@@ -93,6 +93,10 @@ func contactHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// realy nice site on creating web applications in go:
+// https://gowebexamples.com/routes-using-gorilla-mux/
+// serving static files with go:
+// https://www.alexedwards.net/blog/serving-static-sites-with-go
 func main() {
 	// server static files
 	fs := http.FileServer(http.Dir("public"))
