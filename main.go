@@ -15,18 +15,8 @@ var port = "8080"
 var templates = template.Must(template.ParseGlob("public/views/*.html"))
 var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
-type Page struct {
-	Title string
-	Body  []byte
-}
-
-func (p *Page) save() error {
-	filename := p.Title + ".txt"
-	return ioutil.WriteFile(filename, p.Body, 0600)
-}
-
 func loadPage(title string) (*Page, error) {
-	filename := title + ".txt"
+	filename := "pages/" + title + ".txt"
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -95,6 +85,14 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func contactHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf(" > request path: [%s]\n", r.URL.Path)
+	err := templates.ExecuteTemplate(w, "contact.html", "")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func main() {
 	// server static files
 	fs := http.FileServer(http.Dir("public"))
@@ -102,6 +100,7 @@ func main() {
 
 	// index
 	http.HandleFunc("/", indexHandler)
+	http.HandleFunc("/contact", contactHandler)
 
 	// will be removed later
 	http.HandleFunc("/view/", makeHandler(viewHandler))
