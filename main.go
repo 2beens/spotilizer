@@ -1,7 +1,3 @@
-// Copyright 2010 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package main
 
 import (
@@ -16,7 +12,6 @@ import (
 var port = "8080"
 
 // templates ****
-// var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
 var templates = template.Must(template.ParseGlob("public/views/*.html"))
 var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
