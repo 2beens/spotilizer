@@ -11,73 +11,22 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 )
 
-var port = "8080"
-
 // templates ****
 var templates = template.Must(template.ParseGlob("public/views/*.html"))
-var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
+var stateKey = "spotify_auth_state"
+var port = "8080"
 
-func loadPage(title string) (*Page, error) {
-	filename := "pages/" + title + ".txt"
-	body, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	return &Page{Title: title, Body: body}, nil
-}
+// spotify things
+var clientID string
+var clientSecret string
+var loginRedirectURL = "http://localhost:8080/callback"
 
-func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
-	if err != nil {
-		http.Redirect(w, r, "/edit/"+title, http.StatusFound)
-		return
-	}
-	renderTemplate(w, "view", p)
-}
-
-func editHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
-	if err != nil {
-		p = &Page{Title: title}
-	}
-	renderTemplate(w, "edit", p)
-}
-
-func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
-	body := r.FormValue("body")
-	p := &Page{Title: title, Body: []byte(body)}
-	err := p.save()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/view/"+title, http.StatusFound)
-}
-
-func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
-	err := templates.ExecuteTemplate(w, tmpl+".html", p)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		pathMatch := validPath.FindStringSubmatch(r.URL.Path)
-		if pathMatch == nil {
-			fmt.Printf(" > path not found: %v\n", pathMatch)
-			http.NotFound(w, r)
-			return
-		}
-		fmt.Printf(" > path found: %v\n", pathMatch)
-		fn(w, r, pathMatch[2])
-	}
-}
+// TODO: check later why needed (check wiki.go tutorial)
+// var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf(" > request path: [%s]\n", r.URL.Path)
@@ -85,22 +34,20 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-
-	err := templates.ExecuteTemplate(w, "index.html", "")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	render(w, "index")
 }
 
 func contactHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf(" > request path: [%s]\n", r.URL.Path)
-	err := templates.ExecuteTemplate(w, "contact.html", "")
+	render(w, "contact")
+}
+
+func render(w http.ResponseWriter, page string) {
+	err := templates.ExecuteTemplate(w, page+".html", "")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
-
-var stateKey = "spotify_auth_state"
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf(" > request path: [%s]\n", r.URL.Path)
@@ -200,10 +147,6 @@ func makeAuthPostReq(code string) SpotifyAuthOptions {
 	return authOptions
 }
 
-var clientID string
-var clientSecret string
-var loginRedirectURL = "http://localhost:8080/callback"
-
 func readSpotifyAuthData() error {
 	clientID = os.Getenv("SPOTIFY_CLIENT_ID")
 	clientSecret = os.Getenv("SPOTIFY_CLIENT_SECRET")
@@ -240,11 +183,6 @@ func main() {
 	// spotify API
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/callback", callbackHandler)
-
-	// will be removed later
-	http.HandleFunc("/view/", makeHandler(viewHandler))
-	http.HandleFunc("/edit/", makeHandler(editHandler))
-	http.HandleFunc("/save/", makeHandler(saveHandler))
 
 	fmt.Printf(" > server listening on port: %s\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
