@@ -1,11 +1,17 @@
 package main
 
 import (
+	"bytes"
+	b64 "encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
 	"regexp"
 )
 
@@ -93,11 +99,133 @@ func contactHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+var stateKey = "spotify_auth_state"
+
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf(" > request path: [%s]\n", r.URL.Path)
+	state := generateRandomString(16)
+	addCookie(w, stateKey, state)
+
+	q := url.Values{}
+	q.Add("response_type", "code")
+	q.Add("client_id", clientID)
+	q.Add("scope", "user-read-private user-read-email")
+	q.Add("redirect_uri", loginRedirectURL)
+	q.Add("state", state)
+
+	redirectURL := "https://accounts.spotify.com/authorize?" + q.Encode()
+	fmt.Println(" > /login, redirect to: " + redirectURL)
+	http.Redirect(w, r, redirectURL, 302)
+}
+
+func callbackHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf(" > request path: [%s]\n", r.URL.Path)
+
+	q := r.URL.Query()
+	err, ok := q["error"]
+	if ok {
+		fmt.Printf(" > login failed, error: [%v]\n", err)
+		// TODO: redirect to some error, or show error on the index page
+		http.Redirect(w, r, "http://localhost:8080", 302)
+		return
+	}
+
+	code, codeOk := q["code"]
+	state, stateOk := q["state"]
+	storedStateCookie, sStateCookieErr := r.Cookie(stateKey)
+	if !codeOk || !stateOk {
+		fmt.Println(" > login failed, error: some of the mandatory params not found")
+		// TODO: redirect to some error, or show error on the index page
+		http.Redirect(w, r, "http://localhost:8080", 302)
+		return
+	}
+
+	if storedStateCookie == nil || storedStateCookie.Value != state[0] || sStateCookieErr != nil {
+		fmt.Printf(" > login failed, error: state cookie not found or state mismatch. more details [%v]\n", err)
+		if storedStateCookie != nil {
+			fmt.Printf(" >>> storedStateCookie: [%s] state: [%s]\n", storedStateCookie.Value, state[0])
+		} else {
+			fmt.Println(" >>> storedStateCookie is nil!")
+		}
+		// TODO: redirect to some error, or show error on the index page
+		http.Redirect(w, r, "http://localhost:8080", 302)
+		return
+	}
+
+	cleearCookie(w, stateKey)
+	authOptions := makeAuthPostReq(code[0])
+	at := authOptions.AccessToken
+	rt := authOptions.RefreshToken
+	fmt.Printf(" > success! AT [%s] RT [%s]\n", at, rt)
+
+	// TODO: redirect to index page with acces and refresh tokens
+
+	http.Redirect(w, r, "http://localhost:8080", 302)
+}
+
+// https://developer.spotify.com/documentation/general/guides/authorization-guide/
+func makeAuthPostReq(code string) SpotifyAuthOptions {
+	url := "https://accounts.spotify.com/api/token"
+	jsonData := fmt.Sprintf(`{"code":%s, "redirect_uri":%s, "grant_type": "authorization_code"}`, code, loginRedirectURL)
+	fmt.Printf(" > auth post data = %s\n", jsonData)
+	postData := []byte(jsonData)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(postData))
+	authEncoding := b64.StdEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
+	fmt.Println(" > client id: " + clientID)
+	fmt.Println(" > client secret: " + clientSecret)
+	fmt.Println(" > AUTH ENCODING: " + authEncoding)
+	req.Header.Set("Authorization", authEncoding)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf(" >>> error making an auth post req: %v\n", err)
+		return SpotifyAuthOptions{}
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("------------------------------------------")
+	fmt.Println("response Status:", resp.Status)
+	// redirect to error if status != 200
+	fmt.Println("response Headers:", resp.Header)
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+	fmt.Println("------------------------------------------")
+	authOptions := SpotifyAuthOptions{}
+	json.Unmarshal(body, &authOptions)
+	return authOptions
+}
+
+var clientID string
+var clientSecret string
+var loginRedirectURL = "http://localhost:8080/callback"
+
+func readSpotifyAuthData() error {
+	clientID = os.Getenv("SPOTIFY_CLIENT_ID")
+	clientSecret = os.Getenv("SPOTIFY_CLIENT_SECRET")
+	fmt.Println(" > client ID: " + clientID)
+	fmt.Println(" > client secret: " + clientSecret)
+	if clientID == "" {
+		return errors.New(" >>> error, client ID missing. set it using env [SPOTIFY_CLIENT_ID]")
+	}
+	if clientSecret == "" {
+		return errors.New(" >>> error, client secret missing. set it using env [SPOTIFY_CLIENT_SECRET]")
+	}
+	return nil
+}
+
 // realy nice site on creating web applications in go:
 // https://gowebexamples.com/routes-using-gorilla-mux/
 // serving static files with go:
 // https://www.alexedwards.net/blog/serving-static-sites-with-go
 func main() {
+	err := readSpotifyAuthData()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	// server static files
 	fs := http.FileServer(http.Dir("public"))
 	http.Handle("/public/", http.StripPrefix("/public/", fs))
@@ -105,6 +233,10 @@ func main() {
 	// index
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/contact", contactHandler)
+
+	// spotify API
+	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/callback", callbackHandler)
 
 	// will be removed later
 	http.HandleFunc("/view/", makeHandler(viewHandler))
