@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	b64 "encoding/base64"
 	"encoding/json"
 	"errors"
@@ -13,6 +12,8 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
+	"strings"
 )
 
 var port = "8080"
@@ -157,6 +158,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	at := authOptions.AccessToken
 	rt := authOptions.RefreshToken
 	fmt.Printf(" > success! AT [%s] RT [%s]\n", at, rt)
+	fmt.Printf(" > %v\n", authOptions)
 
 	// TODO: redirect to index page with acces and refresh tokens
 
@@ -165,33 +167,34 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 
 // https://developer.spotify.com/documentation/general/guides/authorization-guide/
 func makeAuthPostReq(code string) SpotifyAuthOptions {
-	url := "https://accounts.spotify.com/api/token"
-	jsonData := fmt.Sprintf(`{"code":%s, "redirect_uri":%s, "grant_type": "authorization_code"}`, code, loginRedirectURL)
-	fmt.Printf(" > auth post data = %s\n", jsonData)
-	postData := []byte(jsonData)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(postData))
-	authEncoding := b64.StdEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
-	fmt.Println(" > client id: " + clientID)
-	fmt.Println(" > client secret: " + clientSecret)
-	fmt.Println(" > AUTH ENCODING: " + authEncoding)
-	req.Header.Set("Authorization", authEncoding)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	apiURL := "https://accounts.spotify.com"
+	resource := "/api/token/"
+	data := url.Values{}
+	data.Set("code", code)
+	data.Set("redirect_uri", loginRedirectURL)
+	data.Set("grant_type", "authorization_code")
+
+	u, _ := url.ParseRequestURI(apiURL)
+	u.Path = resource
+	urlStr := u.String()
 
 	client := &http.Client{}
-	resp, err := client.Do(req)
+	r, _ := http.NewRequest("POST", urlStr, strings.NewReader(data.Encode())) // URL-encoded payload
+	authEncoding := b64.StdEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
+	r.Header.Add("Authorization", "Basic "+authEncoding)
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+
+	resp, err := client.Do(r)
 	if err != nil {
 		fmt.Printf(" >>> error making an auth post req: %v\n", err)
 		return SpotifyAuthOptions{}
 	}
 	defer resp.Body.Close()
-
 	fmt.Println("------------------------------------------")
 	fmt.Println("response Status:", resp.Status)
 	// redirect to error if status != 200
-	fmt.Println("response Headers:", resp.Header)
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
-	fmt.Println("------------------------------------------")
 	authOptions := SpotifyAuthOptions{}
 	json.Unmarshal(body, &authOptions)
 	return authOptions
