@@ -1,4 +1,21 @@
 {{define "content"}}
+  {{if .Data}}
+    {{if .Data.AccessToken}}
+      <h1>{{.Data.AccessToken}}</h1>
+    {{else}}
+      <h4>Access token not there :(</h4>
+    {{end}}
+    <hr/>
+    {{if .Data.RefreshToken}}
+      <h1>{{.Data.RefreshToken}}</h1>
+    {{else}}
+      <h4>Refresh token not there :(</h4>
+    {{end}}
+  {{end}}
+  <hr/>
+
+  <h4>{{ . }}</h4>
+
   <div class="jumbotron">
     <h1 class="display-3">Spotify Playlists Analyzer</h1>
     <p class="lead">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>

@@ -31,27 +31,31 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	render(w, "index", "")
+	render(w, "index", ViewData{})
 }
 
 func contactHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf(" > request path: [%s]\n", r.URL.Path)
-	render(w, "contact", "")
+	render(w, "contact", ViewData{})
 }
 
-func render(w http.ResponseWriter, page string, data interface{}) {
+// templates cheatsheet
+// https://curtisvermeeren.github.io/2017/09/14/Golang-Templates-Cheatsheet
+func render(w http.ResponseWriter, page string, viewData ViewData) {
+	// TODO: parse the template once and reuse it
 	files := []string{
 		"public/views/layouts/layout.html",
 		"public/views/layouts/footer.html",
 		"public/views/layouts/navbar.html",
 		"public/views/" + page + ".html",
 	}
-	t, err := template.ParseFiles(files...)
+	t, err := template.New("layout").ParseFiles(files...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = t.ExecuteTemplate(w, "layout", data)
+
+	err = t.ExecuteTemplate(w, "layout", viewData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -72,6 +76,23 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	redirectURL := "https://accounts.spotify.com/authorize?" + q.Encode()
 	fmt.Println(" > /login, redirect to: " + redirectURL)
 	http.Redirect(w, r, redirectURL, 302)
+}
+
+func refreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf(" > request path: [%s]\n", r.URL.Path)
+
+	q := r.URL.Query()
+	refreshToken, refreshTokenOk := q["refresh_token"]
+	if !refreshTokenOk {
+		fmt.Println(" > refresh token failed, error: refresh_token param not found")
+		// TODO: redirect to some error, or show error on the index page
+		w.Write([]byte("missing refresh_token param"))
+		return
+	}
+	fmt.Println(" > refresh token, value: " + refreshToken[0])
+
+	//TODO: implement the rest ...
+
 }
 
 func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -191,6 +212,7 @@ func main() {
 	// spotify API
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/callback", spotifyCallbackHandler)
+	http.HandleFunc("/refresh_token", refreshTokenHandler)
 
 	fmt.Printf(" > server listening on port: %s\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
