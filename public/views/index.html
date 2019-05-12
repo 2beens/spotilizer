@@ -14,7 +14,26 @@
   {{end}}
   <hr/>
 
-  <h4>{{ . }}</h4>
+  {{if .Data }}
+  <script>
+    accessToken = '{{.Data.AccessToken}}';
+    refreshToken = '{{.Data.RefreshToken}}';
+    if (accessToken) {
+        var prevAccToken = getCookie("accessToken");
+        if (!prevAccToken || accessToken !== prevAccToken) {
+            setCookie("accessToken", accessToken, 7);
+        }
+    }
+    if (refreshToken) {
+        var prevRefToken = getCookie("refreshToken");
+        if (!prevRefToken || refreshToken !== prevRefToken) {
+            setCookie("refreshToken", refreshToken, 7);
+        }
+    }
+  </script>
+  {{end}}
+
+  <h4>[ {{ . }} ]</h4>
 
   <div class="jumbotron">
     <h1 class="display-3">Spotify Playlists Analyzer</h1>

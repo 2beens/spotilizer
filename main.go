@@ -57,6 +57,7 @@ func render(w http.ResponseWriter, page string, viewData ViewData) {
 
 	err = t.ExecuteTemplate(w, "layout", viewData)
 	if err != nil {
+		fmt.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -136,9 +137,8 @@ func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf(" > success! AT [%s] RT [%s]\n", at, rt)
 	fmt.Printf(" > %v\n", authOptions)
 
-	// TODO: redirect to index page with acces and refresh tokens
-
-	http.Redirect(w, r, "http://localhost:8080", 302)
+	// redirect to index page with acces and refresh tokens
+	render(w, "index", ViewData{Message: "success", Error: "", Data: authOptions})
 }
 
 // https://developer.spotify.com/documentation/general/guides/authorization-guide/
