@@ -1,0 +1,14 @@
+{
+  "name": "spotilizer",
+  "version": "1.0.0",
+  "description": "Spotilizer - Spotify playlist analyzer",
+  "main": "main.go",
+  "repository": "git@github.com:2beens/spotilizer.git",
+  "author": "serj <srdjan@adjust.com>",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {},
+  "devDependencies": {
+    "bootstrap": "^4.3.1"
+  }
+}
