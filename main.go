@@ -15,8 +15,6 @@ import (
 	"strings"
 )
 
-// templates ****
-var templates = template.Must(template.ParseGlob("public/views/*.html"))
 var stateKey = "spotify_auth_state"
 var port = "8080"
 
@@ -25,7 +23,6 @@ var clientID string
 var clientSecret string
 var loginRedirectURL = "http://localhost:8080/callback"
 
-// TODO: check later why needed (check wiki.go tutorial)
 // var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -34,16 +31,27 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	render(w, "index")
+	render(w, "index", "")
 }
 
 func contactHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf(" > request path: [%s]\n", r.URL.Path)
-	render(w, "contact")
+	render(w, "contact", "")
 }
 
-func render(w http.ResponseWriter, page string) {
-	err := templates.ExecuteTemplate(w, page+".html", "")
+func render(w http.ResponseWriter, page string, data interface{}) {
+	files := []string{
+		"public/views/layouts/layout.html",
+		"public/views/layouts/footer.html",
+		"public/views/layouts/navbar.html",
+		"public/views/" + page + ".html",
+	}
+	t, err := template.ParseFiles(files...)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = t.ExecuteTemplate(w, "layout", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -66,7 +74,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redirectURL, 302)
 }
 
-func callbackHandler(w http.ResponseWriter, r *http.Request) {
+func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf(" > request path: [%s]\n", r.URL.Path)
 
 	q := r.URL.Query()
@@ -182,7 +190,7 @@ func main() {
 
 	// spotify API
 	http.HandleFunc("/login", loginHandler)
-	http.HandleFunc("/callback", callbackHandler)
+	http.HandleFunc("/callback", spotifyCallbackHandler)
 
 	fmt.Printf(" > server listening on port: %s\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
