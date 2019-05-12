@@ -1,44 +1,46 @@
 {{define "content"}}
-  {{if .Data}}
-    {{if .Data.AccessToken}}
-      <h1>{{.Data.AccessToken}}</h1>
-    {{else}}
-      <h4>Access token not there :(</h4>
-    {{end}}
-    <hr/>
-    {{if .Data.RefreshToken}}
-      <h1>{{.Data.RefreshToken}}</h1>
-    {{else}}
-      <h4>Refresh token not there :(</h4>
-    {{end}}
-  {{end}}
-  <hr/>
-
   {{if .Data }}
   <script>
     accessToken = '{{.Data.AccessToken}}';
     refreshToken = '{{.Data.RefreshToken}}';
+    var prevAccToken = getCookie("accessToken");
+    var prevRefToken = getCookie("refreshToken");
     if (accessToken) {
-        var prevAccToken = getCookie("accessToken");
-        if (!prevAccToken || accessToken !== prevAccToken) {
-            setCookie("accessToken", accessToken, 7);
-        }
+      if (!prevAccToken || accessToken !== prevAccToken) {
+        setCookie("accessToken", accessToken, 7);
+      }
+    } else {
+      accessToken = prevAccToken;
     }
     if (refreshToken) {
-        var prevRefToken = getCookie("refreshToken");
-        if (!prevRefToken || refreshToken !== prevRefToken) {
-            setCookie("refreshToken", refreshToken, 7);
-        }
+      if (!prevRefToken || refreshToken !== prevRefToken) {
+        setCookie("refreshToken", refreshToken, 7);
+      }
+    } else {
+      refreshToken = prevRefToken;
     }
+
+    if (accessToken && prevAccToken) {
+      printSelfSpotifyInfo();
+    } 
   </script>
   {{end}}
-
-  <h4>[ {{ . }} ]</h4>
 
   <div class="jumbotron">
     <h1 class="display-3">Spotify Playlists Analyzer</h1>
     <p class="lead">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
-    <p><a class="btn btn-lg btn-success" href="/login" role="button">Log in to Spotify</a></p>
+    
+    <div id="login">
+      <p><a class="btn btn-lg btn-success" href="/login" role="button">Log in to Spotify</a></p>
+    </div>
+    <div id="loggedin">
+      <div id="user-profile">
+      </div>
+      <div id="oauth">
+      </div>
+      <p><a class="btn btn-lg btn-success" role="button" onclick="console.log('not implemented ...')">Obtain new token using the refresh token</a></p>
+      <p><a class="btn btn-lg btn-success" role="button" onclick="printSelfSpotifyInfo()">Log Spotify info to console</a></p>
+    </div>
   </div>
 
   <div class="row marketing">

@@ -22,6 +22,22 @@ function setCookie(cname, cvalue, daysValid) {
     document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
 }
 
+function printSelfSpotifyInfo() {
+    $.ajax({
+        url: 'https://api.spotify.com/v1/me',
+        headers: {
+            'Authorization': 'Bearer ' + accessToken
+        },
+        success: function (response) {
+            console.log('------------------------------- response from spotify ------------')
+            console.log(response);
+            console.log('------------------------------------------------------------------')
+            // $('#login').hide();
+            // $('#loggedin').show();
+        }
+    });
+}
+
 (function () {
     var accessToken = getCookie("accessToken");
     var refreshToken = getCookie("refreshToken");
