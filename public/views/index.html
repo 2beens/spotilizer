@@ -1,8 +1,8 @@
 {{define "content"}}
   {{if .Data }}
   <script>
-    accessToken = '{{.Data.AccessToken}}';
-    refreshToken = '{{.Data.RefreshToken}}';
+    var accessToken = '{{.Data.AccessToken}}';
+    var refreshToken = '{{.Data.RefreshToken}}';
     var prevAccToken = getCookie("accessToken");
     var prevRefToken = getCookie("refreshToken");
     if (accessToken) {
@@ -20,9 +20,14 @@
       refreshToken = prevRefToken;
     }
 
+    window.accessToken = accessToken;
+    window.refreshToken = refreshToken;
+
     if (accessToken && prevAccToken) {
       printSelfSpotifyInfo();
-    } 
+    }
+
+    console.log(' > internal script 1 ran');
   </script>
   {{end}}
 
@@ -40,6 +45,22 @@
       </div>
       <p><a class="btn btn-lg btn-success" role="button" onclick="console.log('not implemented ...')">Obtain new token using the refresh token</a></p>
       <p><a class="btn btn-lg btn-success" role="button" onclick="printSelfSpotifyInfo()">Log Spotify info to console</a></p>
+      <p><a class="btn btn-lg btn-success" role="button" onclick="getFavPlaylist()">Get Fav List</a></p>
+    </div>
+  </div>
+
+  <div class="url-query">
+    <h5>URL Query</h5>
+    <div class="row">
+      <div class="col-lg-11">
+        <textarea name="query-val" id="query-text" cols="80%" rows="2">https://api.spotify.com/v1/me/albums/contains</textarea>
+      </div>
+      <div class="col-lg-1">
+          <p><a class="btn btn-success" role="button" onclick="executeUrlQueryRequest()">Get!</a></p>
+      </div>
+      <div>
+        <p id="query-result"></p>
+      </div>
     </div>
   </div>
 

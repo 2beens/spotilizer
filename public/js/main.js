@@ -23,24 +23,56 @@ function setCookie(cname, cvalue, daysValid) {
 }
 
 function printSelfSpotifyInfo() {
+    makeRequest('https://api.spotify.com/v1/me', function (response) {
+        console.log('------------------------------- response from spotify ------------')
+        console.log(response);
+        console.log('------------------------------------------------------------------')
+    });
+}
+
+function makeRequest(queryUrl, callback) {
+    console.log(' ---> making a request call to: ' + queryUrl);
     $.ajax({
-        url: 'https://api.spotify.com/v1/me',
+        url: queryUrl,
         headers: {
-            'Authorization': 'Bearer ' + accessToken
+            'Authorization': 'Bearer ' + window.accessToken
         },
-        success: function (response) {
-            console.log('------------------------------- response from spotify ------------')
+        success: callback,
+    });
+}
+
+function executeUrlQueryRequest() {
+    var queryUrl = $('#query-text').val();
+    if (!queryUrl) {
+        console.log(' > query URL error ...');
+        return;
+    }
+    console.log(' > URL: ' + queryUrl);
+    makeRequest(queryUrl, function(response) {
+        console.log(' > received from Spotify: ' + response);
+        $('#query-result').val(response);
+    });
+}
+
+function getFavPlaylist() {
+    console.log(' > getting fav playlist ...');
+    $.ajax({
+        url: 'https://api.spotify.com/v1/me/tracks',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + window.accessToken
+        },
+        success: function(response) {
             console.log(response);
-            console.log('------------------------------------------------------------------')
-            // $('#login').hide();
-            // $('#loggedin').show();
-        }
+        },
     });
 }
 
 (function () {
-    var accessToken = getCookie("accessToken");
-    var refreshToken = getCookie("refreshToken");
-    console.log(" > loaded cookie AT: " + accessToken);
-    console.log(" > loaded cookie RT: " + refreshToken);
+    window.accessToken = getCookie("accessToken");
+    window.refreshToken = getCookie("refreshToken");
+    console.log(" > loaded cookie AT: " + window.accessToken);
+    console.log(" > loaded cookie RT: " + window.refreshToken);
+    console.log(' > main script finished');
 })()

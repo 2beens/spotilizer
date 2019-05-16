@@ -70,7 +70,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	q := url.Values{}
 	q.Add("response_type", "code")
 	q.Add("client_id", clientID)
-	q.Add("scope", "user-read-private user-read-email")
+	q.Add("scope", "user-read-private user-read-email user-library-read")
 	q.Add("redirect_uri", loginRedirectURL)
 	q.Add("state", state)
 
