@@ -14,13 +14,19 @@ import (
 	"strings"
 )
 
-var stateKey = "spotify_auth_state"
+var ipAddress = "localhost"
+var cookieStateKey = "spotify_auth_state"
+var cookieUserIDKey = "spotilizer-user-id"
+var protocol = "http"
 var port = "8080"
+var serverURL = fmt.Sprintf("%s://%s:%s", protocol, ipAddress, port)
 
 // spotify things
 var clientID string
 var clientSecret string
-var loginRedirectURL = fmt.Sprintf("http://localhost:%s/callback", port)
+var loginRedirectURL = fmt.Sprintf("%s/callback", serverURL)
+
+var user2authOptionsMap = make(map[string]SpotifyAuthOptions)
 
 // var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
@@ -64,7 +70,7 @@ func render(w http.ResponseWriter, page string, viewData ViewData) {
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf(" > request path: [%s]\n", r.URL.Path)
 	state := generateRandomString(16)
-	addCookie(w, stateKey, state)
+	addCookie(w, cookieStateKey, state)
 
 	q := url.Values{}
 	q.Add("response_type", "code")
@@ -95,6 +101,31 @@ func refreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func saveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := r.Cookie(cookieUserIDKey)
+	if err != nil {
+		// TOOD: redirect to error
+		log.Printf(" >>> error while saving current user playlists: %v\n", err)
+		return
+	}
+
+	log.Printf(" > user ID: %s\n", userID.Value)
+
+	if authOptions, found := user2authOptionsMap[userID.Value]; found {
+		playlists, err := getCurrentUserPlaylists(authOptions)
+		if err != nil {
+			log.Printf(" >>> error while saving current user playlists: %v\n", err)
+			return
+		}
+		log.Printf(" > playlists count: %d\n", len(playlists.Items))
+		// TODO: return standardized resp message
+		w.Write([]byte("saved!"))
+		return
+	}
+	log.Printf(" >>> failed to find user, must login first\n")
+	http.Redirect(w, r, serverURL, 302)
+}
+
 func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf(" > request path: [%s]\n", r.URL.Path)
 
@@ -103,17 +134,17 @@ func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		log.Printf(" > login failed, error: [%v]\n", err)
 		// TODO: redirect to some error, or show error on the index page
-		http.Redirect(w, r, "http://localhost:8080", 302)
+		http.Redirect(w, r, serverURL, 302)
 		return
 	}
 
 	code, codeOk := q["code"]
 	state, stateOk := q["state"]
-	storedStateCookie, sStateCookieErr := r.Cookie(stateKey)
+	storedStateCookie, sStateCookieErr := r.Cookie(cookieStateKey)
 	if !codeOk || !stateOk {
 		log.Println(" > login failed, error: some of the mandatory params not found")
 		// TODO: redirect to some error, or show error on the index page
-		http.Redirect(w, r, "http://localhost:8080", 302)
+		http.Redirect(w, r, serverURL, 302)
 		return
 	}
 
@@ -125,16 +156,20 @@ func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println(" >>> storedStateCookie is nil!")
 		}
 		// TODO: redirect to some error, or show error on the index page
-		http.Redirect(w, r, "http://localhost:8080", 302)
+		http.Redirect(w, r, serverURL, 302)
 		return
 	}
 
-	cleearCookie(w, stateKey)
+	cleearCookie(w, cookieStateKey)
 	authOptions := makeAuthPostReq(code[0])
 	at := authOptions.AccessToken
 	rt := authOptions.RefreshToken
 	log.Printf(" > success! AT [%s] RT [%s]\n", at, rt)
 	log.Printf(" > %v\n", authOptions)
+
+	newUserID := generateRandomString(35)
+	user2authOptionsMap[newUserID] = authOptions
+	addCookie(w, cookieUserIDKey, newUserID)
 
 	// redirect to index page with acces and refresh tokens
 	render(w, "index", ViewData{Message: "success", Error: "", Data: authOptions})
@@ -211,6 +246,7 @@ func main() {
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/callback", spotifyCallbackHandler)
 	http.HandleFunc("/refresh_token", refreshTokenHandler)
+	http.HandleFunc("/save_current_playlists", saveCurrentPlaylistsHandler)
 
 	log.Printf(" > server listening on port: [%s]\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

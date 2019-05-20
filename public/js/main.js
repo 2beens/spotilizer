@@ -23,6 +23,8 @@ function setCookie(cname, cvalue, daysValid) {
 }
 
 function printSelfSpotifyInfo() {
+    var spotilizerId = getCookie("spotilizer-user-id");
+    console.log(' > spotilizer-user-id: ' + spotilizerId);
     makeRequest('https://api.spotify.com/v1/me', function (response) {
         console.log('------------------------------- response from spotify ------------')
         console.log(response);
@@ -38,6 +40,13 @@ function makeRequest(queryUrl, callback) {
             'Authorization': 'Bearer ' + window.accessToken
         },
         success: callback,
+    });
+}
+
+function saveCurrentPlaylists() {
+    makeRequest("/save_current_playlists", function(response) {
+        console.log(' > received from server: ' + response);
+        $('#query-result').val(response);
     });
 }
 
