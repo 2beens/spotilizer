@@ -17,26 +17,20 @@ import (
 	"strings"
 	"time"
 
+	c "github.com/2beens/spotilizer/constants"
+	h "github.com/2beens/spotilizer/handlers"
 	m "github.com/2beens/spotilizer/models"
 	"github.com/2beens/spotilizer/services"
+	"github.com/2beens/spotilizer/util"
 	"github.com/gorilla/mux"
 )
 
-var ipAddress = "localhost"
-var cookieStateKey = "spotify_auth_state"
-var cookieUserIDKey = "spotilizer-user-id"
-var protocol = "http"
-var port = "8080"
-var serverURL = fmt.Sprintf("%s://%s:%s", protocol, ipAddress, port)
+var serverURL = fmt.Sprintf("%s://%s:%s", c.Protocol, c.IPAddress, c.Port)
 
 // spotify things
 var clientID string
 var clientSecret string
 var loginRedirectURL = fmt.Sprintf("%s/callback", serverURL)
-
-var user2authOptionsMap = make(map[string]m.SpotifyAuthOptions)
-
-// var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf(" > request path: [%s]\n", r.URL.Path)
@@ -77,8 +71,8 @@ func render(w http.ResponseWriter, page string, viewData m.ViewData) {
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf(" > request path: [%s]\n", r.URL.Path)
-	state := generateRandomString(16)
-	addCookie(w, cookieStateKey, state)
+	state := util.GenerateRandomString(16)
+	util.AddCookie(w, c.CookieStateKey, state)
 
 	q := url.Values{}
 	q.Add("response_type", "code")
@@ -109,31 +103,6 @@ func refreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func saveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
-	userID, err := r.Cookie(cookieUserIDKey)
-	if err != nil {
-		// TOOD: redirect to error
-		log.Printf(" >>> error while saving current user playlists: %v\n", err)
-		return
-	}
-
-	log.Printf(" > user ID: %s\n", userID.Value)
-
-	if authOptions, found := user2authOptionsMap[userID.Value]; found {
-		playlists, err := services.GetCurrentUserPlaylists(authOptions)
-		if err != nil {
-			log.Printf(" >>> error while saving current user playlists: %v\n", err)
-			return
-		}
-		log.Printf(" > playlists count: %d\n", len(playlists.Items))
-		// TODO: return standardized resp message
-		w.Write([]byte("saved!"))
-		return
-	}
-	log.Printf(" >>> failed to find user, must login first\n")
-	http.Redirect(w, r, serverURL, 302)
-}
-
 func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf(" > request path: [%s]\n", r.URL.Path)
 
@@ -148,7 +117,7 @@ func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	code, codeOk := q["code"]
 	state, stateOk := q["state"]
-	storedStateCookie, sStateCookieErr := r.Cookie(cookieStateKey)
+	storedStateCookie, sStateCookieErr := r.Cookie(c.CookieStateKey)
 	if !codeOk || !stateOk {
 		log.Println(" > login failed, error: some of the mandatory params not found")
 		// TODO: redirect to some error, or show error on the index page
@@ -163,16 +132,16 @@ func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cleearCookie(w, cookieStateKey)
+	util.CleearCookie(w, c.CookieStateKey)
 	authOptions := makeAuthPostReq(code[0])
 	at := authOptions.AccessToken
 	rt := authOptions.RefreshToken
 	log.Printf(" > success! AT [%s] RT [%s]\n", at, rt)
 	log.Printf(" > %v\n", authOptions)
 
-	newUserID := generateRandomString(35)
-	user2authOptionsMap[newUserID] = authOptions
-	addCookie(w, cookieUserIDKey, newUserID)
+	newUserID := util.GenerateRandomString(35)
+	services.Users.User2authOptionsMap[newUserID] = authOptions
+	util.AddCookie(w, c.CookieUserIDKey, newUserID)
 
 	// redirect to index page with acces and refresh tokens
 	render(w, "index", m.ViewData{Message: "success", Error: "", Data: authOptions})
@@ -237,7 +206,7 @@ func routerSetup() (r *mux.Router) {
 	r.HandleFunc("/login", loginHandler)
 	r.HandleFunc("/callback", spotifyCallbackHandler)
 	r.HandleFunc("/refresh_token", refreshTokenHandler)
-	r.HandleFunc("/save_current_playlists", saveCurrentPlaylistsHandler)
+	r.HandleFunc("/save_current_playlists", h.GetSaveCurrentPlaylistsHandler(serverURL))
 
 	return
 }
@@ -256,11 +225,11 @@ func main() {
 		return
 	}
 
-	loggingSetup(*logFileName)
+	util.LoggingSetup(*logFileName)
 
 	// read spotify client ID & Secret
 	var err error
-	clientID, clientSecret, err = readSpotifyAuthData()
+	clientID, clientSecret, err = util.ReadSpotifyAuthData()
 	if err != nil {
 		log.Println(err)
 		return
@@ -268,7 +237,7 @@ func main() {
 
 	router := routerSetup()
 
-	ipAndPort := fmt.Sprintf("%s:%s", ipAddress, port)
+	ipAndPort := fmt.Sprintf("%s:%s", c.IPAddress, c.Port)
 	srv := &http.Server{
 		Handler:      router,
 		Addr:         ipAndPort,

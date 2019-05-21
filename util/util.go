@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 )
 
 // generates a random string containing numbers and letters
-func generateRandomString(length int) string {
+func GenerateRandomString(length int) string {
 	text := ""
 	possible := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
@@ -28,7 +28,7 @@ func generateRandomString(length int) string {
 
 // addCookie will apply a new cookie to the response of a http
 // request, with the key/value this method is passed.
-func addCookie(w http.ResponseWriter, name string, value string) {
+func AddCookie(w http.ResponseWriter, name string, value string) {
 	expire := time.Now().AddDate(0, 0, 1)
 	cookie := http.Cookie{
 		Name:    name,
@@ -38,7 +38,7 @@ func addCookie(w http.ResponseWriter, name string, value string) {
 	http.SetCookie(w, &cookie)
 }
 
-func cleearCookie(w http.ResponseWriter, name string) {
+func CleearCookie(w http.ResponseWriter, name string) {
 	expire := time.Now()
 	cookie := http.Cookie{
 		Name:    name,
@@ -48,7 +48,7 @@ func cleearCookie(w http.ResponseWriter, name string) {
 	http.SetCookie(w, &cookie)
 }
 
-func readSpotifyAuthData() (clientID string, clientSecret string, err error) {
+func ReadSpotifyAuthData() (clientID string, clientSecret string, err error) {
 	clientID = os.Getenv("SPOTIFY_CLIENT_ID")
 	clientSecret = os.Getenv("SPOTIFY_CLIENT_SECRET")
 	log.Println(" > client ID: " + clientID)
@@ -62,7 +62,7 @@ func readSpotifyAuthData() (clientID string, clientSecret string, err error) {
 	return
 }
 
-func loggingSetup(logFileName string) {
+func LoggingSetup(logFileName string) {
 	if logFileName == "" {
 		log.SetOutput(os.Stdout)
 		return
