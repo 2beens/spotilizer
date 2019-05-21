@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	m "github.com/2beens/spotilizer/models"
+	"github.com/2beens/spotilizer/services"
 	"github.com/gorilla/mux"
 )
 
@@ -32,7 +34,7 @@ var clientID string
 var clientSecret string
 var loginRedirectURL = fmt.Sprintf("%s/callback", serverURL)
 
-var user2authOptionsMap = make(map[string]SpotifyAuthOptions)
+var user2authOptionsMap = make(map[string]m.SpotifyAuthOptions)
 
 // var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
@@ -42,17 +44,17 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	render(w, "index", ViewData{})
+	render(w, "index", m.ViewData{})
 }
 
 func contactHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf(" > request path: [%s]\n", r.URL.Path)
-	render(w, "contact", ViewData{})
+	render(w, "contact", m.ViewData{})
 }
 
 // templates cheatsheet
 // https://curtisvermeeren.github.io/2017/09/14/Golang-Templates-Cheatsheet
-func render(w http.ResponseWriter, page string, viewData ViewData) {
+func render(w http.ResponseWriter, page string, viewData m.ViewData) {
 	// TODO: parse the template once and reuse it
 	files := []string{
 		"public/views/layouts/layout.html",
@@ -118,7 +120,7 @@ func saveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf(" > user ID: %s\n", userID.Value)
 
 	if authOptions, found := user2authOptionsMap[userID.Value]; found {
-		playlists, err := getCurrentUserPlaylists(authOptions)
+		playlists, err := services.GetCurrentUserPlaylists(authOptions)
 		if err != nil {
 			log.Printf(" >>> error while saving current user playlists: %v\n", err)
 			return
@@ -156,11 +158,6 @@ func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	if storedStateCookie == nil || storedStateCookie.Value != state[0] || sStateCookieErr != nil {
 		log.Printf(" > login failed, error: state cookie not found or state mismatch. more details [%v]\n", err)
-		if storedStateCookie != nil {
-			log.Printf(" >>> storedStateCookie: [%s] state: [%s]\n", storedStateCookie.Value, state[0])
-		} else {
-			log.Println(" >>> storedStateCookie is nil!")
-		}
 		// TODO: redirect to some error, or show error on the index page
 		http.Redirect(w, r, serverURL, 302)
 		return
@@ -178,11 +175,11 @@ func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	addCookie(w, cookieUserIDKey, newUserID)
 
 	// redirect to index page with acces and refresh tokens
-	render(w, "index", ViewData{Message: "success", Error: "", Data: authOptions})
+	render(w, "index", m.ViewData{Message: "success", Error: "", Data: authOptions})
 }
 
 // https://developer.spotify.com/documentation/general/guides/authorization-guide/
-func makeAuthPostReq(code string) SpotifyAuthOptions {
+func makeAuthPostReq(code string) m.SpotifyAuthOptions {
 	apiURL := "https://accounts.spotify.com"
 	resource := "/api/token/"
 	data := url.Values{}
@@ -204,14 +201,14 @@ func makeAuthPostReq(code string) SpotifyAuthOptions {
 	resp, err := client.Do(r)
 	if err != nil {
 		log.Printf(" >>> error making an auth post req: %v\n", err)
-		return SpotifyAuthOptions{}
+		return m.SpotifyAuthOptions{}
 	}
 	defer resp.Body.Close()
 	log.Println("------------------------------------------")
 	log.Println("response Status:", resp.Status)
 	// redirect to error if status != 200
 	body, _ := ioutil.ReadAll(resp.Body)
-	authOptions := SpotifyAuthOptions{}
+	authOptions := m.SpotifyAuthOptions{}
 	json.Unmarshal(body, &authOptions)
 	return authOptions
 }

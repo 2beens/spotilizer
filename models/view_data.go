@@ -1,4 +1,4 @@
-package main
+package models
 
 type ViewData struct {
 	Message string      `json:"message"`
