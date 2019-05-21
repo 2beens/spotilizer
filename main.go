@@ -12,6 +12,9 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/gorilla/mux"
 )
 
 var ipAddress = "localhost"
@@ -210,6 +213,35 @@ func makeAuthPostReq(code string) SpotifyAuthOptions {
 	return authOptions
 }
 
+func routerSetup() (r *mux.Router) {
+	// https://github.com/gorilla/mux
+	r = mux.NewRouter()
+
+	// server static files
+	fs := http.FileServer(http.Dir("./public/"))
+	r.PathPrefix("/public/").Handler(http.StripPrefix("/public/", fs))
+
+	// index
+	r.HandleFunc("/", indexHandler)
+	r.HandleFunc("/contact", contactHandler)
+
+	// router example usage with params
+	r.HandleFunc("/books/{title}/page/{page}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		title := vars["title"] // the book title slug
+		page := vars["page"]   // the page
+		log.Printf(" > received title [%s] and page [%s]\n", title, page)
+	}).Methods("GET")
+
+	// spotify API
+	r.HandleFunc("/login", loginHandler)
+	r.HandleFunc("/callback", spotifyCallbackHandler)
+	r.HandleFunc("/refresh_token", refreshTokenHandler)
+	r.HandleFunc("/save_current_playlists", saveCurrentPlaylistsHandler)
+
+	return
+}
+
 // realy nice site on creating web applications in go:
 // https://gowebexamples.com/routes-using-gorilla-mux/
 // serving static files with go:
@@ -234,20 +266,16 @@ func main() {
 		return
 	}
 
-	// server static files
-	fs := http.FileServer(http.Dir("public"))
-	http.Handle("/public/", http.StripPrefix("/public/", fs))
+	router := routerSetup()
 
-	// index
-	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/contact", contactHandler)
+	ipAndPort := fmt.Sprintf("%s:%s", ipAddress, port)
+	srv := &http.Server{
+		Handler:      router,
+		Addr:         ipAndPort,
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
 
-	// spotify API
-	http.HandleFunc("/login", loginHandler)
-	http.HandleFunc("/callback", spotifyCallbackHandler)
-	http.HandleFunc("/refresh_token", refreshTokenHandler)
-	http.HandleFunc("/save_current_playlists", saveCurrentPlaylistsHandler)
-
-	log.Printf(" > server listening on port: [%s]\n", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Printf(" > server listening on: [%s]\n", ipAndPort)
+	log.Fatal(srv.ListenAndServe())
 }
