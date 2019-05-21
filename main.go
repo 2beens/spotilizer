@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	b64 "encoding/base64"
 	"encoding/json"
 	"flag"
@@ -10,6 +11,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 	"time"
@@ -276,6 +279,28 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	log.Printf(" > server listening on: [%s]\n", ipAndPort)
-	log.Fatal(srv.ListenAndServe())
+	// run our server in a goroutine so that it doesn't block
+	go func() {
+		log.Printf(" > server listening on: [%s]\n", ipAndPort)
+		log.Fatal(srv.ListenAndServe())
+	}()
+
+	c := make(chan os.Signal, 1)
+	// we'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
+	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught
+	signal.Notify(c, os.Interrupt)
+
+	// block until (eg. Ctrl+C) signal is received
+	<-c
+
+	// the duration for which the server gracefully wait for existing connections to finish
+	maxWaitDuration := time.Second * 15
+	// create a deadline to wait for
+	ctx, cancel := context.WithTimeout(context.Background(), maxWaitDuration)
+	defer cancel()
+	// doesn't block if no connections, but will otherwise wait until the timeout deadline
+	srv.Shutdown(ctx)
+
+	log.Println(" > shutting down")
+	os.Exit(0)
 }
