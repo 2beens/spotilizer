@@ -33,7 +33,6 @@ var clientSecret string
 var loginRedirectURL = fmt.Sprintf("%s/callback", serverURL)
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf(" > request path: [%s]\n", r.URL.Path)
 	if r.URL.Path != "/index" && r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
@@ -42,7 +41,6 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func contactHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf(" > request path: [%s]\n", r.URL.Path)
 	render(w, "contact", m.ViewData{})
 }
 
@@ -70,7 +68,6 @@ func render(w http.ResponseWriter, page string, viewData m.ViewData) {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf(" > request path: [%s]\n", r.URL.Path)
 	state := util.GenerateRandomString(16)
 	util.AddCookie(w, c.CookieStateKey, state)
 
@@ -87,8 +84,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func refreshTokenHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf(" > request path: [%s]\n", r.URL.Path)
-
 	q := r.URL.Query()
 	refreshToken, refreshTokenOk := q["refresh_token"]
 	if !refreshTokenOk {
@@ -104,8 +99,6 @@ func refreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf(" > request path: [%s]\n", r.URL.Path)
-
 	q := r.URL.Query()
 	err, ok := q["error"]
 	if ok {
@@ -145,6 +138,14 @@ func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	// redirect to index page with acces and refresh tokens
 	render(w, "index", m.ViewData{Message: "success", Error: "", Data: authOptions})
+}
+
+// middleware function wrapping a handler functiomn and logging the request path
+func logMiddleware(f http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf(" > request path: [%s]\n", r.URL.Path)
+		f(w, r)
+	}
 }
 
 // https://developer.spotify.com/documentation/general/guides/authorization-guide/
@@ -191,22 +192,22 @@ func routerSetup() (r *mux.Router) {
 	r.PathPrefix("/public/").Handler(http.StripPrefix("/public/", fs))
 
 	// index
-	r.HandleFunc("/", indexHandler)
-	r.HandleFunc("/contact", contactHandler)
+	r.HandleFunc("/", logMiddleware(indexHandler))
+	r.HandleFunc("/contact", logMiddleware(contactHandler))
 
 	// router example usage with params
-	r.HandleFunc("/books/{title}/page/{page}", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/books/{title}/page/{page}", logMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		title := vars["title"] // the book title slug
 		page := vars["page"]   // the page
 		log.Printf(" > received title [%s] and page [%s]\n", title, page)
-	}).Methods("GET")
+	})).Methods("GET")
 
 	// spotify API
-	r.HandleFunc("/login", loginHandler)
-	r.HandleFunc("/callback", spotifyCallbackHandler)
-	r.HandleFunc("/refresh_token", refreshTokenHandler)
-	r.HandleFunc("/save_current_playlists", h.GetSaveCurrentPlaylistsHandler(serverURL))
+	r.HandleFunc("/login", logMiddleware(loginHandler))
+	r.HandleFunc("/callback", logMiddleware(spotifyCallbackHandler))
+	r.HandleFunc("/refresh_token", logMiddleware(refreshTokenHandler))
+	r.HandleFunc("/save_current_playlists", logMiddleware(h.GetSaveCurrentPlaylistsHandler(serverURL)))
 
 	return
 }
