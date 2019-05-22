@@ -40,18 +40,17 @@ func logMiddleware(f http.HandlerFunc) http.HandlerFunc {
 }
 
 func routerSetup() (r *mux.Router) {
-	// https://github.com/gorilla/mux
 	r = mux.NewRouter()
 
 	// server static files
 	fs := http.FileServer(http.Dir("./public/"))
 	r.PathPrefix("/public/").Handler(http.StripPrefix("/public/", fs))
 
-	// index
+	// web content
 	r.HandleFunc("/", logMiddleware(indexHandler))
 	r.HandleFunc("/contact", logMiddleware(contactHandler))
 
-	// router example usage with params
+	// router example usage with params (remove later)
 	r.HandleFunc("/books/{title}/page/{page}", logMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		title := vars["title"] // the book title slug
@@ -68,10 +67,8 @@ func routerSetup() (r *mux.Router) {
 	return
 }
 
-// realy nice site on creating web applications in go:
-// https://gowebexamples.com/routes-using-gorilla-mux/
-// serving static files with go:
-// https://www.alexedwards.net/blog/serving-static-sites-with-go
+/****************** M A I N ************************************************************************/
+/***************************************************************************************************/
 func main() {
 	displayHelp := flag.Bool("h", false, "display info/help message")
 	logFileName := flag.String("logfile", "", "log file used to store server logs")
@@ -85,12 +82,12 @@ func main() {
 	util.LoggingSetup(*logFileName)
 
 	// read spotify client ID & Secret
-	var err error
-	h.ClientID, h.ClientSecret, err = util.ReadSpotifyAuthData()
+	clientID, clientSecret, err := util.ReadSpotifyAuthData()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	h.SetCliendIdAndSecret(clientID, clientSecret)
 
 	router := routerSetup()
 
@@ -108,6 +105,10 @@ func main() {
 		log.Fatal(srv.ListenAndServe())
 	}()
 
+	gracefulShutdown(srv)
+}
+
+func gracefulShutdown(srv *http.Server) {
 	c := make(chan os.Signal, 1)
 	// we'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught

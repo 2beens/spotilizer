@@ -17,8 +17,13 @@ import (
 	"github.com/2beens/spotilizer/util"
 )
 
-var ClientID string
-var ClientSecret string
+var clientID string
+var clientSecret string
+
+func SetCliendIdAndSecret(cID string, cSecret string) {
+	clientID = cID
+	clientSecret = cSecret
+}
 
 func GetSpotifyLoginHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +32,7 @@ func GetSpotifyLoginHandler(serverURL string) func(w http.ResponseWriter, r *htt
 
 		q := url.Values{}
 		q.Add("response_type", "code")
-		q.Add("client_id", ClientID)
+		q.Add("client_id", clientID)
 		q.Add("scope", "user-read-private user-read-email user-library-read")
 		q.Add("redirect_uri", fmt.Sprintf("%s/callback", serverURL))
 		q.Add("state", state)
@@ -83,8 +88,6 @@ func GetRefreshTokenHandler() func(w http.ResponseWriter, r *http.Request) {
 
 func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf(" > request path: [%s]\n", r.URL.Path)
-
 		q := r.URL.Query()
 		err, ok := q["error"]
 		if ok {
@@ -129,20 +132,17 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 
 // https://developer.spotify.com/documentation/general/guides/authorization-guide/
 func makeAuthPostReq(code string, serverURL string) m.SpotifyAuthOptions {
-	apiURL := "https://accounts.spotify.com"
-	resource := "/api/token/"
 	data := url.Values{}
 	data.Set("code", code)
 	data.Set("redirect_uri", fmt.Sprintf("%s/callback", serverURL))
 	data.Set("grant_type", "authorization_code")
 
-	u, _ := url.ParseRequestURI(apiURL)
-	u.Path = resource
-	urlStr := u.String()
+	u, _ := url.ParseRequestURI("https://accounts.spotify.com")
+	u.Path = "/api/token/"
 
 	client := &http.Client{}
-	r, _ := http.NewRequest("POST", urlStr, strings.NewReader(data.Encode())) // URL-encoded payload
-	authEncoding := b64.StdEncoding.EncodeToString([]byte(ClientID + ":" + ClientSecret))
+	r, _ := http.NewRequest("POST", u.String(), strings.NewReader(data.Encode())) // URL-encoded payload
+	authEncoding := b64.StdEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
 	r.Header.Add("Authorization", "Basic "+authEncoding)
 	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))

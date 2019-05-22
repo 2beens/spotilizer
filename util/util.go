@@ -23,13 +23,12 @@ func GenerateRandomString(length int) string {
 		possibleLen := float64(len(possible))
 		nextPossible := math.Floor(rand.Float64() * possibleLen)
 		text += string(possible[int(nextPossible)])
-		// text += possible.charAt(Math.floor(Math.random() * possible.length))
 	}
 
 	return text
 }
 
-// addCookie will apply a new cookie to the response of a http
+// AddCookie will apply a new cookie to the response of a http
 // request, with the key/value this method is passed.
 func AddCookie(w http.ResponseWriter, name string, value string) {
 	expire := time.Now().AddDate(0, 0, 1)
