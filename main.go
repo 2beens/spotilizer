@@ -2,250 +2,73 @@ package main
 
 import (
 	"context"
-	b64 "encoding/base64"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
-	"strconv"
-	"strings"
 	"time"
 
+	c "github.com/2beens/spotilizer/constants"
+	h "github.com/2beens/spotilizer/handlers"
 	m "github.com/2beens/spotilizer/models"
-	"github.com/2beens/spotilizer/services"
+	"github.com/2beens/spotilizer/util"
 	"github.com/gorilla/mux"
 )
 
-var ipAddress = "localhost"
-var cookieStateKey = "spotify_auth_state"
-var cookieUserIDKey = "spotilizer-user-id"
-var protocol = "http"
-var port = "8080"
-var serverURL = fmt.Sprintf("%s://%s:%s", protocol, ipAddress, port)
-
-// spotify things
-var clientID string
-var clientSecret string
-var loginRedirectURL = fmt.Sprintf("%s/callback", serverURL)
-
-var user2authOptionsMap = make(map[string]m.SpotifyAuthOptions)
-
-// var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
+var serverURL = fmt.Sprintf("%s://%s:%s", c.Protocol, c.IPAddress, c.Port)
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf(" > request path: [%s]\n", r.URL.Path)
 	if r.URL.Path != "/index" && r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
 	}
-	render(w, "index", m.ViewData{})
+	util.RenderView(w, "index", m.ViewData{})
 }
 
 func contactHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf(" > request path: [%s]\n", r.URL.Path)
-	render(w, "contact", m.ViewData{})
+	util.RenderView(w, "contact", m.ViewData{})
 }
 
-// templates cheatsheet
-// https://curtisvermeeren.github.io/2017/09/14/Golang-Templates-Cheatsheet
-func render(w http.ResponseWriter, page string, viewData m.ViewData) {
-	// TODO: parse the template once and reuse it
-	files := []string{
-		"public/views/layouts/layout.html",
-		"public/views/layouts/footer.html",
-		"public/views/layouts/navbar.html",
-		"public/views/" + page + ".html",
+// middleware function wrapping a handler functiomn and logging the request path
+func logMiddleware(f http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf(" > request path: [%s]\n", r.URL.Path)
+		f(w, r)
 	}
-	t, err := template.New("layout").ParseFiles(files...)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = t.ExecuteTemplate(w, "layout", viewData)
-	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func loginHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf(" > request path: [%s]\n", r.URL.Path)
-	state := generateRandomString(16)
-	addCookie(w, cookieStateKey, state)
-
-	q := url.Values{}
-	q.Add("response_type", "code")
-	q.Add("client_id", clientID)
-	q.Add("scope", "user-read-private user-read-email user-library-read")
-	q.Add("redirect_uri", loginRedirectURL)
-	q.Add("state", state)
-
-	redirectURL := "https://accounts.spotify.com/authorize?" + q.Encode()
-	log.Println(" > /login, redirect to: " + redirectURL)
-	http.Redirect(w, r, redirectURL, 302)
-}
-
-func refreshTokenHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf(" > request path: [%s]\n", r.URL.Path)
-
-	q := r.URL.Query()
-	refreshToken, refreshTokenOk := q["refresh_token"]
-	if !refreshTokenOk {
-		log.Println(" > refresh token failed, error: refresh_token param not found")
-		// TODO: redirect to some error, or show error on the index page
-		w.Write([]byte("missing refresh_token param"))
-		return
-	}
-	log.Println(" > refresh token, value: " + refreshToken[0])
-
-	//TODO: implement the rest ...
-
-}
-
-func saveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
-	userID, err := r.Cookie(cookieUserIDKey)
-	if err != nil {
-		// TOOD: redirect to error
-		log.Printf(" >>> error while saving current user playlists: %v\n", err)
-		return
-	}
-
-	log.Printf(" > user ID: %s\n", userID.Value)
-
-	if authOptions, found := user2authOptionsMap[userID.Value]; found {
-		playlists, err := services.GetCurrentUserPlaylists(authOptions)
-		if err != nil {
-			log.Printf(" >>> error while saving current user playlists: %v\n", err)
-			return
-		}
-		log.Printf(" > playlists count: %d\n", len(playlists.Items))
-		// TODO: return standardized resp message
-		w.Write([]byte("saved!"))
-		return
-	}
-	log.Printf(" >>> failed to find user, must login first\n")
-	http.Redirect(w, r, serverURL, 302)
-}
-
-func spotifyCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf(" > request path: [%s]\n", r.URL.Path)
-
-	q := r.URL.Query()
-	err, ok := q["error"]
-	if ok {
-		log.Printf(" > login failed, error: [%v]\n", err)
-		// TODO: redirect to some error, or show error on the index page
-		http.Redirect(w, r, serverURL, 302)
-		return
-	}
-
-	code, codeOk := q["code"]
-	state, stateOk := q["state"]
-	storedStateCookie, sStateCookieErr := r.Cookie(cookieStateKey)
-	if !codeOk || !stateOk {
-		log.Println(" > login failed, error: some of the mandatory params not found")
-		// TODO: redirect to some error, or show error on the index page
-		http.Redirect(w, r, serverURL, 302)
-		return
-	}
-
-	if storedStateCookie == nil || storedStateCookie.Value != state[0] || sStateCookieErr != nil {
-		log.Printf(" > login failed, error: state cookie not found or state mismatch. more details [%v]\n", err)
-		// TODO: redirect to some error, or show error on the index page
-		http.Redirect(w, r, serverURL, 302)
-		return
-	}
-
-	cleearCookie(w, cookieStateKey)
-	authOptions := makeAuthPostReq(code[0])
-	at := authOptions.AccessToken
-	rt := authOptions.RefreshToken
-	log.Printf(" > success! AT [%s] RT [%s]\n", at, rt)
-	log.Printf(" > %v\n", authOptions)
-
-	newUserID := generateRandomString(35)
-	user2authOptionsMap[newUserID] = authOptions
-	addCookie(w, cookieUserIDKey, newUserID)
-
-	// redirect to index page with acces and refresh tokens
-	render(w, "index", m.ViewData{Message: "success", Error: "", Data: authOptions})
-}
-
-// https://developer.spotify.com/documentation/general/guides/authorization-guide/
-func makeAuthPostReq(code string) m.SpotifyAuthOptions {
-	apiURL := "https://accounts.spotify.com"
-	resource := "/api/token/"
-	data := url.Values{}
-	data.Set("code", code)
-	data.Set("redirect_uri", loginRedirectURL)
-	data.Set("grant_type", "authorization_code")
-
-	u, _ := url.ParseRequestURI(apiURL)
-	u.Path = resource
-	urlStr := u.String()
-
-	client := &http.Client{}
-	r, _ := http.NewRequest("POST", urlStr, strings.NewReader(data.Encode())) // URL-encoded payload
-	authEncoding := b64.StdEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
-	r.Header.Add("Authorization", "Basic "+authEncoding)
-	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
-
-	resp, err := client.Do(r)
-	if err != nil {
-		log.Printf(" >>> error making an auth post req: %v\n", err)
-		return m.SpotifyAuthOptions{}
-	}
-	defer resp.Body.Close()
-	log.Println("------------------------------------------")
-	log.Println("response Status:", resp.Status)
-	// redirect to error if status != 200
-	body, _ := ioutil.ReadAll(resp.Body)
-	authOptions := m.SpotifyAuthOptions{}
-	json.Unmarshal(body, &authOptions)
-	return authOptions
 }
 
 func routerSetup() (r *mux.Router) {
-	// https://github.com/gorilla/mux
 	r = mux.NewRouter()
 
 	// server static files
 	fs := http.FileServer(http.Dir("./public/"))
 	r.PathPrefix("/public/").Handler(http.StripPrefix("/public/", fs))
 
-	// index
-	r.HandleFunc("/", indexHandler)
-	r.HandleFunc("/contact", contactHandler)
+	// web content
+	r.HandleFunc("/", logMiddleware(indexHandler))
+	r.HandleFunc("/contact", logMiddleware(contactHandler))
 
-	// router example usage with params
-	r.HandleFunc("/books/{title}/page/{page}", func(w http.ResponseWriter, r *http.Request) {
+	// router example usage with params (remove later)
+	r.HandleFunc("/books/{title}/page/{page}", logMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		title := vars["title"] // the book title slug
 		page := vars["page"]   // the page
 		log.Printf(" > received title [%s] and page [%s]\n", title, page)
-	}).Methods("GET")
+	})).Methods("GET")
 
 	// spotify API
-	r.HandleFunc("/login", loginHandler)
-	r.HandleFunc("/callback", spotifyCallbackHandler)
-	r.HandleFunc("/refresh_token", refreshTokenHandler)
-	r.HandleFunc("/save_current_playlists", saveCurrentPlaylistsHandler)
+	r.HandleFunc("/login", logMiddleware(h.GetSpotifyLoginHandler(serverURL)))
+	r.HandleFunc("/callback", logMiddleware(h.GetSpotifyCallbackHandler(serverURL)))
+	r.HandleFunc("/refresh_token", logMiddleware(h.GetRefreshTokenHandler()))
+	r.HandleFunc("/save_current_playlists", logMiddleware(h.GetSaveCurrentPlaylistsHandler(serverURL)))
 
 	return
 }
 
-// realy nice site on creating web applications in go:
-// https://gowebexamples.com/routes-using-gorilla-mux/
-// serving static files with go:
-// https://www.alexedwards.net/blog/serving-static-sites-with-go
+/****************** M A I N ************************************************************************/
+/***************************************************************************************************/
 func main() {
 	displayHelp := flag.Bool("h", false, "display info/help message")
 	logFileName := flag.String("logfile", "", "log file used to store server logs")
@@ -256,19 +79,19 @@ func main() {
 		return
 	}
 
-	loggingSetup(*logFileName)
+	util.LoggingSetup(*logFileName)
 
 	// read spotify client ID & Secret
-	var err error
-	clientID, clientSecret, err = readSpotifyAuthData()
+	clientID, clientSecret, err := util.ReadSpotifyAuthData()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	h.SetCliendIdAndSecret(clientID, clientSecret)
 
 	router := routerSetup()
 
-	ipAndPort := fmt.Sprintf("%s:%s", ipAddress, port)
+	ipAndPort := fmt.Sprintf("%s:%s", c.IPAddress, c.Port)
 	srv := &http.Server{
 		Handler:      router,
 		Addr:         ipAndPort,
@@ -282,6 +105,10 @@ func main() {
 		log.Fatal(srv.ListenAndServe())
 	}()
 
+	gracefulShutdown(srv)
+}
+
+func gracefulShutdown(srv *http.Server) {
 	c := make(chan os.Signal, 1)
 	// we'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught

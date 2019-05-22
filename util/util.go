@@ -1,7 +1,8 @@
-package main
+package util
 
 import (
 	"errors"
+	"html/template"
 	"log"
 	"math"
 	"math/rand"
@@ -9,10 +10,12 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	m "github.com/2beens/spotilizer/models"
 )
 
 // generates a random string containing numbers and letters
-func generateRandomString(length int) string {
+func GenerateRandomString(length int) string {
 	text := ""
 	possible := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
@@ -20,15 +23,14 @@ func generateRandomString(length int) string {
 		possibleLen := float64(len(possible))
 		nextPossible := math.Floor(rand.Float64() * possibleLen)
 		text += string(possible[int(nextPossible)])
-		// text += possible.charAt(Math.floor(Math.random() * possible.length))
 	}
 
 	return text
 }
 
-// addCookie will apply a new cookie to the response of a http
+// AddCookie will apply a new cookie to the response of a http
 // request, with the key/value this method is passed.
-func addCookie(w http.ResponseWriter, name string, value string) {
+func AddCookie(w http.ResponseWriter, name string, value string) {
 	expire := time.Now().AddDate(0, 0, 1)
 	cookie := http.Cookie{
 		Name:    name,
@@ -38,7 +40,7 @@ func addCookie(w http.ResponseWriter, name string, value string) {
 	http.SetCookie(w, &cookie)
 }
 
-func cleearCookie(w http.ResponseWriter, name string) {
+func CleearCookie(w http.ResponseWriter, name string) {
 	expire := time.Now()
 	cookie := http.Cookie{
 		Name:    name,
@@ -48,7 +50,7 @@ func cleearCookie(w http.ResponseWriter, name string) {
 	http.SetCookie(w, &cookie)
 }
 
-func readSpotifyAuthData() (clientID string, clientSecret string, err error) {
+func ReadSpotifyAuthData() (clientID string, clientSecret string, err error) {
 	clientID = os.Getenv("SPOTIFY_CLIENT_ID")
 	clientSecret = os.Getenv("SPOTIFY_CLIENT_SECRET")
 	log.Println(" > client ID: " + clientID)
@@ -62,7 +64,7 @@ func readSpotifyAuthData() (clientID string, clientSecret string, err error) {
 	return
 }
 
-func loggingSetup(logFileName string) {
+func LoggingSetup(logFileName string) {
 	if logFileName == "" {
 		log.SetOutput(os.Stdout)
 		return
@@ -79,4 +81,28 @@ func loggingSetup(logFileName string) {
 
 	log.SetOutput(logFile)
 	log.SetFlags(5)
+}
+
+// templates cheatsheet
+// https://curtisvermeeren.github.io/2017/09/14/Golang-Templates-Cheatsheet
+func RenderView(w http.ResponseWriter, page string, viewData m.ViewData) {
+	// TODO: parse the template once and reuse it
+	files := []string{
+		"public/views/layouts/layout.html",
+		"public/views/layouts/footer.html",
+		"public/views/layouts/navbar.html",
+		"public/views/" + page + ".html",
+	}
+	t, err := template.New("layout").ParseFiles(files...)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = t.ExecuteTemplate(w, "layout", viewData)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
