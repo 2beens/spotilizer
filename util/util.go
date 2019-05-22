@@ -2,6 +2,7 @@ package util
 
 import (
 	"errors"
+	"html/template"
 	"log"
 	"math"
 	"math/rand"
@@ -9,6 +10,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	m "github.com/2beens/spotilizer/models"
 )
 
 // generates a random string containing numbers and letters
@@ -79,4 +82,28 @@ func LoggingSetup(logFileName string) {
 
 	log.SetOutput(logFile)
 	log.SetFlags(5)
+}
+
+// templates cheatsheet
+// https://curtisvermeeren.github.io/2017/09/14/Golang-Templates-Cheatsheet
+func RenderView(w http.ResponseWriter, page string, viewData m.ViewData) {
+	// TODO: parse the template once and reuse it
+	files := []string{
+		"public/views/layouts/layout.html",
+		"public/views/layouts/footer.html",
+		"public/views/layouts/navbar.html",
+		"public/views/" + page + ".html",
+	}
+	t, err := template.New("layout").ParseFiles(files...)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = t.ExecuteTemplate(w, "layout", viewData)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
