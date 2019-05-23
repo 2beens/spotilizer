@@ -1,5 +1,9 @@
 package models
 
+import (
+	"time"
+)
+
 type SpGetCurrentPlaylistsResp struct {
 	Href     string       `json:"href"`
 	Items    []SpPlaylist `json:"items"`
@@ -8,6 +12,60 @@ type SpGetCurrentPlaylistsResp struct {
 	Offset   int          `json:"offset"`
 	Previous string       `json:"previous"`
 	Total    int          `json:"total"`
+}
+
+// TODO: these two responses are basically the same, the only diff being the items
+// see if those can be merged into one type (maybe somehow by using []interface{} for items)
+
+type SpGetSavedTracksResp struct {
+	Href     string         `json:"href"`
+	Items    []SpAddedTrack `json:"items"`
+	Limit    int            `json:"limit"`
+	Next     string         `json:"next"`
+	Offset   int            `json:"offset"`
+	Previous string         `json:"previous"`
+	Total    int            `json:"total"`
+}
+
+type SpAddedTrack struct {
+	AddedAt time.Time `json:"added_at"`
+	Track   SpTrack   `json:"track"`
+}
+
+type SpTrack struct {
+	Album            SpAlbum       `json:"album"`
+	Artists          []SpArtist    `json:"artists"`
+	AvailableMarkets []string      `json:"available_markets"`
+	DiscNumber       int           `json:"disc_number"`
+	DurationMs       int           `json:"duration_ms"`
+	Explicit         bool          `json:"explicit"`
+	ExternalIds      SpExternalIds `json:"external_ids"`
+	ExternalUrls     SpUrl         `json:"external_urls"`
+	Href             string        `json:"href"`
+	ID               string        `json:"id"`
+	IsLocal          bool          `json:"is_local"`
+	Name             string        `json:"name"`
+	Popularity       int           `json:"popularity"`
+	PreviewURL       string        `json:"preview_url"`
+	TrackNumber      int           `json:"track_number"`
+	Type             string        `json:"type"`
+	URI              string        `json:"uri"`
+}
+
+type SpAlbum struct {
+	AlbumType            string     `json:"album_type"`
+	Artists              []SpArtist `json:"artists"`
+	AvailableMarkets     []string   `json:"available_markets"`
+	ExternalUrls         SpUrl      `json:"external_urls"`
+	Href                 string     `json:"href"`
+	ID                   string     `json:"id"`
+	Images               []SpImage  `json:"images"`
+	Name                 string     `json:"name"`
+	ReleaseDate          string     `json:"release_date"`
+	ReleaseDatePrecision string     `json:"release_date_precision"`
+	TotalTracks          int        `json:"total_tracks"`
+	Type                 string     `json:"type"`
+	URI                  string     `json:"uri"`
 }
 
 type SpPlaylist struct {
@@ -24,6 +82,10 @@ type SpPlaylist struct {
 	Tracks        SpTracks    `json:"tracks"`
 	Type          string      `json:"type"`
 	URI           string      `json:"uri"`
+}
+
+type SpExternalIds struct {
+	Isrc string `json:"isrc"`
 }
 
 type SpTracks struct {

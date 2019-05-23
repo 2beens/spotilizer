@@ -50,6 +50,13 @@ function saveCurrentPlaylists() {
     });
 }
 
+function saveCurrentTracks() {
+    makeRequest("/save_current_tracks", function(response) {
+        console.log(' > received from server: ' + response);
+        $('#query-result').val(response);
+    });
+}
+
 function executeUrlQueryRequest() {
     var queryUrl = $('#query-text').val();
     if (!queryUrl) {

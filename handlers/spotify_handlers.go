@@ -43,6 +43,33 @@ func GetSpotifyLoginHandler(serverURL string) func(w http.ResponseWriter, r *htt
 	}
 }
 
+func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := r.Cookie(c.CookieUserIDKey)
+		if err != nil {
+			// TOOD: redirect to error
+			log.Printf(" >>> error while saving current user tracks: %v\n", err)
+			return
+		}
+
+		log.Printf(" > user ID: %s\n", userID.Value)
+
+		if authOptions, found := services.Users.User2authOptionsMap[userID.Value]; found {
+			tracks, err := services.UserPlaylist.GetSavedTracks(authOptions)
+			if err != nil {
+				log.Printf(" >>> error while saving current user tracks: %v\n", err)
+				return
+			}
+			log.Printf(" > tracks count: %d\n", len(tracks.Items))
+			// TODO: return standardized resp message
+			w.Write([]byte("track saved!"))
+			return
+		}
+		log.Printf(" >>> failed to find user, must login first\n")
+		http.Redirect(w, r, serverURL, 302)
+	}
+}
+
 func GetSaveCurrentPlaylistsHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := r.Cookie(c.CookieUserIDKey)
@@ -62,7 +89,7 @@ func GetSaveCurrentPlaylistsHandler(serverURL string) func(w http.ResponseWriter
 			}
 			log.Printf(" > playlists count: %d\n", len(playlists.Items))
 			// TODO: return standardized resp message
-			w.Write([]byte("saved!"))
+			w.Write([]byte("playlists saved!"))
 			return
 		}
 		log.Printf(" >>> failed to find user, must login first\n")

@@ -63,6 +63,7 @@ func routerSetup() (r *mux.Router) {
 	r.HandleFunc("/callback", logMiddleware(h.GetSpotifyCallbackHandler(serverURL)))
 	r.HandleFunc("/refresh_token", logMiddleware(h.GetRefreshTokenHandler(serverURL)))
 	r.HandleFunc("/save_current_playlists", logMiddleware(h.GetSaveCurrentPlaylistsHandler(serverURL)))
+	r.HandleFunc("/save_current_tracks", logMiddleware(h.GetSaveCurrentTracksHandler(serverURL)))
 
 	return
 }
