@@ -61,7 +61,7 @@ func routerSetup() (r *mux.Router) {
 	// spotify API
 	r.HandleFunc("/login", logMiddleware(h.GetSpotifyLoginHandler(serverURL)))
 	r.HandleFunc("/callback", logMiddleware(h.GetSpotifyCallbackHandler(serverURL)))
-	r.HandleFunc("/refresh_token", logMiddleware(h.GetRefreshTokenHandler()))
+	r.HandleFunc("/refresh_token", logMiddleware(h.GetRefreshTokenHandler(serverURL)))
 	r.HandleFunc("/save_current_playlists", logMiddleware(h.GetSaveCurrentPlaylistsHandler(serverURL)))
 
 	return

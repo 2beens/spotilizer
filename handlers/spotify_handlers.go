@@ -70,19 +70,32 @@ func GetSaveCurrentPlaylistsHandler(serverURL string) func(w http.ResponseWriter
 	}
 }
 
-func GetRefreshTokenHandler() func(w http.ResponseWriter, r *http.Request) {
+func GetRefreshTokenHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-		refreshToken, refreshTokenOk := q["refresh_token"]
-		if !refreshTokenOk {
+		userID, err := r.Cookie(c.CookieUserIDKey)
+		if err != nil {
+			log.Printf(" > refresh token failed, error: [%v]\n", err)
+			// TODO: redirect to some error, or show error on the index page
+			http.Redirect(w, r, serverURL, 302)
+			return
+		}
+		authOptions, found := services.Users.User2authOptionsMap[userID.Value]
+		if !found {
 			log.Println(" > refresh token failed, error: refresh_token param not found")
 			// TODO: redirect to some error, or show error on the index page
 			w.Write([]byte("missing refresh_token param"))
 			return
 		}
-		log.Println(" > refresh token, value: " + refreshToken[0])
+		log.Println(" > refresh token, value: " + authOptions.RefreshToken)
 
-		//TODO: implement the rest ...
+		data := url.Values{}
+		data.Set("refresh_token", authOptions.RefreshToken)
+		data.Set("grant_type", "refresh_token")
+		newAuthOptions := getAccessToken(data)
+		services.Users.User2authOptionsMap[userID.Value] = newAuthOptions
+
+		// redirect to index page with acces and refresh tokens
+		util.RenderView(w, "index", m.ViewData{Message: "success", Error: "", Data: authOptions})
 	}
 }
 
@@ -115,11 +128,11 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		}
 
 		util.CleearCookie(w, c.CookieStateKey)
-		authOptions := makeAuthPostReq(code[0], serverURL)
-		at := authOptions.AccessToken
-		rt := authOptions.RefreshToken
-		log.Printf(" > success! AT [%s] RT [%s]\n", at, rt)
-		log.Printf(" > %v\n", authOptions)
+		data := url.Values{}
+		data.Set("code", code[0])
+		data.Set("redirect_uri", fmt.Sprintf("%s/callback", serverURL))
+		data.Set("grant_type", "authorization_code")
+		authOptions := getAccessToken(data)
 
 		newUserID := util.GenerateRandomString(35)
 		services.Users.User2authOptionsMap[newUserID] = authOptions
@@ -130,15 +143,16 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 	}
 }
 
-// https://developer.spotify.com/documentation/general/guides/authorization-guide/
-func makeAuthPostReq(code string, serverURL string) m.SpotifyAuthOptions {
-	data := url.Values{}
-	data.Set("code", code)
-	data.Set("redirect_uri", fmt.Sprintf("%s/callback", serverURL))
-	data.Set("grant_type", "authorization_code")
+func getAccessToken(data url.Values) m.SpotifyAuthOptions {
+	body := postReq(data, "https://accounts.spotify.com", "/api/token/")
+	authOptions := m.SpotifyAuthOptions{}
+	json.Unmarshal(body, &authOptions)
+	return authOptions
+}
 
-	u, _ := url.ParseRequestURI("https://accounts.spotify.com")
-	u.Path = "/api/token/"
+func postReq(data url.Values, uri string, path string) []byte {
+	u, _ := url.ParseRequestURI(uri)
+	u.Path = path
 
 	client := &http.Client{}
 	r, _ := http.NewRequest("POST", u.String(), strings.NewReader(data.Encode())) // URL-encoded payload
@@ -150,14 +164,12 @@ func makeAuthPostReq(code string, serverURL string) m.SpotifyAuthOptions {
 	resp, err := client.Do(r)
 	if err != nil {
 		log.Printf(" >>> error making an auth post req: %v\n", err)
-		return m.SpotifyAuthOptions{}
+		// TODO: return error and check for it later
+		return nil
 	}
 	defer resp.Body.Close()
-	log.Println("------------------------------------------")
-	log.Println("response Status:", resp.Status)
-	// redirect to error if status != 200
+
+	// redirect or return error if status != 200
 	body, _ := ioutil.ReadAll(resp.Body)
-	authOptions := m.SpotifyAuthOptions{}
-	json.Unmarshal(body, &authOptions)
-	return authOptions
+	return body
 }
