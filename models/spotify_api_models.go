@@ -120,3 +120,8 @@ type SpArtist struct {
 	Type         string `json:"type"`
 	URI          string `json:"uri"`
 }
+
+type SpError struct {
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
+}

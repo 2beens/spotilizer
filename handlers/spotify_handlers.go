@@ -13,7 +13,7 @@ import (
 
 	c "github.com/2beens/spotilizer/constants"
 	m "github.com/2beens/spotilizer/models"
-	"github.com/2beens/spotilizer/services"
+	s "github.com/2beens/spotilizer/services"
 	"github.com/2beens/spotilizer/util"
 )
 
@@ -49,24 +49,30 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 		if err != nil {
 			// TOOD: redirect to error
 			log.Printf(" >>> error while saving current user tracks: %v\n", err)
+			http.Redirect(w, r, serverURL, 302)
 			return
 		}
-
 		log.Printf(" > user ID: %s\n", userID.Value)
-
-		if authOptions, found := services.Users.User2authOptionsMap[userID.Value]; found {
-			tracks, err := services.UserPlaylist.GetSavedTracks(authOptions)
-			if err != nil {
-				log.Printf(" >>> error while saving current user tracks: %v\n", err)
-				return
-			}
-			log.Printf(" > tracks count: %d\n", len(tracks.Items))
-			// TODO: return standardized resp message
-			w.Write([]byte("track saved!"))
+		if !s.Users.UserExists(userID.Value) {
+			// TOOD: redirect to error
+			log.Printf(" >>> failed to find user, must login first\n")
+			http.Redirect(w, r, serverURL, 302)
 			return
 		}
-		log.Printf(" >>> failed to find user, must login first\n")
-		http.Redirect(w, r, serverURL, 302)
+
+		authOptions, _ := s.Users.Get(userID.Value)
+		resp, err := s.UserPlaylist.GetSavedTracks(authOptions)
+		if err != nil {
+			log.Printf(" >>> error while saving current user tracks: %v\n", err)
+			return
+		}
+		log.Printf(" > tracks count: %d\n", len(resp))
+		// TODO: return standardized resp message
+
+		// TOOD: save tracks somewhere
+
+		w.Write([]byte("track saved!"))
+		return
 	}
 }
 
@@ -81,8 +87,8 @@ func GetSaveCurrentPlaylistsHandler(serverURL string) func(w http.ResponseWriter
 
 		log.Printf(" > user ID: %s\n", userID.Value)
 
-		if authOptions, found := services.Users.User2authOptionsMap[userID.Value]; found {
-			playlists, err := services.UserPlaylist.GetCurrentUserPlaylists(authOptions)
+		if authOptions, found := s.Users.User2authOptionsMap[userID.Value]; found {
+			playlists, err := s.UserPlaylist.GetCurrentUserPlaylists(authOptions)
 			if err != nil {
 				log.Printf(" >>> error while saving current user playlists: %v\n", err)
 				return
@@ -106,7 +112,7 @@ func GetRefreshTokenHandler(serverURL string) func(w http.ResponseWriter, r *htt
 			http.Redirect(w, r, serverURL, 302)
 			return
 		}
-		authOptions, found := services.Users.User2authOptionsMap[userID.Value]
+		authOptions, found := s.Users.User2authOptionsMap[userID.Value]
 		if !found {
 			log.Println(" > refresh token failed, error: refresh_token param not found")
 			// TODO: redirect to some error, or show error on the index page
@@ -119,7 +125,7 @@ func GetRefreshTokenHandler(serverURL string) func(w http.ResponseWriter, r *htt
 		data.Set("refresh_token", authOptions.RefreshToken)
 		data.Set("grant_type", "refresh_token")
 		newAuthOptions := getAccessToken(data)
-		services.Users.User2authOptionsMap[userID.Value] = newAuthOptions
+		s.Users.User2authOptionsMap[userID.Value] = newAuthOptions
 
 		// redirect to index page with acces and refresh tokens
 		util.RenderView(w, "index", m.ViewData{Message: "success", Error: "", Data: authOptions})
@@ -162,7 +168,7 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		authOptions := getAccessToken(data)
 
 		newUserID := util.GenerateRandomString(35)
-		services.Users.User2authOptionsMap[newUserID] = authOptions
+		s.Users.User2authOptionsMap[newUserID] = authOptions
 		util.AddCookie(w, c.CookieUserIDKey, newUserID)
 
 		// redirect to index page with acces and refresh tokens
