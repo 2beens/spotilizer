@@ -52,7 +52,7 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 			http.Redirect(w, r, serverURL, 302)
 			return
 		}
-		log.Printf(" > user ID: %s\n", userID.Value)
+
 		if !s.Users.Exists(userID.Value) {
 			// TOOD: redirect to error
 			log.Printf(" >>> failed to find user, must login first\n")
@@ -69,7 +69,7 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 		log.Printf(" > tracks count: %d\n", len(resp))
 		// TODO: return standardized resp message
 
-		// TOOD: save tracks somewhere
+		// TOOD: save tracks somewhere (redis)
 
 		w.Write([]byte("track saved!"))
 		return
@@ -182,9 +182,10 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		var userID string
 		user := s.Users.GetByUsername(spUser.ID)
 		if user == nil {
-			userID := util.GenerateRandomString(35)
+			userID = util.GenerateRandomString(35)
 			user = &m.User{Username: spUser.ID, ID: userID, Auth: authOptions}
 			s.Users.Add(user)
+			log.Println(" > new user created and stored: " + user.Username)
 		} else {
 			userID = user.ID
 		}
