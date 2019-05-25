@@ -103,15 +103,6 @@ type SpImage struct {
 	Width  int    `json:"width"`
 }
 
-type SpUser struct {
-	DisplayName  string `json:"display_name"`
-	ExternalUrls SpUrl  `json:"external_urls"`
-	Href         string `json:"href"`
-	ID           string `json:"id"`
-	Type         string `json:"type"`
-	URI          string `json:"uri"`
-}
-
 type SpArtist struct {
 	ExternalUrls SpUrl  `json:"external_urls"`
 	Href         string `json:"href"`
@@ -124,4 +115,30 @@ type SpArtist struct {
 type SpError struct {
 	Error            string `json:"error"`
 	ErrorDescription string `json:"error_description"`
+}
+
+type SpUser struct {
+	Birthdate       string                   `json:"birthdate"`
+	Country         string                   `json:"country"`
+	DisplayName     string                   `json:"display_name"`
+	Email           string                   `json:"email"`
+	ExplicitContent SpExplicitContentOptions `json:"explicit_content"`
+	ExternalUrls    SpUrl                    `json:"external_urls"`
+	Followers       SpUserFollowers          `json:"followers"`
+	Href            string                   `json:"href"`
+	ID              string                   `json:"id"`
+	Images          []SpImage                `json:"images"`
+	Product         string                   `json:"product"`
+	Type            string                   `json:"type"`
+	URI             string                   `json:"uri"`
+}
+
+type SpExplicitContentOptions struct {
+	FilterEnabled bool `json:"filter_enabled"`
+	FilterLocked  bool `json:"filter_locked"`
+}
+
+type SpUserFollowers struct {
+	Href  string `json:"href"`
+	Total int    `json:"total"`
 }
