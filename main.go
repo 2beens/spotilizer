@@ -14,6 +14,7 @@ import (
 	db "github.com/2beens/spotilizer/db"
 	h "github.com/2beens/spotilizer/handlers"
 	m "github.com/2beens/spotilizer/models"
+	s "github.com/2beens/spotilizer/services"
 	"github.com/2beens/spotilizer/util"
 	"github.com/gorilla/mux"
 )
@@ -93,6 +94,8 @@ func main() {
 
 	// redis setup
 	db.InitRedisClient()
+	// services setup
+	s.InitServices()
 
 	router := routerSetup()
 

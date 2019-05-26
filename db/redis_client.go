@@ -31,7 +31,7 @@ func InitRedisClient() {
 		log.Panicf(" >>> failed to ping redis %+v", options)
 	}
 
-	log.Printf(" > connected to redis %+v", options)
+	log.Printf(" > connected to redis %+v\n", options)
 }
 
 func SaveUser(user *m.User) (stored bool) {
@@ -42,13 +42,10 @@ func SaveUser(user *m.User) (stored bool) {
 	}
 	authJSON := string(auth)
 	authEncoded := b64.StdEncoding.EncodeToString([]byte(authJSON))
-	log.Println(" > storing auth json:")
-	log.Printf("%v\n", authJSON)
-	log.Println("---------------------------------------")
-	var key = "user::" + user.Username
-	cmd := rc.Set(key, fmt.Sprintf("%s::%s::%s", user.ID, user.Username, authEncoded), 0)
+	userKey := "user::" + user.Username
+	cmd := rc.Set(userKey, fmt.Sprintf("%s::%s::%s", user.ID, user.Username, authEncoded), 0)
 	if err := cmd.Err(); err != nil {
-		log.Printf(" >>> failed to store user info for user: %s, [%s]", user.Username, user.ID)
+		log.Printf(" >>> failed to store user info for user: %s, [%s]\n", user.Username, user.ID)
 		return false
 	}
 	return true
@@ -58,23 +55,37 @@ func SaveUser(user *m.User) (stored bool) {
 func GetUser(username string) *m.User {
 	cmd := rc.Get("user::" + username)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
-		log.Printf(" >>> failed to get user %s: %v", username, err)
+		log.Printf(" >>> failed to get user %s: %v\n", username, err)
 		return nil
 	}
 	userStringData := cmd.Val()
 	userData := strings.Split(userStringData, "::")
 	authDecoded, err := b64.StdEncoding.DecodeString(userData[2])
 	if err != nil {
-		log.Printf(" >>> failed to get user %s: %v", username, err)
+		log.Printf(" >>> failed to get user %s: %v\n", username, err)
 		return nil
 	}
 	auth := &m.SpotifyAuthOptions{}
 	err = json.Unmarshal(authDecoded, auth)
 	if err != nil {
-		log.Printf(" >>> failed to get user %s: %v", username, err)
+		log.Printf(" >>> failed to get user %s: %v\n", username, err)
 		return nil
 	}
 	return &m.User{Username: username, ID: userData[0], Auth: auth}
+}
+
+func GetAllUsers() *[]m.User {
+	cmd := rc.Keys("user::*")
+	if err := cmd.Err(); err != nil && err != redis.Nil {
+		log.Printf(" >>> failed to get all users: %v\n", err)
+		return nil
+	}
+	users := []m.User{}
+	for _, userKey := range cmd.Val() {
+		username := strings.Split(userKey, "::")[1]
+		users = append(users, *GetUser(username))
+	}
+	return &users
 }
 
 func StoreCurrentTracks(user m.User) {
