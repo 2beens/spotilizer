@@ -23,7 +23,7 @@ func (us *UserService) SyncWithDB() {
 	us.id2userMap = make(map[string]*m.User)
 	// get all users from Redis
 	for _, u := range *db.GetAllUsers() {
-		us.id2userMap[u.Username] = &u
+		us.id2userMap[u.ID] = &u
 		log.Printf(" > found and added user: %s\n", u.Username)
 	}
 }

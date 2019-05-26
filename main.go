@@ -117,6 +117,8 @@ func main() {
 }
 
 func gracefulShutdown(srv *http.Server) {
+	// TODO: maybe persist everything to redis db before shutdown ?
+
 	c := make(chan os.Signal, 1)
 	// we'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught
