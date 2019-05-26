@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	c "github.com/2beens/spotilizer/config"
+	db "github.com/2beens/spotilizer/db"
 	m "github.com/2beens/spotilizer/models"
 	"log"
 )
@@ -34,6 +35,7 @@ func (us *UserService) Get(userID string) (user *m.User, err error) {
 
 func (us *UserService) Add(user *m.User) {
 	us.id2userMap[user.ID] = user
+	db.StoreUserInfo(user)
 }
 
 func (us *UserService) GetByUsername(username string) (u *m.User) {

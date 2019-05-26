@@ -61,12 +61,15 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 		}
 
 		user, _ := s.Users.Get(userID.Value)
-		resp, err := s.UserPlaylist.GetSavedTracks(user.Auth)
+		tracks, err := s.UserPlaylist.GetSavedTracks(user.Auth)
 		if err != nil {
 			log.Printf(" >>> error while saving current user tracks: %v\n", err)
 			return
 		}
-		log.Printf(" > tracks count: %d\n", len(resp))
+
+		log.Printf(" > tracks count: %d\n", len(tracks))
+		user.FavTracks = tracks
+
 		// TODO: return standardized resp message
 
 		// TOOD: save tracks somewhere (redis)

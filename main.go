@@ -11,6 +11,7 @@ import (
 	"time"
 
 	c "github.com/2beens/spotilizer/constants"
+	db "github.com/2beens/spotilizer/db"
 	h "github.com/2beens/spotilizer/handlers"
 	m "github.com/2beens/spotilizer/models"
 	"github.com/2beens/spotilizer/util"
@@ -89,6 +90,9 @@ func main() {
 		return
 	}
 	h.SetCliendIdAndSecret(clientID, clientSecret)
+
+	// redis setup
+	db.InitRedisClient()
 
 	router := routerSetup()
 
