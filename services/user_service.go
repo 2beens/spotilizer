@@ -1,30 +1,58 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
+	c "github.com/2beens/spotilizer/config"
+	db "github.com/2beens/spotilizer/db"
 	m "github.com/2beens/spotilizer/models"
+	"log"
 )
 
 type UserService struct {
-	User2authOptionsMap map[string]m.SpotifyAuthOptions
+	id2userMap map[string]*m.User
 }
 
 func NewUserService() *UserService {
 	var us UserService
-	us.User2authOptionsMap = make(map[string]m.SpotifyAuthOptions)
+	us.id2userMap = make(map[string]*m.User)
 	return &us
 }
 
-func (us *UserService) UserExists(userID string) (found bool) {
-	_, found = us.User2authOptionsMap[userID]
+func (us *UserService) Exists(userID string) (found bool) {
+	_, found = us.id2userMap[userID]
 	return
 }
 
-func (us *UserService) Get(userID string) (ao m.SpotifyAuthOptions, err error) {
-	if !us.UserExists(userID) {
-		return m.SpotifyAuthOptions{}, errors.New("cannot find user auth options")
+func (us *UserService) Get(userID string) (user *m.User, err error) {
+	if !us.Exists(userID) {
+		return nil, errors.New("cannot find user with provided ID")
 	}
-	ao = us.User2authOptionsMap[userID]
+	user = us.id2userMap[userID]
 	err = nil
 	return
+}
+
+func (us *UserService) Add(user *m.User) {
+	us.id2userMap[user.ID] = user
+	db.SaveUser(user)
+}
+
+func (us *UserService) GetByUsername(username string) (u *m.User) {
+	for _, u := range us.id2userMap {
+		if u.Username == username {
+			return u
+		}
+	}
+	return nil //, errors.New("cannot find user with provided username")
+}
+
+func (us *UserService) GetUserFromSpotify(ao *m.SpotifyAuthOptions) (user *m.SpUser, err error) {
+	body, err := getFromSpotify(c.Get().SpotifyApiURL, c.Get().URLCurrentUser, ao)
+	if err != nil {
+		log.Printf(" >>> error getting current user playlists. details: %v\n", err)
+		return nil, err
+	}
+	json.Unmarshal(body, &user)
+	return user, nil
 }
