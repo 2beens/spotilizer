@@ -34,7 +34,7 @@ func InitRedisClient() {
 	log.Printf(" > connected to redis %+v", options)
 }
 
-func StoreUserInfo(user *m.User) (stored bool) {
+func SaveUser(user *m.User) (stored bool) {
 	auth, err := json.Marshal(user.Auth)
 	if err != nil {
 		fmt.Println(" >>> error while storing user info: " + err.Error())

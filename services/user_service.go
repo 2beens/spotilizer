@@ -35,7 +35,7 @@ func (us *UserService) Get(userID string) (user *m.User, err error) {
 
 func (us *UserService) Add(user *m.User) {
 	us.id2userMap[user.ID] = user
-	db.StoreUserInfo(user)
+	db.SaveUser(user)
 }
 
 func (us *UserService) GetByUsername(username string) (u *m.User) {
