@@ -68,7 +68,7 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 		}
 
 		log.Printf(" > tracks count: %d\n", len(tracks))
-		user.FavTracks = tracks
+		user.FavTracks = &tracks
 
 		// TODO: return standardized resp message
 
@@ -200,9 +200,9 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 	}
 }
 
-func getAccessToken(data url.Values) m.SpotifyAuthOptions {
+func getAccessToken(data url.Values) *m.SpotifyAuthOptions {
 	body := postReq(data, "https://accounts.spotify.com", "/api/token/")
-	authOptions := m.SpotifyAuthOptions{}
+	authOptions := &m.SpotifyAuthOptions{}
 	json.Unmarshal(body, &authOptions)
 	return authOptions
 }

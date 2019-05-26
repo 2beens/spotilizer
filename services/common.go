@@ -8,7 +8,7 @@ import (
 	m "github.com/2beens/spotilizer/models"
 )
 
-func getFromSpotify(apiURL string, path string, authOptions m.SpotifyAuthOptions) (body []byte, err error) {
+func getFromSpotify(apiURL string, path string, authOptions *m.SpotifyAuthOptions) (body []byte, err error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", apiURL+path, nil)
 	if err != nil {

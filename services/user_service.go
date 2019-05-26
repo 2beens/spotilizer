@@ -47,7 +47,7 @@ func (us *UserService) GetByUsername(username string) (u *m.User) {
 	return nil //, errors.New("cannot find user with provided username")
 }
 
-func (us *UserService) GetUserFromSpotify(ao m.SpotifyAuthOptions) (user *m.SpUser, err error) {
+func (us *UserService) GetUserFromSpotify(ao *m.SpotifyAuthOptions) (user *m.SpUser, err error) {
 	body, err := getFromSpotify(c.Get().SpotifyApiURL, c.Get().URLCurrentUser, ao)
 	if err != nil {
 		log.Printf(" >>> error getting current user playlists. details: %v\n", err)

@@ -10,8 +10,8 @@ import (
 )
 
 type UserPlaylistService interface {
-	GetCurrentUserPlaylists(authOptions m.SpotifyAuthOptions) (response m.SpGetCurrentPlaylistsResp, err error)
-	GetSavedTracks(authOptions m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err error)
+	GetCurrentUserPlaylists(authOptions *m.SpotifyAuthOptions) (response m.SpGetCurrentPlaylistsResp, err error)
+	GetSavedTracks(authOptions *m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err error)
 }
 
 // TODO: removed this, it is unnecessary, especially that all these values can be found in config obj
@@ -38,7 +38,7 @@ func getAPIError(body []byte) (spErr m.SpError, isError bool) {
 }
 
 // GetCurrentUserPlaylists more info: https://developer.spotify.com/console/get-current-user-playlists/
-func (ups SpotifyUserPlaylistService) GetCurrentUserPlaylists(authOptions m.SpotifyAuthOptions) (response m.SpGetCurrentPlaylistsResp, err error) {
+func (ups SpotifyUserPlaylistService) GetCurrentUserPlaylists(authOptions *m.SpotifyAuthOptions) (response m.SpGetCurrentPlaylistsResp, err error) {
 	body, err := getFromSpotify(ups.spotifyApiURL, ups.urlCurrentUserPlaylists, authOptions)
 	if err != nil {
 		log.Printf(" >>> error getting current user playlists. details: %v\n", err)
@@ -48,7 +48,7 @@ func (ups SpotifyUserPlaylistService) GetCurrentUserPlaylists(authOptions m.Spot
 	return
 }
 
-func (ups SpotifyUserPlaylistService) GetSavedTracks(authOptions m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err error) {
+func (ups SpotifyUserPlaylistService) GetSavedTracks(authOptions *m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err error) {
 	offset := 0
 	prevCount := 0
 	for {
