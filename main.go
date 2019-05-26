@@ -34,9 +34,16 @@ func contactHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // middleware function wrapping a handler functiomn and logging the request path
-func logMiddleware(f http.HandlerFunc) http.HandlerFunc {
+func middleware(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf(" > request path: [%s]\n", r.URL.Path)
+		var cookieIDval string
+		cookieID, err := r.Cookie(c.CookieUserIDKey)
+		if err != nil {
+			cookieIDval = "<nil>"
+		} else {
+			cookieIDval = cookieID.Value
+		}
+		log.Printf(" > request path: [%s], cookieID: [%s]\n", r.URL.Path, cookieIDval)
 		f(w, r)
 	}
 }
@@ -49,11 +56,11 @@ func routerSetup() (r *mux.Router) {
 	r.PathPrefix("/public/").Handler(http.StripPrefix("/public/", fs))
 
 	// web content
-	r.HandleFunc("/", logMiddleware(indexHandler))
-	r.HandleFunc("/contact", logMiddleware(contactHandler))
+	r.HandleFunc("/", middleware(indexHandler))
+	r.HandleFunc("/contact", middleware(contactHandler))
 
 	// router example usage with params (remove later)
-	r.HandleFunc("/books/{title}/page/{page}", logMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/books/{title}/page/{page}", middleware(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		title := vars["title"] // the book title slug
 		page := vars["page"]   // the page
@@ -61,11 +68,11 @@ func routerSetup() (r *mux.Router) {
 	})).Methods("GET")
 
 	// spotify API
-	r.HandleFunc("/login", logMiddleware(h.GetSpotifyLoginHandler(serverURL)))
-	r.HandleFunc("/callback", logMiddleware(h.GetSpotifyCallbackHandler(serverURL)))
-	r.HandleFunc("/refresh_token", logMiddleware(h.GetRefreshTokenHandler(serverURL)))
-	r.HandleFunc("/save_current_playlists", logMiddleware(h.GetSaveCurrentPlaylistsHandler(serverURL)))
-	r.HandleFunc("/save_current_tracks", logMiddleware(h.GetSaveCurrentTracksHandler(serverURL)))
+	r.HandleFunc("/login", middleware(h.GetSpotifyLoginHandler(serverURL)))
+	r.HandleFunc("/callback", middleware(h.GetSpotifyCallbackHandler(serverURL)))
+	r.HandleFunc("/refresh_token", middleware(h.GetRefreshTokenHandler(serverURL)))
+	r.HandleFunc("/save_current_playlists", middleware(h.GetSaveCurrentPlaylistsHandler(serverURL)))
+	r.HandleFunc("/save_current_tracks", middleware(h.GetSaveCurrentTracksHandler(serverURL)))
 
 	return
 }
@@ -74,11 +81,16 @@ func routerSetup() (r *mux.Router) {
 /***************************************************************************************************/
 func main() {
 	displayHelp := flag.Bool("h", false, "display info/help message")
+	flashDB := flag.Bool("flushdb", false, "Flush Redis DB")
 	logFileName := flag.String("logfile", "", "log file used to store server logs")
 	flag.Parse()
 
 	if *displayHelp {
-		fmt.Println("\t -h \t\t\t\t> show this message\n\t -logfile=<logFileName> \t> output log file name")
+		fmt.Println(`
+			-h                      > show this message
+			-logfile=<logFileName>  > output log file name
+			-flushdb                > flush/clear redis DB before start`)
+		fmt.Println()
 		return
 	}
 
@@ -93,7 +105,7 @@ func main() {
 	h.SetCliendIdAndSecret(clientID, clientSecret)
 
 	// redis setup
-	db.InitRedisClient()
+	db.InitRedisClient(*flashDB)
 	// services setup
 	s.InitServices()
 

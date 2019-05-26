@@ -17,7 +17,7 @@ import (
 // much better would be PostreSQL, or SQLite or so, but ... let's use redis for study reasons, but also not having to use SQL :)
 var rc *redis.Client
 
-func InitRedisClient() {
+func InitRedisClient(flashDB bool) {
 	log.Println(" > initializing redis ...")
 	options := &redis.Options{
 		Network: "tcp",
@@ -31,7 +31,22 @@ func InitRedisClient() {
 		log.Panicf(" >>> failed to ping redis %+v", options)
 	}
 
+	if flashDB {
+		log.Println(" > will flush redis DB ...")
+		FlushDB()
+	}
+
 	log.Printf(" > connected to redis %+v\n", options)
+}
+
+func FlushDB() {
+	cmd := rc.FlushAll()
+	res, err := cmd.Result()
+	if err != nil {
+		log.Printf(" >>> Flush DB error: %v\n", err)
+		return
+	}
+	log.Printf(" > flush DB result: %s\n", res)
 }
 
 func SaveUser(user *m.User) (stored bool) {
@@ -43,9 +58,9 @@ func SaveUser(user *m.User) (stored bool) {
 	authJSON := string(auth)
 	authEncoded := b64.StdEncoding.EncodeToString([]byte(authJSON))
 	userKey := "user::" + user.Username
-	cmd := rc.Set(userKey, fmt.Sprintf("%s::%s::%s", user.ID, user.Username, authEncoded), 0)
+	cmd := rc.Set(userKey, fmt.Sprintf("%s::%s", user.Username, authEncoded), 0)
 	if err := cmd.Err(); err != nil {
-		log.Printf(" >>> failed to store user info for user: %s, [%s]\n", user.Username, user.ID)
+		log.Printf(" >>> failed to store user info for user: %s\n", user.Username)
 		return false
 	}
 	return true
@@ -60,7 +75,7 @@ func GetUser(username string) *m.User {
 	}
 	userStringData := cmd.Val()
 	userData := strings.Split(userStringData, "::")
-	authDecoded, err := b64.StdEncoding.DecodeString(userData[2])
+	authDecoded, err := b64.StdEncoding.DecodeString(userData[1])
 	if err != nil {
 		log.Printf(" >>> failed to get user %s: %v\n", username, err)
 		return nil
@@ -71,7 +86,7 @@ func GetUser(username string) *m.User {
 		log.Printf(" >>> failed to get user %s: %v\n", username, err)
 		return nil
 	}
-	return &m.User{Username: username, ID: userData[0], Auth: auth}
+	return &m.User{Username: username, Auth: auth}
 }
 
 func GetAllUsers() *[]m.User {

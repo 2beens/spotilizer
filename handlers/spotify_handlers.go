@@ -45,7 +45,7 @@ func GetSpotifyLoginHandler(serverURL string) func(w http.ResponseWriter, r *htt
 
 func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := r.Cookie(c.CookieUserIDKey)
+		cookieID, err := r.Cookie(c.CookieUserIDKey)
 		if err != nil {
 			// TOOD: redirect to error
 			log.Printf(" >>> error while saving current user tracks: %v\n", err)
@@ -53,14 +53,16 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 			return
 		}
 
-		if !s.Users.Exists(userID.Value) {
+		log.Println(" > user cookie: " + cookieID.Value)
+
+		user, err := s.Users.GetUserByCookieID(cookieID.Value)
+		if err != nil {
 			// TOOD: redirect to error
 			log.Printf(" >>> failed to find user, must login first\n")
 			http.Redirect(w, r, serverURL, 302)
 			return
 		}
 
-		user, _ := s.Users.Get(userID.Value)
 		tracks, err := s.UserPlaylist.GetSavedTracks(user.Auth)
 		if err != nil {
 			log.Printf(" >>> error while saving current user tracks: %v\n", err)
@@ -81,16 +83,16 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 
 func GetSaveCurrentPlaylistsHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := r.Cookie(c.CookieUserIDKey)
+		cookieID, err := r.Cookie(c.CookieUserIDKey)
 		if err != nil {
 			// TOOD: redirect to error
 			log.Printf(" >>> error while saving current user playlists: %v\n", err)
 			return
 		}
 
-		log.Printf(" > user ID: %s\n", userID.Value)
+		log.Printf(" > user ID: %s\n", cookieID.Value)
 
-		user, err := s.Users.Get(userID.Value)
+		user, err := s.Users.Get(cookieID.Value)
 		if err != nil {
 			playlists, err := s.UserPlaylist.GetCurrentUserPlaylists(user.Auth)
 			if err != nil {
@@ -109,14 +111,14 @@ func GetSaveCurrentPlaylistsHandler(serverURL string) func(w http.ResponseWriter
 
 func GetRefreshTokenHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := r.Cookie(c.CookieUserIDKey)
+		cookieID, err := r.Cookie(c.CookieUserIDKey)
 		if err != nil {
 			log.Printf(" > refresh token failed, error: [%v]\n", err)
 			// TODO: redirect to some error, or show error on the index page
 			http.Redirect(w, r, serverURL, 302)
 			return
 		}
-		user, err := s.Users.Get(userID.Value)
+		user, err := s.Users.Get(cookieID.Value)
 		if err != nil {
 			log.Println(" > refresh token failed, error: refresh_token param not found")
 			// TODO: redirect to some error, or show error on the index page
@@ -182,18 +184,25 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		}
 		log.Printf(" > gotten user [%s]\n", spUser.ID)
 
-		var userID string
-		user := s.Users.GetByUsername(spUser.ID)
+		var cookieID string
+		user, _ := s.Users.Get(spUser.ID)
 		if user == nil {
-			userID = util.GenerateRandomString(35)
-			user = &m.User{Username: spUser.ID, ID: userID, Auth: authOptions}
+			cookieID = util.GenerateRandomString(45)
+			user = &m.User{Username: spUser.ID, Auth: authOptions}
 			s.Users.Add(user)
-			log.Println(" > new user created and stored: " + user.Username)
+			s.Users.AddUserCookie(cookieID, user.Username)
+			log.Printf(" > new user [%s] created and stored. cookie [%s]\n", user.Username, cookieID)
 		} else {
-			userID = user.ID
+			cID, cErr := s.Users.GetCookieIDByUsername(user.Username)
+			if cErr != nil {
+				cookieID = util.GenerateRandomString(45)
+				log.Printf(" > generating and seding new cookie ID [%s] to client\n", cookieID)
+				s.Users.AddUserCookie(cookieID, user.Username)
+			}
+			cookieID = cID
 		}
 
-		util.AddCookie(w, c.CookieUserIDKey, userID)
+		util.AddCookie(w, c.CookieUserIDKey, cookieID)
 
 		// redirect to index page with acces and refresh tokens
 		util.RenderView(w, "index", m.ViewData{Message: "success", Error: "", Data: authOptions})
