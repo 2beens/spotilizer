@@ -11,7 +11,9 @@ import (
 	"strings"
 	"time"
 
+	c "github.com/2beens/spotilizer/constants"
 	m "github.com/2beens/spotilizer/models"
+	s "github.com/2beens/spotilizer/services"
 )
 
 // generates a random string containing numbers and letters
@@ -48,6 +50,16 @@ func CleearCookie(w http.ResponseWriter, name string) {
 		Expires: expire,
 	}
 	http.SetCookie(w, &cookie)
+}
+
+func GetUsernameByRequestCookieID(r *http.Request) (username string, found bool) {
+	cookieID, err := r.Cookie(c.CookieUserIDKey)
+	if err != nil {
+		// error ignored. can panic when invoked from incognito window
+		return "", false
+	}
+	username, found = s.Users.GetUsernameByCookieID(cookieID.Value)
+	return
 }
 
 func ReadSpotifyAuthData() (clientID string, clientSecret string, err error) {

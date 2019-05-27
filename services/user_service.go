@@ -3,10 +3,11 @@ package services
 import (
 	"encoding/json"
 	"errors"
+	"log"
+
 	c "github.com/2beens/spotilizer/config"
 	db "github.com/2beens/spotilizer/db"
 	m "github.com/2beens/spotilizer/models"
-	"log"
 )
 
 type UserService struct {
@@ -29,6 +30,7 @@ func (us *UserService) AddUserCookie(cookieID string, username string) {
 
 func (us *UserService) RemoveUserCookie(cookieID string) {
 	delete(us.cookieID2usernameMap, cookieID)
+	log.Println(" > user cookie removed: " + cookieID)
 }
 
 func (us *UserService) GetCookieIDByUsername(username string) (string, error) {
@@ -38,6 +40,11 @@ func (us *UserService) GetCookieIDByUsername(username string) (string, error) {
 		}
 	}
 	return "", errors.New("cookie ID not found by username")
+}
+
+func (us *UserService) GetUsernameByCookieID(cookieID string) (username string, found bool) {
+	username, found = us.cookieID2usernameMap[cookieID]
+	return
 }
 
 func (us *UserService) GetUserByCookieID(cookieID string) (user *m.User, err error) {

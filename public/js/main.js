@@ -85,13 +85,18 @@ function getFavPlaylist() {
     });
 }
 
+function stringOK(val) {
+    return val !== undefined && val !== null && val.length > 0;
+}
+
 (function () {
+    var cookieID = getCookie("spotilizer-user-id");
+    console.log(' > cookie ID: ' + cookieID);
     window.accessToken = getCookie("accessToken");
     window.refreshToken = getCookie("refreshToken");
     console.log(" > loaded cookie AT: " + window.accessToken);
-    console.log(" > loaded cookie RT: " + window.refreshToken);
-    console.log(' > main script finished');
-
+    console.log(" > loaded cookie RT: " + window.refreshToken);    
+    
     // set navbar active button
     document.addEventListener("DOMContentLoaded", function(event) {
         $('.nav-bar-a').each(function(index) {
@@ -104,5 +109,16 @@ function getFavPlaylist() {
         } else {
             $('#nav-bar-home').addClass('active');
         }
+
+        if (stringOK(cookieID) && stringOK(window.username)) {
+            console.log(' > cookieID: ' + cookieID + ', username: ' + username);
+            $('#nav-item-login').addClass('invisible-elem');
+            $('#nav-item-logout').removeClass('invisible-elem');
+        } else {
+            $('#nav-item-login').removeClass('invisible-elem');
+            $('#nav-item-logout').addClass('invisible-elem');
+        }
     });
+
+    console.log(' > main script function finished');
 })()

@@ -42,7 +42,7 @@ func GetRefreshTokenHandler(serverURL string) func(w http.ResponseWriter, r *htt
 		user.Auth = newAuthOptions
 
 		// redirect to index page with acces and refresh tokens
-		util.RenderView(w, "index", m.ViewData{Message: "success", Error: "", Data: user.Auth})
+		util.RenderView(w, "index", m.ViewData{Message: "success", Error: "", Username: user.Username, Data: user.Auth})
 	}
 }
 
@@ -115,7 +115,7 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		util.AddCookie(w, c.CookieUserIDKey, cookieID)
 
 		// redirect to index page with acces and refresh tokens
-		util.RenderView(w, "index", m.ViewData{Message: "success", Error: "", Data: authOptions})
+		util.RenderView(w, "index", m.ViewData{Message: "success", Error: "", Username: user.Username, Data: authOptions})
 	}
 }
 

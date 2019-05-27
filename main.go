@@ -22,19 +22,27 @@ import (
 var serverURL = fmt.Sprintf("%s://%s:%s", c.Protocol, c.IPAddress, c.Port)
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/index" && r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-	util.RenderView(w, "index", m.ViewData{})
+	username, _ := util.GetUsernameByRequestCookieID(r)
+	util.RenderView(w, "index", m.ViewData{Username: username})
 }
 
 func contactHandler(w http.ResponseWriter, r *http.Request) {
-	util.RenderView(w, "contact", m.ViewData{})
+	username, _ := util.GetUsernameByRequestCookieID(r)
+	util.RenderView(w, "contact", m.ViewData{Username: username})
 }
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
-	util.RenderView(w, "about", m.ViewData{})
+	username, _ := util.GetUsernameByRequestCookieID(r)
+	util.RenderView(w, "about", m.ViewData{Username: username})
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	cookieID, err := r.Cookie(c.CookieUserIDKey)
+	if err == nil {
+		s.Users.RemoveUserCookie(cookieID.Value)
+		util.CleearCookie(w, c.CookieStateKey)
+	}
+	util.RenderView(w, "index", m.ViewData{Username: ""})
 }
 
 // middleware function wrapping a handler functiomn and logging the request path
@@ -47,7 +55,7 @@ func middleware(f http.HandlerFunc) http.HandlerFunc {
 		} else {
 			cookieIDval = cookieID.Value
 		}
-		log.Printf(" > request path: [%s], cookieID: [%s]\n", r.URL.Path, cookieIDval)
+		log.Printf(" ====> request path: [%s], cookieID: [%s]\n", r.URL.Path, cookieIDval)
 		f(w, r)
 	}
 }
@@ -74,6 +82,7 @@ func routerSetup() (r *mux.Router) {
 
 	// spotify API
 	r.HandleFunc("/login", middleware(h.GetSpotifyLoginHandler(serverURL)))
+	r.HandleFunc("/logout", middleware(logoutHandler))
 	r.HandleFunc("/callback", middleware(h.GetSpotifyCallbackHandler(serverURL)))
 	r.HandleFunc("/refresh_token", middleware(h.GetRefreshTokenHandler(serverURL)))
 	r.HandleFunc("/save_current_playlists", middleware(h.GetSaveCurrentPlaylistsHandler(serverURL)))
