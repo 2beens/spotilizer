@@ -33,6 +33,10 @@ func contactHandler(w http.ResponseWriter, r *http.Request) {
 	util.RenderView(w, "contact", m.ViewData{})
 }
 
+func aboutHandler(w http.ResponseWriter, r *http.Request) {
+	util.RenderView(w, "about", m.ViewData{})
+}
+
 // middleware function wrapping a handler functiomn and logging the request path
 func middleware(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +61,7 @@ func routerSetup() (r *mux.Router) {
 
 	// web content
 	r.HandleFunc("/", middleware(indexHandler))
+	r.HandleFunc("/about", middleware(aboutHandler))
 	r.HandleFunc("/contact", middleware(contactHandler))
 
 	// router example usage with params (remove later)

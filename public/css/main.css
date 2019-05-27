@@ -1,0 +1,9 @@
+.error-content {
+    display: grid !important;
+    margin-bottom: 30%;
+}
+
+.error-title {
+    margin-left: 15% !important;
+    margin-bottom: 15px !important;
+}

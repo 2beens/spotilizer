@@ -91,4 +91,18 @@ function getFavPlaylist() {
     console.log(" > loaded cookie AT: " + window.accessToken);
     console.log(" > loaded cookie RT: " + window.refreshToken);
     console.log(' > main script finished');
+
+    // set navbar active button
+    document.addEventListener("DOMContentLoaded", function(event) {
+        $('.nav-bar-a').each(function(index) {
+            $(this).removeClass('active');
+        });
+        if (window.location.pathname === '/about') {
+            $('#nav-bar-about').addClass('active');
+        } else if (window.location.pathname === '/contact') {
+            $('#nav-bar-contact').addClass('active');
+        } else {
+            $('#nav-bar-home').addClass('active');
+        }
+    });
 })()
