@@ -19,6 +19,7 @@ func NewUserService() *UserService {
 	var us UserService
 	us.SyncWithDB()
 	us.cookieID2usernameMap = make(map[string]string)
+	us.cookieID2usernameMap = db.GetCookiesInfo()
 	return &us
 }
 
@@ -56,6 +57,10 @@ func (us *UserService) SyncWithDB() {
 		us.username2userMap[u.Username] = &u
 		log.Printf(" > found and added user: %s\n", u.Username)
 	}
+}
+
+func (us *UserService) StoreCookiesInfo() {
+	db.SaveCookiesInfo(us.cookieID2usernameMap)
 }
 
 func (us *UserService) Exists(username string) (found bool) {

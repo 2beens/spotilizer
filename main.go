@@ -139,6 +139,9 @@ func gracefulShutdown(srv *http.Server) {
 	// block until (eg. Ctrl+C) signal is received
 	<-c
 
+	// store users cookies data
+	s.Users.StoreCookiesInfo()
+
 	// the duration for which the server gracefully wait for existing connections to finish
 	maxWaitDuration := time.Second * 15
 	// create a deadline to wait for
