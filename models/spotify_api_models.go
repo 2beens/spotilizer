@@ -113,8 +113,12 @@ type SpArtist struct {
 }
 
 type SpError struct {
-	Error            string `json:"error"`
-	ErrorDescription string `json:"error_description"`
+	Status  int    `json:"status"`
+	Message string `json:"message"`
+}
+
+type SpAPIError struct {
+	Error SpError `json:"error"`
 }
 
 type SpUser struct {

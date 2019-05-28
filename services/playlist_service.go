@@ -29,14 +29,6 @@ func NewSpotifyUserPlaylistService() *SpotifyUserPlaylistService {
 	return &ps
 }
 
-func getAPIError(body []byte) (spErr m.SpError, isError bool) {
-	err := json.Unmarshal(body, &spErr)
-	if err != nil {
-		return m.SpError{}, false
-	}
-	return spErr, true
-}
-
 // GetCurrentUserPlaylists more info: https://developer.spotify.com/console/get-current-user-playlists/
 func (ups SpotifyUserPlaylistService) GetCurrentUserPlaylists(authOptions *m.SpotifyAuthOptions) (response m.SpGetCurrentPlaylistsResp, err error) {
 	body, err := getFromSpotify(ups.spotifyApiURL, ups.urlCurrentUserPlaylists, authOptions)
@@ -48,24 +40,27 @@ func (ups SpotifyUserPlaylistService) GetCurrentUserPlaylists(authOptions *m.Spo
 	return
 }
 
-func (ups SpotifyUserPlaylistService) GetSavedTracks(authOptions *m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err error) {
+func (ups SpotifyUserPlaylistService) GetSavedTracks(authOptions *m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err *m.SpAPIError) {
 	offset := 0
 	prevCount := 0
 	for {
 		path := fmt.Sprintf("%s?offset=%d&limit=50", ups.urlCurrentUserSavedTracks, offset)
 		body, err := getFromSpotify(ups.spotifyApiURL, path, authOptions)
 		if err != nil {
-			log.Printf(" >>> error getting current user tracks. details: %v\n", err)
-			return nil, err
+			errMsg := fmt.Sprintf(" >>> error getting current user tracks. details: %v", err)
+			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
 		}
+
+		if apiErr, isError := getAPIError(body); isError {
+			log.Printf("API error: status [%d] -> [%s]\n", apiErr.Error.Status, apiErr.Error.Message)
+			return nil, &apiErr
+		}
+
 		var response m.SpGetSavedTracksResp
 		err = json.Unmarshal(body, &response)
 		if err != nil {
-			if apiErr, isError := getAPIError(body); isError {
-				return nil, fmt.Errorf("API error: [%s] -> [%s]", apiErr.Error, apiErr.ErrorDescription)
-			}
-			log.Printf(" >>> error occured while unmarshaling get tracks response: %v\n", err)
-			return nil, err
+			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get tracks response: %v", err)
+			return nil, &m.SpAPIError{Error: m.SpError{Status: 100, Message: errMsg}}
 		}
 
 		tracks = append(tracks, response.Items...)
@@ -76,6 +71,7 @@ func (ups SpotifyUserPlaylistService) GetSavedTracks(authOptions *m.SpotifyAuthO
 
 		// safety mechanism agains infinite loop - if no new tracks are added, bail out
 		if prevCount == len(tracks) {
+			log.Println(" > no new tracks coming in, bail out")
 			return tracks, nil
 		}
 		prevCount = len(tracks)

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -34,4 +35,12 @@ func getFromSpotify(apiURL string, path string, authOptions *m.SpotifyAuthOption
 	// log.Println(string(body))
 
 	return
+}
+
+func getAPIError(body []byte) (spErr m.SpAPIError, isError bool) {
+	err := json.Unmarshal(body, &spErr)
+	if err == nil && len(spErr.Error.Message) > 0 && spErr.Error.Status > 0 {
+		return spErr, true
+	}
+	return m.SpAPIError{}, false
 }

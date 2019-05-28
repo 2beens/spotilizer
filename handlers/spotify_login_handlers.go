@@ -110,6 +110,9 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 				log.Println(" > using previous cookie ID: " + cID)
 			}
 			cookieID = cID
+
+			// TODO: check if refresh token has to be done
+
 		}
 
 		util.AddCookie(&w, c.CookieUserIDKey, cookieID)

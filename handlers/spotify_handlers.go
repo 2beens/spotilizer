@@ -47,8 +47,6 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 			return
 		}
 
-		log.Println(" > user cookie: " + cookieID.Value)
-
 		user, err := s.Users.GetUserByCookieID(cookieID.Value)
 		if err != nil {
 			// TOOD: redirect to error
@@ -57,9 +55,13 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 			return
 		}
 
-		tracks, err := s.UserPlaylist.GetSavedTracks(user.Auth)
-		if err != nil {
-			log.Printf(" >>> error while saving current user tracks: %v\n", err)
+		log.Printf(" > get fav tracks: cookie [%s], username [%s]\n", cookieID.Value, user.Username)
+
+		tracks, apiErr := s.UserPlaylist.GetSavedTracks(user.Auth)
+		if apiErr != nil {
+			log.Printf(" >>> error while saving current user tracks: %v\n", apiErr)
+			// TODO: redirect to error
+
 			return
 		}
 
