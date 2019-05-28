@@ -40,9 +40,9 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	cookieID, err := r.Cookie(c.CookieUserIDKey)
 	if err == nil {
 		s.Users.RemoveUserCookie(cookieID.Value)
-		util.CleearCookie(w, c.CookieStateKey)
+		util.CleearCookie(&w, c.CookieStateKey)
 	}
-	util.RenderView(w, "index", m.ViewData{Username: ""})
+	indexHandler(w, r)
 }
 
 // middleware function wrapping a handler functiomn and logging the request path

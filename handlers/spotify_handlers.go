@@ -22,7 +22,7 @@ func SetCliendIdAndSecret(cID string, cSecret string) {
 func GetSpotifyLoginHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		state := util.GenerateRandomString(16)
-		util.AddCookie(w, c.CookieStateKey, state)
+		util.AddCookie(&w, c.CookieStateKey, state)
 
 		q := url.Values{}
 		q.Add("response_type", "code")

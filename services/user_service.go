@@ -35,8 +35,11 @@ func (us *UserService) RemoveUserCookie(cookieID string) {
 
 func (us *UserService) GetCookieIDByUsername(username string) (string, error) {
 	for c, un := range us.cookieID2usernameMap {
-		if un == username {
+		if un == username && len(c) > 0 {
 			return c, nil
+		}
+		if len(c) == 0 {
+			log.Printf(" >>> warning: found an empty cookie for user: [%s]\n", un)
 		}
 	}
 	return "", errors.New("cookie ID not found by username")

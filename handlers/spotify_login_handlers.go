@@ -74,7 +74,7 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 			return
 		}
 
-		util.CleearCookie(w, c.CookieStateKey)
+		util.CleearCookie(&w, c.CookieStateKey)
 		data := url.Values{}
 		data.Set("code", code[0])
 		data.Set("redirect_uri", fmt.Sprintf("%s/callback", serverURL))
@@ -107,12 +107,12 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 				log.Printf(" > generating and seding new cookie ID [%s] to client\n", cookieID)
 				s.Users.AddUserCookie(cookieID, user.Username)
 			} else {
-				log.Println(" > using previous cookie ID: " + cookieID)
+				log.Println(" > using previous cookie ID: " + cID)
 			}
 			cookieID = cID
 		}
 
-		util.AddCookie(w, c.CookieUserIDKey, cookieID)
+		util.AddCookie(&w, c.CookieUserIDKey, cookieID)
 
 		// redirect to index page with acces and refresh tokens
 		util.RenderView(w, "index", m.ViewData{Message: "success", Error: "", Username: user.Username, Data: authOptions})

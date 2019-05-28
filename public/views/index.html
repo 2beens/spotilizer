@@ -1,42 +1,4 @@
 {{define "content"}}
-  {{if .Data }}
-  <script>
-    // this script will execute after login -> .Data will contain AuthOptions data
-    var accessToken = '{{.Data.AccessToken}}';
-    var refreshToken = '{{.Data.RefreshToken}}';
-    var prevAccToken = getCookie("accessToken");
-    var prevRefToken = getCookie("refreshToken");
-    if (accessToken) {
-      if (!prevAccToken || accessToken !== prevAccToken) {
-        setCookie("accessToken", accessToken, 7);
-      }
-    } else {
-      accessToken = prevAccToken;
-    }
-    if (refreshToken) {
-      if (!prevRefToken || refreshToken !== prevRefToken) {
-        setCookie("refreshToken", refreshToken, 7);
-      }
-    } else {
-      refreshToken = prevRefToken;
-    }
-
-    window.accessToken = accessToken;
-    window.refreshToken = refreshToken;
-
-    if (accessToken && prevAccToken) {
-      printSelfSpotifyInfo();
-    }
-  </script>
-  {{end}}
-
-  {{if .Username }}
-  <script>
-    window.username = '{{.Username}}';
-    console.log(' > index script, received username: ' + window.username);
-  </script>
-  {{end}}
-
   <div class="jumbotron">
     <h1 class="display-3">Spotify Playlists Analyzer</h1>
     <p class="lead">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>

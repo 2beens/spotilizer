@@ -16,7 +16,7 @@ import (
 	s "github.com/2beens/spotilizer/services"
 )
 
-// generates a random string containing numbers and letters
+// GenerateRandomString generates a random string containing numbers and letters
 func GenerateRandomString(length int) string {
 	text := ""
 	possible := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
@@ -32,24 +32,23 @@ func GenerateRandomString(length int) string {
 
 // AddCookie will apply a new cookie to the response of a http
 // request, with the key/value this method is passed.
-func AddCookie(w http.ResponseWriter, name string, value string) {
+func AddCookie(w *http.ResponseWriter, name string, value string) {
 	expire := time.Now().AddDate(0, 0, 1)
-	cookie := http.Cookie{
+	cookie := &http.Cookie{
 		Name:    name,
 		Value:   value,
 		Expires: expire,
 	}
-	http.SetCookie(w, &cookie)
+	http.SetCookie(*w, cookie)
 }
 
-func CleearCookie(w http.ResponseWriter, name string) {
-	expire := time.Now()
-	cookie := http.Cookie{
+func CleearCookie(w *http.ResponseWriter, name string) {
+	cookie := &http.Cookie{
 		Name:    name,
 		Value:   "",
-		Expires: expire,
+		Expires: time.Unix(0, 0),
 	}
-	http.SetCookie(w, &cookie)
+	http.SetCookie(*w, cookie)
 }
 
 func GetUsernameByRequestCookieID(r *http.Request) (username string, found bool) {

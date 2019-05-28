@@ -22,6 +22,15 @@ function setCookie(cname, cvalue, daysValid) {
     document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
 }
 
+function eraseCookie(name) {   
+    document.cookie = name+'=; Max-Age=-99999999;';  
+}
+
+function onLogout() {
+    console.log(' > onLogout initiated ...');
+    eraseCookie("spotilizer-user-id");
+}
+
 function printSelfSpotifyInfo() {
     var spotilizerId = getCookie("spotilizer-user-id");
     console.log(' > spotilizer-user-id: ' + spotilizerId);
@@ -91,11 +100,14 @@ function stringOK(val) {
 
 (function () {
     var cookieID = getCookie("spotilizer-user-id");
-    console.log(' > cookie ID: ' + cookieID);
+    console.log(' > main script function: cookie ID: ' + cookieID);
     window.accessToken = getCookie("accessToken");
     window.refreshToken = getCookie("refreshToken");
-    console.log(" > loaded cookie AT: " + window.accessToken);
-    console.log(" > loaded cookie RT: " + window.refreshToken);    
+
+    // remove unnecessary path info during login or logout
+    if (window.location.pathname === '/callback' || window.location.pathname === '/logout') {
+        history.pushState({}, null, "/");
+    }
     
     // set navbar active button
     document.addEventListener("DOMContentLoaded", function(event) {
@@ -120,5 +132,5 @@ function stringOK(val) {
         }
     });
 
-    console.log(' > main script function finished');
+    console.log(' > main script function: finished');
 })()
