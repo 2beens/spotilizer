@@ -60,7 +60,7 @@ func (ups SpotifyUserPlaylistService) GetSavedTracks(authOptions *m.SpotifyAuthO
 		err = json.Unmarshal(body, &response)
 		if err != nil {
 			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get tracks response: %v", err)
-			return nil, &m.SpAPIError{Error: m.SpError{Status: 100, Message: errMsg}}
+			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
 		}
 
 		tracks = append(tracks, response.Items...)

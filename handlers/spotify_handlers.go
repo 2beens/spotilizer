@@ -41,17 +41,15 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookieID, err := r.Cookie(c.CookieUserIDKey)
 		if err != nil {
-			// TOOD: redirect to error
-			log.Printf(" >>> error while saving current user tracks: %v\n", err)
-			http.Redirect(w, r, serverURL, 302)
+			log.Printf(" >>> %s\n", fmt.Sprintf(" >>> cookie error while saving current user tracks: %s", err.Error()))
+			util.SendAPIErrorResp(w, "Not available when logged off", 400)
 			return
 		}
 
 		user, err := s.Users.GetUserByCookieID(cookieID.Value)
 		if err != nil {
-			// TOOD: redirect to error
-			log.Printf(" >>> failed to find user, must login first\n")
-			http.Redirect(w, r, serverURL, 302)
+			log.Printf(" >>> %s\n", fmt.Sprintf(" >>> user/cookie error while saving current user tracks: %s", err.Error()))
+			util.SendAPIErrorResp(w, "Not available when logged off", 400)
 			return
 		}
 
@@ -60,8 +58,7 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 		tracks, apiErr := s.UserPlaylist.GetSavedTracks(user.Auth)
 		if apiErr != nil {
 			log.Printf(" >>> error while saving current user tracks: %v\n", apiErr)
-			// TODO: redirect to error
-
+			util.SendAPIErrorResp(w, apiErr.Error.Message, apiErr.Error.Status)
 			return
 		}
 
@@ -72,7 +69,7 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 
 		// TOOD: save tracks somewhere (redis)
 
-		w.Write([]byte("track saved!"))
+		util.SendAPIOKResp(w, "Tracks saved successfully")
 		return
 	}
 }

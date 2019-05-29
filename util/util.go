@@ -1,7 +1,9 @@
 package util
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"log"
 	"math"
@@ -96,7 +98,7 @@ func LoggingSetup(logFileName string) {
 
 // templates cheatsheet
 // https://curtisvermeeren.github.io/2017/09/14/Golang-Templates-Cheatsheet
-func RenderView(w http.ResponseWriter, page string, viewData m.ViewData) {
+func RenderView(w http.ResponseWriter, page string, viewData interface{}) {
 	// TODO: parse the template once and reuse it
 	files := []string{
 		"public/views/layouts/layout.html",
@@ -116,4 +118,31 @@ func RenderView(w http.ResponseWriter, page string, viewData m.ViewData) {
 		log.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func RenderSpAPIErrorView(w http.ResponseWriter, username string, title string, apiErr *m.SpAPIError) {
+	RenderView(w, "error", m.ErrorViewData{Title: title, Error: fmt.Sprintf("Status: [%d]: %s", apiErr.Error.Status, apiErr.Error.Message), Username: username})
+}
+
+func RenderErrorView(w http.ResponseWriter, username string, title string, status int, message string) {
+	RenderView(w, "error", m.ErrorViewData{Title: title, Error: fmt.Sprintf("Status: [%d]: %s", status, message), Username: username})
+}
+
+func SendAPIResp(w http.ResponseWriter, data interface{}) {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		log.Printf(" >>> Error while sending API response: %s\n", err.Error())
+		return
+	}
+	w.Write(dataBytes)
+}
+
+func SendAPIOKResp(w http.ResponseWriter, message string) {
+	apiResp := m.APIResponse{Status: 200, Message: message}
+	SendAPIResp(w, apiResp)
+}
+
+func SendAPIErrorResp(w http.ResponseWriter, message string, status int) {
+	apiErr := m.SpAPIError{Error: m.SpError{Message: message, Status: status}}
+	SendAPIResp(w, apiErr)
 }
