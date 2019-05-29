@@ -69,7 +69,7 @@ func GetSaveCurrentTracksHandler(serverURL string) func(w http.ResponseWriter, r
 
 		// TOOD: save tracks somewhere (redis)
 
-		util.SendAPIOKResp(w, "Tracks saved successfully")
+		util.SendAPIOKResp(w, fmt.Sprintf("%d tracks saved successfully", len(tracks)))
 		return
 	}
 }
@@ -78,26 +78,31 @@ func GetSaveCurrentPlaylistsHandler(serverURL string) func(w http.ResponseWriter
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookieID, err := r.Cookie(c.CookieUserIDKey)
 		if err != nil {
-			// TOOD: redirect to error
-			log.Printf(" >>> error while saving current user playlists: %v\n", err)
+			log.Printf(" >>> %s\n", fmt.Sprintf(" >>> cookie error while saving current user playlists: %s", err.Error()))
+			util.SendAPIErrorResp(w, "Not available when logged off", 400)
+			return
+		}
+
+		user, err := s.Users.GetUserByCookieID(cookieID.Value)
+		if err != nil {
+			log.Printf(" >>> %s\n", fmt.Sprintf(" >>> user/cookie error while saving current user playlists: %s", err.Error()))
+			util.SendAPIErrorResp(w, "Not available when logged off", 400)
 			return
 		}
 
 		log.Printf(" > user ID: %s\n", cookieID.Value)
 
-		user, err := s.Users.Get(cookieID.Value)
+		playlists, err := s.UserPlaylist.GetCurrentUserPlaylists(user.Auth)
 		if err != nil {
-			playlists, err := s.UserPlaylist.GetCurrentUserPlaylists(user.Auth)
-			if err != nil {
-				log.Printf(" >>> error while saving current user playlists: %v\n", err)
-				return
-			}
-			log.Printf(" > playlists count: %d\n", len(playlists.Items))
-			// TODO: return standardized resp message
-			w.Write([]byte("playlists saved!"))
+			log.Printf(" >>> error while saving current user playlists: %v\n", err)
+			util.SendAPIErrorResp(w, err.Error(), 400)
 			return
 		}
-		log.Printf(" >>> failed to find user, must login first\n")
-		http.Redirect(w, r, serverURL, 302)
+		log.Printf(" > playlists count: %d\n", len(playlists.Items))
+
+		// TODO: save playlists
+
+		util.SendAPIOKResp(w, fmt.Sprintf("%d playlists saved successfully", len(playlists.Items)))
+		return
 	}
 }

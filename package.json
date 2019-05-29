@@ -7,8 +7,8 @@
   "author": "serj <srdjan@adjust.com>",
   "license": "MIT",
   "private": false,
-  "dependencies": {},
-  "devDependencies": {
+  "dependencies": {
+    "toastr": "^2.1.4",
     "bootstrap": "^4.3.1"
   }
 }

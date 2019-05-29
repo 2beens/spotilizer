@@ -41,28 +41,49 @@ function printSelfSpotifyInfo() {
     });
 }
 
-function makeRequest(queryUrl, callback) {
+function makeRequest(queryUrl, successf, errorf) {
     console.log(' ---> making a request call to: ' + queryUrl);
+    if (errorf === undefined || errorf === null) {
+        errorf = function(xhr,status,error) {
+            console.log(' ---> error occured, status: ' + status + ', error: ' + error);
+        };
+    }
     $.ajax({
         url: queryUrl,
         headers: {
             'Authorization': 'Bearer ' + window.accessToken
         },
-        success: callback,
+        success: successf,
+        complete: function() {
+            console.log(' ---> call completed!');
+        },
+        error: errorf
     });
 }
 
 function saveCurrentPlaylists() {
     makeRequest("/save_current_playlists", function(response) {
         console.log(' > received from server: ' + response);
-        $('#query-result').val(response);
+        var respObj = JSON.parse(response);
+        if (respObj.error) {
+            toastr.error(respObj.error.message, "Save current playlists error");
+        } else {
+            toastr.success(respObj.message, "Save current playlists");
+        }
+    }, function(xhr, status, error) {
+        toastr.error("Status: " + status + ", error: " + JSON.stringify(error), "Save current playlists error");
     });
 }
 
 function saveCurrentTracks() {
     makeRequest("/save_current_tracks", function(response) {
         console.log(' > received from server: ' + response);
-        $('#query-result').val(response);
+        var respObj = JSON.parse(response);
+        if (respObj.error) {
+            toastr.error(respObj.error.message, "Save fav tracks error");
+        } else {
+            toastr.success(respObj.message, "Save fav tracks");
+        }
     });
 }
 
@@ -130,6 +151,9 @@ function stringOK(val) {
             $('#nav-item-login').removeClass('invisible-elem');
             $('#nav-item-logout').addClass('invisible-elem');
         }
+
+        // Display an info toast with no title
+        toastr.info('Page lodaded ...', 'Spotilizer', {timeOut: 1000})
     });
 
     console.log(' > main script function: finished');
