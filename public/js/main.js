@@ -1,3 +1,7 @@
+toastr.options = {
+    "positionClass": "toast-top-left",
+}
+
 function getCookie(cname) {
     var name = cname + "=";
     var decodedCookie = decodeURIComponent(document.cookie);
@@ -29,16 +33,6 @@ function eraseCookie(name) {
 function onLogout() {
     console.log(' > onLogout initiated ...');
     eraseCookie("spotilizer-user-id");
-}
-
-function printSelfSpotifyInfo() {
-    var spotilizerId = getCookie("spotilizer-user-id");
-    console.log(' > spotilizer-user-id: ' + spotilizerId);
-    makeRequest('https://api.spotify.com/v1/me', function (response) {
-        console.log('------------------------------- response from spotify ------------')
-        console.log(response);
-        console.log('------------------------------------------------------------------')
-    });
 }
 
 function makeRequest(queryUrl, successf, errorf) {
@@ -132,34 +126,6 @@ function saveCurrentTracks() {
     });
 }
 
-function executeUrlQueryRequest() {
-    var queryUrl = $('#query-text').val();
-    if (!queryUrl) {
-        console.log(' > query URL error ...');
-        return;
-    }
-    console.log(' > URL: ' + queryUrl);
-    makeRequest(queryUrl, function(response) {
-        console.log(' > received from Spotify: ' + response);
-        $('#query-result').val(response);
-    });
-}
-
-function getFavPlaylist() {
-    console.log(' > getting fav playlist ...');
-    $.ajax({
-        url: 'https://api.spotify.com/v1/me/tracks',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + window.accessToken
-        },
-        success: function(response) {
-            console.log(response);
-        },
-    });
-}
-
 function stringOK(val) {
     return val !== undefined && val !== null && val.length > 0;
 }
@@ -192,9 +158,11 @@ function stringOK(val) {
             console.log(' > cookieID: ' + cookieID + ', username: ' + username);
             $('#nav-item-login').addClass('invisible-elem');
             $('#nav-item-logout').removeClass('invisible-elem');
+            $('#spotify-controls-div').removeClass('invisible-elem');
         } else {
             $('#nav-item-login').removeClass('invisible-elem');
             $('#nav-item-logout').addClass('invisible-elem');
+            $('#spotify-controls-div').addClass('invisible-elem');
         }
 
         // Display an info toast with no title

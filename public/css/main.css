@@ -9,5 +9,9 @@
 }
 
 .invisible-elem {
-    display: none;
+    display: none !important;
+}
+
+.spotify-controls {
+    margin-left: 10% !important;
 }

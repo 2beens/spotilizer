@@ -82,7 +82,7 @@ func (ups *SpotifyUserPlaylistService) GetSavedTracks(authOptions *m.SpotifyAuth
 		}
 
 		if apiErr, isError := getAPIError(body); isError {
-			log.Printf("API error: status [%d] -> [%s]\n", apiErr.Error.Status, apiErr.Error.Message)
+			log.Printf(" >>> API error: status [%d] -> [%s]\n", apiErr.Error.Status, apiErr.Error.Message)
 			return nil, &apiErr
 		}
 

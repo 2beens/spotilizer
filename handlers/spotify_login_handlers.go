@@ -77,8 +77,8 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		err, ok := q["error"]
 		if ok {
 			log.Printf(" > login failed, error: [%v]\n", err)
-			// TODO: redirect to some error, or show error on the index page
-			http.Redirect(w, r, serverURL, 302)
+			util.RenderView(w, "error", m.ErrorViewData{Title: "Spotify Login",
+				Error: "Login to Spotify failed: " + strings.Join(err, ", ")})
 			return
 		}
 
@@ -87,15 +87,15 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		storedStateCookie, sStateCookieErr := r.Cookie(c.CookieStateKey)
 		if !codeOk || !stateOk {
 			log.Println(" > login failed, error: some of the mandatory params not found")
-			// TODO: redirect to some error, or show error on the index page
-			http.Redirect(w, r, serverURL, 302)
+			util.RenderView(w, "error", m.ErrorViewData{Title: "Spotify Login",
+				Error: "Login to Spotify failed: login failed, error: some of the mandatory params not found"})
 			return
 		}
 
 		if storedStateCookie == nil || storedStateCookie.Value != state[0] || sStateCookieErr != nil {
 			log.Printf(" > login failed, error: state cookie not found or state mismatch. more details [%v]\n", err)
-			// TODO: redirect to some error, or show error on the index page
-			http.Redirect(w, r, serverURL, 302)
+			util.RenderView(w, "error", m.ErrorViewData{Title: "Spotify Login",
+				Error: "Login to Spotify failed: state cookie not found or state mismatch"})
 			return
 		}
 
@@ -111,8 +111,8 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		spUser, userErr := s.Users.GetUserFromSpotify(authOptions)
 		if userErr != nil {
 			log.Println(" >>> error, cannot get user info from Spotify API.")
-			// TODO: redirect to some error, or show error on the index page
-			http.Redirect(w, r, serverURL, 302)
+			util.RenderView(w, "error", m.ErrorViewData{Title: "Spotify Login",
+				Error: "Login to Spotify failed: error, cannot get user info from Spotify API"})
 			return
 		}
 		log.Printf(" > gotten user [%s]\n", spUser.ID)
@@ -137,13 +137,12 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 			cookieID = cID
 
 			// TODO: check if refresh token has to be done
-
 		}
 
 		util.AddCookie(&w, c.CookieUserIDKey, cookieID)
 
 		// redirect to index page with acces and refresh tokens
-		util.RenderView(w, "index", m.ViewData{Message: "success", Username: user.Username, Data: authOptions})
+		util.RenderView(w, "index", m.ViewData{Message: "Successfully logged in", Username: user.Username, Data: authOptions})
 	}
 }
 
