@@ -11,5 +11,6 @@ const (
 		user-read-private 
 		user-read-email 
 		user-library-read 
-		user-read-birthdate`
+		user-read-birthdate
+		playlist-read-private`
 )

@@ -5,4 +5,5 @@ type User struct {
 	Username  string
 	Auth      *SpotifyAuthOptions
 	FavTracks *[]SpAddedTrack
+	Playlists *[]SpPlaylist
 }

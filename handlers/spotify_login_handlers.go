@@ -17,6 +17,32 @@ import (
 	"github.com/2beens/spotilizer/util"
 )
 
+var clientID string
+var clientSecret string
+
+func SetCliendIdAndSecret(cID string, cSecret string) {
+	clientID = cID
+	clientSecret = cSecret
+}
+
+func GetSpotifyLoginHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		state := util.GenerateRandomString(16)
+		util.AddCookie(&w, c.CookieStateKey, state)
+
+		q := url.Values{}
+		q.Add("response_type", "code")
+		q.Add("client_id", clientID)
+		q.Add("scope", c.Permissions)
+		q.Add("redirect_uri", fmt.Sprintf("%s/callback", serverURL))
+		q.Add("state", state)
+
+		redirectURL := "https://accounts.spotify.com/authorize?" + q.Encode()
+		log.Println(" > /login, redirect to: " + redirectURL)
+		http.Redirect(w, r, redirectURL, 302)
+	}
+}
+
 func GetRefreshTokenHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookieID, err := r.Cookie(c.CookieUserIDKey)
