@@ -61,28 +61,73 @@ function makeRequest(queryUrl, successf, errorf) {
     });
 }
 
+function checkIfRefreshTokenNeeded(response) {
+    if (!response.error) {
+        return false;
+    }
+    if (!response.error.status || !response.error.message) {
+        return false;
+    }
+    if (response.error.status !== 401) {
+        return false;
+    }
+    if(!response.error.message.includes('access token expired')) {
+        return false;
+    }
+    return true;
+}
+
+var lastCalledFunc = null;
+
+function refreshTokenFunc() {
+    console.log(' > making a refresh token call...');
+    makeRequest("/refresh_token", function(response) {
+        console.log(' > refresh token, received from server: ' + response);
+        var respObj = JSON.parse(response);
+        if (respObj.error) {
+            toastr.error(respObj.error.message, 'Refresh token error');
+            return;
+        }
+        // call last failed function if needed
+        // TODO: watch for inifinite looping here - not calling last called function over and over again
+        //       when, e.g. internet connection is gone
+        if (lastCalledFunc !== null) {
+            lastCalledFunc();
+        }
+    }, function(xhr, status, error) {
+        toastr.error("Status: " + status + ", error: " + JSON.stringify(error), 'Refresh token error');
+    });
+}
+
 function saveCurrentPlaylists() {
+    lastCalledFunc = saveCurrentPlaylists;
     makeRequest("/save_current_playlists", function(response) {
         console.log(' > received from server: ' + response);
         var respObj = JSON.parse(response);
+        if(checkIfRefreshTokenNeeded(respObj)) {
+            console.log(' > refresh token needed ...');
+            refreshTokenFunc();
+            return;
+        }
         if (respObj.error) {
-            toastr.error(respObj.error.message, "Save current playlists error");
+            toastr.error(respObj.error.message, 'Save current playlists error');
         } else {
-            toastr.success(respObj.message, "Save current playlists");
+            toastr.success(respObj.message, 'Save current playlists');
         }
     }, function(xhr, status, error) {
-        toastr.error("Status: " + status + ", error: " + JSON.stringify(error), "Save current playlists error");
+        toastr.error("Status: " + status + ", error: " + JSON.stringify(error), 'Save current playlists error');
     });
 }
 
 function saveCurrentTracks() {
+    lastCalledFunc = saveCurrentTracks;
     makeRequest("/save_current_tracks", function(response) {
         console.log(' > received from server: ' + response);
         var respObj = JSON.parse(response);
         if (respObj.error) {
-            toastr.error(respObj.error.message, "Save fav tracks error");
+            toastr.error(respObj.error.message, 'Save fav tracks error');
         } else {
-            toastr.success(respObj.message, "Save fav tracks");
+            toastr.success(respObj.message, 'Save fav tracks');
         }
     });
 }

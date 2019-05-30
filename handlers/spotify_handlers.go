@@ -65,7 +65,7 @@ func GetSaveCurrentPlaylistsHandler(serverURL string) func(w http.ResponseWriter
 
 		playlists, apiErr := s.UserPlaylist.GetCurrentUserPlaylists(user.Auth)
 		if apiErr != nil {
-			log.Printf(" >>> error while saving current user playlists: %v\n", err)
+			log.Printf(" >>> error while saving current user playlists: %v\n", apiErr)
 			util.SendAPIErrorResp(w, apiErr.Error.Message, apiErr.Error.Status)
 			return
 		}

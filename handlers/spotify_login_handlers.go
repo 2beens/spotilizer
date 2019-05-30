@@ -47,16 +47,14 @@ func GetRefreshTokenHandler(serverURL string) func(w http.ResponseWriter, r *htt
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookieID, err := r.Cookie(c.CookieUserIDKey)
 		if err != nil {
-			log.Printf(" > refresh token failed, error: [%v]\n", err)
-			// TODO: redirect to some error, or show error on the index page
-			http.Redirect(w, r, serverURL, 302)
+			log.Printf(" > refresh token failed, cannot find user by cookie ID, error: [%s]\n", err.Error())
+			util.SendAPIErrorResp(w, "Cannot find user by cookie, refresh token failed", 400)
 			return
 		}
-		user, err := s.Users.Get(cookieID.Value)
+		user, err := s.Users.GetUserByCookieID(cookieID.Value)
 		if err != nil {
-			log.Println(" > refresh token failed, error: refresh_token param not found")
-			// TODO: redirect to some error, or show error on the index page
-			w.Write([]byte("missing refresh_token param"))
+			log.Println(" > refresh token failed, cannot find user by cookie ID")
+			util.SendAPIErrorResp(w, "Cannot find user by cookie, refresh token failed", 400)
 			return
 		}
 		log.Println(" > refresh token, value: " + user.Auth.RefreshToken)
@@ -67,8 +65,9 @@ func GetRefreshTokenHandler(serverURL string) func(w http.ResponseWriter, r *htt
 		newAuthOptions := getAccessToken(data)
 		user.Auth = newAuthOptions
 
-		// redirect to index page with acces and refresh tokens
-		util.RenderView(w, "index", m.ViewData{Message: "success", Username: user.Username, Data: user.Auth})
+		s.Users.Save(user)
+
+		util.SendAPIOKResp(w, "success")
 	}
 }
 

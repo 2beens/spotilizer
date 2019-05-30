@@ -95,6 +95,10 @@ func SaveUser(user *m.User) (stored bool) {
 		log.Printf(" >>> failed to store user info for user: %s\n", user.Username)
 		return false
 	}
+
+	// TODO: save user tracks, playlists, and other data ...
+
+	log.Printf(" > user [%s] saved to DB\n", user.Username)
 	return true
 }
 

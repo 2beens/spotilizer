@@ -42,7 +42,7 @@ func (ups *SpotifyUserPlaylistService) GetCurrentUserPlaylists(authOptions *m.Sp
 		}
 
 		if apiErr, isError := getAPIError(body); isError {
-			log.Printf("API error: status [%d] -> [%s]\n", apiErr.Error.Status, apiErr.Error.Message)
+			log.Printf(" >>> API error: status [%d] -> [%s]\n", apiErr.Error.Status, apiErr.Error.Message)
 			return nil, &apiErr
 		}
 

@@ -92,6 +92,10 @@ func (us *UserService) Add(user *m.User) {
 	db.SaveUser(user)
 }
 
+func (us *UserService) Save(user *m.User) {
+	db.SaveUser(user)
+}
+
 func (us *UserService) GetUserFromSpotify(ao *m.SpotifyAuthOptions) (user *m.SpUser, err error) {
 	body, err := getFromSpotify(c.Get().SpotifyApiURL, c.Get().URLCurrentUser, ao)
 	if err != nil {

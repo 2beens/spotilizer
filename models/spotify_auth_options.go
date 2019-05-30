@@ -12,5 +12,5 @@ type SpotifyAuthOptions struct {
 }
 
 func (ao SpotifyAuthOptions) String() string {
-	return fmt.Sprintf("Spotify Auth Options = [tokenType: %s] [scope: %s] [expires in: %v] [at: %s]", ao.TokenType, ao.Scope, ao.ExpiresIn, ao.AccessToken)
+	return fmt.Sprintf("Spotify Auth Options = [tokenType: %s] [scope: %s] [expires in: %v] [at: %s] [rt: %s]", ao.TokenType, ao.Scope, ao.ExpiresIn, ao.AccessToken, ao.RefreshToken)
 }
