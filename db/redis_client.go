@@ -139,7 +139,19 @@ func GetAllUsers() *[]m.User {
 	return &users
 }
 
-func StoreCurrentTracks(user m.User) {
-	log.Println(" > saving stored tracks ...")
-
+func SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool) {
+	log.Printf(" > saving stored playlists [%d] for user [%s] ...\n", len(ps.Playlists), ps.Username)
+	playlistsJson, err := json.Marshal(ps.Playlists)
+	if err != nil {
+		log.Println(" >>> json marshalling error saving playlists to DB for user: " + ps.Username)
+		return false
+	}
+	snapshotKey := fmt.Sprintf("user::%s::timestamp::%s", ps.Username, ps.Timestamp)
+	cmd := rc.Set(snapshotKey, string(playlistsJson), 0)
+	if err := cmd.Err(); err != nil {
+		log.Printf(" >>> failed to store playlists snapshot for user: %s\n", ps.Username)
+		return false
+	}
+	log.Printf(" > user [%s] playlists snapshot saved to DB\n", ps.Username)
+	return true
 }

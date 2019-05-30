@@ -4,8 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
+
+	"github.com/2beens/spotilizer/db"
 
 	c "github.com/2beens/spotilizer/constants"
+	m "github.com/2beens/spotilizer/models"
 	s "github.com/2beens/spotilizer/services"
 	"github.com/2beens/spotilizer/util"
 )
@@ -73,9 +77,15 @@ func GetSaveCurrentPlaylistsHandler(serverURL string) func(w http.ResponseWriter
 		log.Printf(" > playlists count: %d\n", len(playlists))
 		user.Playlists = &playlists
 
-		// TODO: save playlists
+		// save playlists to DB
+		playlistsSnapshot := &m.PlaylistsSnapshot{Username: user.Username, Timestamp: time.Now(), Playlists: playlists}
+		saved := db.SavePlaylistsSnapshot(playlistsSnapshot)
+		if saved {
+			util.SendAPIOKResp(w, fmt.Sprintf("%d playlists saved successfully", len(playlists)))
+		} else {
+			util.SendAPIErrorResp(w, "Playlists not saved. Server internal error.", 500)
+		}
 
-		util.SendAPIOKResp(w, fmt.Sprintf("%d playlists saved successfully", len(playlists)))
 		return
 	}
 }

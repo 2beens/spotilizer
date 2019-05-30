@@ -15,3 +15,9 @@
 .spotify-controls {
     margin-left: 10% !important;
 }
+
+#spotify-icon {
+    max-width: 43px;
+    max-height: 43px;
+    margin-right: 220px;
+}

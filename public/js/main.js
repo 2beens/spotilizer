@@ -152,6 +152,7 @@ function stringOK(val) {
             $('#nav-bar-contact').addClass('active');
         } else {
             $('#nav-bar-home').addClass('active');
+            toastr.info('Page lodaded ...', 'Spotilizer', {timeOut: 1000})
         }
 
         if (stringOK(cookieID) && stringOK(window.username)) {
@@ -164,9 +165,6 @@ function stringOK(val) {
             $('#nav-item-logout').addClass('invisible-elem');
             $('#spotify-controls-div').addClass('invisible-elem');
         }
-
-        // Display an info toast with no title
-        toastr.info('Page lodaded ...', 'Spotilizer', {timeOut: 1000})
     });
 
     console.log(' > main script function: finished');
