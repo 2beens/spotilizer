@@ -126,6 +126,13 @@ function saveCurrentTracks() {
     });
 }
 
+function callDebug() {
+    console.log(' > calling debug function on server ...');
+    makeRequest('/debug', function(response) {
+        console.log(' > received from server: ' + response);
+    });
+}
+
 function stringOK(val) {
     return val !== undefined && val !== null && val.length > 0;
 }

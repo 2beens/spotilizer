@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
+	"time"
 
 	c "github.com/2beens/spotilizer/constants"
 	m "github.com/2beens/spotilizer/models"
@@ -128,7 +130,7 @@ func GetUser(username string) *m.User {
 func GetAllUsers() *[]m.User {
 	cmd := rc.Keys("user::*")
 	if err := cmd.Err(); err != nil && err != redis.Nil {
-		log.Printf(" >>> failed to get all users: %v\n", err)
+		log.Printf(" >>> failed to get all users: %s\n", err.Error())
 		return nil
 	}
 	users := []m.User{}
@@ -141,17 +143,65 @@ func GetAllUsers() *[]m.User {
 
 func SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool) {
 	log.Printf(" > saving stored playlists [%d] for user [%s] ...\n", len(ps.Playlists), ps.Username)
-	playlistsJson, err := json.Marshal(ps.Playlists)
+	playlistsJSON, err := json.Marshal(ps.Playlists)
 	if err != nil {
 		log.Println(" >>> json marshalling error saving playlists to DB for user: " + ps.Username)
 		return false
 	}
-	snapshotKey := fmt.Sprintf("user::%s::timestamp::%s", ps.Username, ps.Timestamp)
-	cmd := rc.Set(snapshotKey, string(playlistsJson), 0)
+	timestamp := strconv.FormatInt(ps.Timestamp.Unix(), 10)
+	snapshotKey := fmt.Sprintf("playlistsshot::user::%s::timestamp::%s", ps.Username, timestamp)
+	log.Printf(" > saving new playlist snapshot: [%s]\n", snapshotKey)
+	cmd := rc.Set(snapshotKey, string(playlistsJSON), 0)
 	if err := cmd.Err(); err != nil {
 		log.Printf(" >>> failed to store playlists snapshot for user: %s\n", ps.Username)
 		return false
 	}
 	log.Printf(" > user [%s] playlists snapshot saved to DB\n", ps.Username)
 	return true
+}
+
+func GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot {
+	cmd := rc.Get(key)
+	if err := cmd.Err(); err != nil && err != redis.Nil {
+		log.Printf(" >>> failed to get playlist snapshot [%s]: %s\n", key, err.Error())
+		return nil
+	}
+
+	keyParts := strings.Split(key, "::")
+	log.Printf(" > get playlists snapshot, key parts: %v\n", keyParts)
+	username := keyParts[2]
+	timestampStr := keyParts[4]
+	timestampInt, err := strconv.ParseInt(timestampStr, 10, 64)
+	if err != nil {
+		log.Println(" >>> error while parsing playlist snapshot timestamp")
+		return nil
+	}
+	timestamp := time.Unix(timestampInt, 0)
+
+	playlistsJSON := cmd.Val()
+	playlists := &[]m.SpPlaylist{}
+	err = json.Unmarshal([]byte(playlistsJSON), playlists)
+	if err != nil {
+		log.Printf(" >>> failed to unmarshal playlists for [%s]: %s\n", key, err.Error())
+		return nil
+	}
+
+	return &m.PlaylistsSnapshot{Username: username, Timestamp: timestamp, Playlists: *playlists}
+}
+
+func GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot {
+	snapshotsKey := fmt.Sprintf("playlistsshot::user::%s::timestamp::*", username)
+	cmd := rc.Keys(snapshotsKey)
+	if err := cmd.Err(); err != nil && err != redis.Nil {
+		log.Printf(" >>> failed to get all playlists snapshots for user [%s]: %s\n", username, err.Error())
+		return nil
+	}
+	plsnapshots := []m.PlaylistsSnapshot{}
+	for _, skey := range cmd.Val() {
+		ps := GetPlaylistSnapshot(skey)
+		if ps != nil {
+			plsnapshots = append(plsnapshots, *ps)
+		}
+	}
+	return &plsnapshots
 }
