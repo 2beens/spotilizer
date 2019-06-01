@@ -41,9 +41,14 @@ func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf(" > tracks count: %d\n", len(tracks))
 	user.FavTracks = &tracks
 
-	// TOOD: save tracks somewhere (redis)
-
-	util.SendAPIOKResp(w, fmt.Sprintf("%d tracks saved successfully", len(tracks)))
+	// save tracks to DB
+	tracksSnapshot := &m.FavTracksSnapshot{Username: user.Username, Timestamp: time.Now(), Tracks: tracks}
+	saved := db.SaveFavTracksSnapshot(tracksSnapshot)
+	if saved {
+		util.SendAPIOKResp(w, fmt.Sprintf("%d favorite tracks saved successfully", len(tracks)))
+	} else {
+		util.SendAPIErrorResp(w, "Favorite tracks not saved. Server internal error.", 500)
+	}
 	return
 }
 
@@ -82,16 +87,5 @@ func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		util.SendAPIErrorResp(w, "Playlists not saved. Server internal error.", 500)
 	}
-
 	return
-}
-
-func DebugHandler(w http.ResponseWriter, r *http.Request) {
-	cookieID, _ := r.Cookie(c.CookieUserIDKey)
-	user, _ := s.Users.GetUserByCookieID(cookieID.Value)
-	playlists := db.GetAllPlaylistsSnapshots(user.Username)
-	for _, p := range *playlists {
-		log.Printf(" ====>>> [%v]: count %d\n", p.Timestamp, len(p.Playlists))
-	}
-	http.Redirect(w, r, "/", 302)
 }

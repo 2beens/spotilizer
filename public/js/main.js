@@ -118,6 +118,11 @@ function saveCurrentTracks() {
     makeRequest("/save_current_tracks", function(response) {
         console.log(' > received from server: ' + response);
         var respObj = JSON.parse(response);
+        if(checkIfRefreshTokenNeeded(respObj)) {
+            console.log(' > refresh token needed ...');
+            refreshTokenFunc();
+            return;
+        }
         if (respObj.error) {
             toastr.error(respObj.error.message, 'Save fav tracks error');
         } else {

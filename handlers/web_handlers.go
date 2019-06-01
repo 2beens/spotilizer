@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	c "github.com/2beens/spotilizer/constants"
+	"github.com/2beens/spotilizer/db"
 	m "github.com/2beens/spotilizer/models"
 	s "github.com/2beens/spotilizer/services"
 	"github.com/2beens/spotilizer/util"
@@ -31,4 +33,23 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		util.CleearCookie(&w, c.CookieStateKey)
 	}
 	IndexHandler(w, r)
+}
+
+func DebugHandler(w http.ResponseWriter, r *http.Request) {
+	cookieID, _ := r.Cookie(c.CookieUserIDKey)
+	user, _ := s.Users.GetUserByCookieID(cookieID.Value)
+	log.Println("--------------- USER      ---------------------------------")
+	log.Println(user)
+	playlists := db.GetAllPlaylistsSnapshots(user.Username)
+	log.Println("--------------- PLAYLISTS ---------------------------------")
+	for _, p := range *playlists {
+		log.Printf(" ====>>> [%v]: count %d\n", p.Timestamp, len(p.Playlists))
+	}
+	log.Println("--------------- TRACKS    ---------------------------------")
+	favtracks := db.GetAllFavTracksSnapshots(user.Username)
+	for _, t := range *favtracks {
+		log.Printf(" ====>>> [%v]: count %d\n", t.Timestamp, len(t.Tracks))
+	}
+	log.Println("-------------------------------------------------------------")
+	http.Redirect(w, r, "/", 302)
 }

@@ -43,32 +43,30 @@ func GetSpotifyLoginHandler(serverURL string) func(w http.ResponseWriter, r *htt
 	}
 }
 
-func GetRefreshTokenHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		cookieID, err := r.Cookie(c.CookieUserIDKey)
-		if err != nil {
-			log.Printf(" > refresh token failed, cannot find user by cookie ID, error: [%s]\n", err.Error())
-			util.SendAPIErrorResp(w, "Cannot find user by cookie, refresh token failed", 400)
-			return
-		}
-		user, err := s.Users.GetUserByCookieID(cookieID.Value)
-		if err != nil {
-			log.Println(" > refresh token failed, cannot find user by cookie ID")
-			util.SendAPIErrorResp(w, "Cannot find user by cookie, refresh token failed", 400)
-			return
-		}
-		log.Println(" > refresh token, value: " + user.Auth.RefreshToken)
-
-		data := url.Values{}
-		data.Set("refresh_token", user.Auth.RefreshToken)
-		data.Set("grant_type", "refresh_token")
-		newAuthOptions := getAccessToken(data)
-		user.Auth = newAuthOptions
-
-		s.Users.Save(user)
-
-		util.SendAPIOKResp(w, "success")
+func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+	cookieID, err := r.Cookie(c.CookieUserIDKey)
+	if err != nil {
+		log.Printf(" > refresh token failed, cannot find user by cookie ID, error: [%s]\n", err.Error())
+		util.SendAPIErrorResp(w, "Cannot find user by cookie, refresh token failed", 400)
+		return
 	}
+	user, err := s.Users.GetUserByCookieID(cookieID.Value)
+	if err != nil {
+		log.Println(" > refresh token failed, cannot find user by cookie ID")
+		util.SendAPIErrorResp(w, "Cannot find user by cookie, refresh token failed", 400)
+		return
+	}
+	log.Println(" > refresh token, value: " + user.Auth.RefreshToken)
+
+	data := url.Values{}
+	data.Set("refresh_token", user.Auth.RefreshToken)
+	data.Set("grant_type", "refresh_token")
+	newAuthOptions := getAccessToken(data)
+	user.Auth = newAuthOptions
+
+	s.Users.Save(user)
+
+	util.SendAPIOKResp(w, "success")
 }
 
 func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
@@ -135,8 +133,8 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 				log.Println(" > using previous cookie ID: " + cID)
 			}
 			cookieID = cID
-
-			// TODO: check if refresh token has to be done
+			user.Auth = authOptions
+			s.Users.Save(user)
 		}
 
 		util.AddCookie(&w, c.CookieUserIDKey, cookieID)
