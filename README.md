@@ -1,10 +1,9 @@
 # :notes: spotilizer
-Study **golang** through using **Spotify API**.
+Study **golang** through using **Spotify API** and **Redis**.
 
 A small project which aims to help managing personal Spotify lists and tracks, but mostly to do what I love to do and study **Go** in the process.
 
-Came to my mind that I could find this useful, because a lot of times it hapens that I screw up my lists (by removing a song from fav songs list), without ability to undo the operation. Sadly, Spotify Desktop Client App does not have undo for that operation.
-Also, in the future, it can be made to transfer playlists from other Music Services like Deezer, YouTube, etc.
+Came to my mind that I could find this useful, having a history/snapshots of my Spotify Data, because a lot of times it hapens that I screw up my lists (by removing a song from fav songs list), without ability to undo the operation, and also not remembering the name of the removed song. Sadly, Spotify Desktop/Browser Client App does not have undo for that operation. Also, in the future, it can be made to transfer playlists from other Music Services like Deezer, YouTube, etc.
 
 ## Install & Run
 
@@ -19,7 +18,21 @@ export SPOTIFY_CLIENT_ID=<your_spotify_app_client_id_here>
 export SPOTIFY_CLIENT_SECRET=<your_spotify_app_client_secret_here>
 ```
 
-### :two: Spotilizer get & run
+### :two: Redis - install and start service
+Make sure `Redis` is installed, up and running. See: https://redis.io/
+
+Maybe more convenient, you can also install and run it using `brew`:
+``` sh
+brew install redis
+```
+Then just run the service :
+``` sh
+brew services start redis
+```
+
+Spotilizer uses default Redis setup, so just starting the service is enough.
+
+### :three: Spotilizer get & run
 Make sure `golang` is properly installed and set.
 
 ``` sh
@@ -32,7 +45,7 @@ spotilizer
 
 By default, logger output is terminal (can be changed to file. see source code `main.go` for more info).
 
-### :three: Web Client
+### :four: Web Client
 :point_right: Open browser (Chrome, ofc) and go to: http://localhost:8080
 
 :point_right: Click at just about anything you see there :collision:
