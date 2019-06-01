@@ -32,20 +32,34 @@ brew services start redis
 
 Spotilizer uses default Redis setup, so just starting the service is enough.
 
-### :three: Spotilizer get & run
-Make sure `golang` is properly installed and set.
+### :three: Get Spotilizer
+Make sure `golang` is properly installed and set: https://golang.org/doc/install
 
 ``` sh
 go get github.com/2beens/spotilizer`
 cd $GOPATH/src/github.com/2beens/spotilizer`
 go get ./...
+```
+
+Next, we need to get frontend dependencies via PMS `yarn`, which should be installed on your machine: https://yarnpkg.com/en/docs/install
+
+We are still in the spotilizer project dir, now run:
+``` sh
+yarn install
+```
+
+### :four: Run Spotilizer
+
+``` sh
 go install
 spotilizer
 ```
 
 By default, logger output is terminal (can be changed to file. see source code `main.go` for more info).
 
-### :four: Web Client
+### :five: Web Client
 :point_right: Open browser (Chrome, ofc) and go to: http://localhost:8080
 
 :point_right: Click at just about anything you see there :collision:
+
+:point_right: Observe terminal output for what happens in the server
