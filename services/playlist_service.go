@@ -6,36 +6,43 @@ import (
 	"log"
 
 	c "github.com/2beens/spotilizer/config"
+	"github.com/2beens/spotilizer/db"
 	m "github.com/2beens/spotilizer/models"
 )
 
 type UserPlaylistService interface {
-	GetCurrentUserPlaylists(authOptions *m.SpotifyAuthOptions) (response m.SpGetCurrentPlaylistsResp, err error)
-	GetSavedTracks(authOptions *m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err error)
+	DownloadCurrentUserPlaylists(authOptions *m.SpotifyAuthOptions) (response m.SpGetCurrentPlaylistsResp, err error)
+	DownloadSavedFavTracks(authOptions *m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err error)
+	GetAllFavTracksSnapshots(username string) *[]m.FavTracksSnapshot
+	GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot
+	SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool)
+	SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool)
 }
 
 // TODO: removed this, it is unnecessary, especially that all these values can be found in config obj
 type SpotifyUserPlaylistService struct {
-	spotifyApiURL             string
+	spotifyDB                 db.SpotifyDBClient
+	spotifyAPIURL             string
 	urlCurrentUserPlaylists   string
 	urlCurrentUserSavedTracks string
 }
 
-func NewSpotifyUserPlaylistService() *SpotifyUserPlaylistService {
+func NewSpotifyUserPlaylistService(spotifyDB db.SpotifyDBClient) *SpotifyUserPlaylistService {
 	var ps SpotifyUserPlaylistService
-	ps.spotifyApiURL = c.Get().SpotifyApiURL
+	ps.spotifyDB = spotifyDB
+	ps.spotifyAPIURL = c.Get().SpotifyApiURL
 	ps.urlCurrentUserPlaylists = c.Get().URLCurrentUserPlaylists
 	ps.urlCurrentUserSavedTracks = c.Get().URLCurrentUserSavedTracks
 	return &ps
 }
 
-// GetCurrentUserPlaylists more info: https://developer.spotify.com/console/get-current-user-playlists/
-func (ups *SpotifyUserPlaylistService) GetCurrentUserPlaylists(authOptions *m.SpotifyAuthOptions) (playlists []m.SpPlaylist, err *m.SpAPIError) {
+// DownloadCurrentUserPlaylists more info: https://developer.spotify.com/console/get-current-user-playlists/
+func (ups SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(authOptions *m.SpotifyAuthOptions) (playlists []m.SpPlaylist, err *m.SpAPIError) {
 	offset := 0
 	prevCount := 0
 	for {
 		path := fmt.Sprintf("%s?offset=%d&limit=50", ups.urlCurrentUserPlaylists, offset)
-		body, err := getFromSpotify(ups.spotifyApiURL, path, authOptions)
+		body, err := getFromSpotify(ups.spotifyAPIURL, path, authOptions)
 		if err != nil {
 			errMsg := fmt.Sprintf(" >>> error getting current user playlists. details: %v", err)
 			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
@@ -70,12 +77,12 @@ func (ups *SpotifyUserPlaylistService) GetCurrentUserPlaylists(authOptions *m.Sp
 	}
 }
 
-func (ups *SpotifyUserPlaylistService) GetSavedTracks(authOptions *m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err *m.SpAPIError) {
+func (ups SpotifyUserPlaylistService) DownloadSavedFavTracks(authOptions *m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err *m.SpAPIError) {
 	offset := 0
 	prevCount := 0
 	for {
 		path := fmt.Sprintf("%s?offset=%d&limit=50", ups.urlCurrentUserSavedTracks, offset)
-		body, err := getFromSpotify(ups.spotifyApiURL, path, authOptions)
+		body, err := getFromSpotify(ups.spotifyAPIURL, path, authOptions)
 		if err != nil {
 			errMsg := fmt.Sprintf(" >>> error getting current user tracks. details: %v", err)
 			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
@@ -108,4 +115,20 @@ func (ups *SpotifyUserPlaylistService) GetSavedTracks(authOptions *m.SpotifyAuth
 
 		offset += 50
 	}
+}
+
+func (self SpotifyUserPlaylistService) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool) {
+	return self.spotifyDB.SaveFavTracksSnapshot(ft)
+}
+
+func (self SpotifyUserPlaylistService) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool) {
+	return self.spotifyDB.SavePlaylistsSnapshot(ps)
+}
+
+func (self SpotifyUserPlaylistService) GetAllFavTracksSnapshots(username string) *[]m.FavTracksSnapshot {
+	return self.spotifyDB.GetAllFavTracksSnapshots(username)
+}
+
+func (self SpotifyUserPlaylistService) GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot {
+	return self.spotifyDB.GetAllPlaylistsSnapshots(username)
 }

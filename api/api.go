@@ -11,6 +11,8 @@ import (
 	"github.com/2beens/spotilizer/util"
 )
 
+var spotifyDB = db.GetSpotifyDBClient()
+
 func GetPlaylistsSnapshots(w http.ResponseWriter, r *http.Request) {
 	user, err := services.Users.GetUserByRequestCookieID(r)
 	if err != nil {
@@ -21,7 +23,7 @@ func GetPlaylistsSnapshots(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf(" > get playlists snapshots: username [%s]\n", user.Username)
 
-	ssplaylistsRaw := db.GetAllPlaylistsSnapshots(user.Username)
+	ssplaylistsRaw := spotifyDB.GetAllPlaylistsSnapshots(user.Username)
 	ssplaylists := []models.DTOPlaylistSnapshot{}
 	for _, plssRaw := range *ssplaylistsRaw {
 		plss := models.DTOPlaylistSnapshot{
