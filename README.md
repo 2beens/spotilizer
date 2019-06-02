@@ -63,3 +63,9 @@ By default, logger output is terminal (can be changed to file. see source code `
 :point_right: Click at just about anything you see there :collision:
 
 :point_right: Observe terminal output for what happens in the server
+
+#### Unit Tests
+Still work in progress, thus not many unit tests exists. Nevertheless:
+``` sh
+go test -v -cover ./...
+```
