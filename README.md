@@ -5,7 +5,7 @@ A small project which aims to help managing personal Spotify lists and tracks, b
 
 Came to my mind that I could find this useful, having a history/snapshots of my Spotify Data, because a lot of times it hapens that I screw up my lists (by removing a song from fav songs list), without ability to undo the operation, and also not remembering the name of the removed song. Sadly, Spotify Desktop/Browser Client App does not have undo for that operation. Also, in the future, it can be made to transfer playlists from other Music Services like Deezer, YouTube, etc.
 
-## Install & Run
+## :wrench: Install & Run
 
 ### :one: Set Spotify App
 Make sure you have a **Spotify App**, through which `spotilizer` interacts with Spotify API. That goes out of this scope, so not gonna explain that here. It's all nicelly explained at this location:
