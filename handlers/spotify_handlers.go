@@ -6,15 +6,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/2beens/spotilizer/db"
-
 	m "github.com/2beens/spotilizer/models"
 	s "github.com/2beens/spotilizer/services"
 	"github.com/2beens/spotilizer/util"
 )
 
 func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
-	var spotifyDB = db.GetSpotifyDBClient()
 	user, err := s.Users.GetUserByRequestCookieID(r)
 	if err != nil {
 		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
@@ -23,7 +20,7 @@ func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf(" > save fav tracks: username [%s]\n", user.Username)
 
-	tracks, apiErr := s.UserPlaylist.GetSavedTracks(user.Auth)
+	tracks, apiErr := s.UserPlaylist.DownloadSavedFavTracks(user.Auth)
 	if apiErr != nil {
 		log.Printf(" >>> error while saving current user tracks: %v\n", apiErr)
 		util.SendAPIErrorResp(w, apiErr.Error.Message, apiErr.Error.Status)
@@ -35,7 +32,7 @@ func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
 
 	// save tracks to DB
 	tracksSnapshot := &m.FavTracksSnapshot{Username: user.Username, Timestamp: time.Now(), Tracks: tracks}
-	saved := spotifyDB.SaveFavTracksSnapshot(tracksSnapshot)
+	saved := s.UserPlaylist.SaveFavTracksSnapshot(tracksSnapshot)
 	if saved {
 		util.SendAPIOKResp(w, fmt.Sprintf("%d favorite tracks saved successfully", len(tracks)))
 	} else {
@@ -44,7 +41,6 @@ func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
-	var spotifyDB = db.GetSpotifyDBClient()
 	user, err := s.Users.GetUserByRequestCookieID(r)
 	if err != nil {
 		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
@@ -53,7 +49,7 @@ func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf(" > save playlists: username: %s\n", user.Username)
 
-	playlists, apiErr := s.UserPlaylist.GetCurrentUserPlaylists(user.Auth)
+	playlists, apiErr := s.UserPlaylist.DownloadCurrentUserPlaylists(user.Auth)
 	if apiErr != nil {
 		log.Printf(" >>> error while saving current user playlists: %v\n", apiErr)
 		util.SendAPIErrorResp(w, apiErr.Error.Message, apiErr.Error.Status)
@@ -65,7 +61,7 @@ func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// save playlists to DB
 	playlistsSnapshot := &m.PlaylistsSnapshot{Username: user.Username, Timestamp: time.Now(), Playlists: playlists}
-	saved := spotifyDB.SavePlaylistsSnapshot(playlistsSnapshot)
+	saved := s.UserPlaylist.SavePlaylistsSnapshot(playlistsSnapshot)
 	if saved {
 		util.SendAPIOKResp(w, fmt.Sprintf("%d playlists saved successfully", len(playlists)))
 	} else {

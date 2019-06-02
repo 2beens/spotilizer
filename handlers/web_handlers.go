@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	c "github.com/2beens/spotilizer/constants"
-	"github.com/2beens/spotilizer/db"
 	m "github.com/2beens/spotilizer/models"
 	s "github.com/2beens/spotilizer/services"
 	"github.com/2beens/spotilizer/util"
@@ -13,8 +12,7 @@ import (
 
 func GetIndexHandler(username string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var spotifyDB = db.GetSpotifyDBClient()
-		playlists := spotifyDB.GetAllPlaylistsSnapshots(username)
+		playlists := s.UserPlaylist.GetAllPlaylistsSnapshots(username)
 		// TODO: tracks can (maybe have) to be transfeterd to web client via API, not template
 		// tracks := db.GetAllFavTracksSnapshots(username)
 		// purpously use anonymous type/struct here, for learning purposes... for now
@@ -54,18 +52,17 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func DebugHandler(w http.ResponseWriter, r *http.Request) {
-	var spotifyDB = db.GetSpotifyDBClient()
 	cookieID, _ := r.Cookie(c.CookieUserIDKey)
 	user, _ := s.Users.GetUserByCookieID(cookieID.Value)
 	log.Println("--------------- USER      ---------------------------------")
 	log.Println(user)
-	playlists := spotifyDB.GetAllPlaylistsSnapshots(user.Username)
+	playlists := s.UserPlaylist.GetAllPlaylistsSnapshots(user.Username)
 	log.Println("--------------- PLAYLISTS ---------------------------------")
 	for _, p := range *playlists {
 		log.Printf(" ====>>> [%v]: count %d\n", p.Timestamp, len(p.Playlists))
 	}
 	log.Println("--------------- TRACKS    ---------------------------------")
-	favtracks := spotifyDB.GetAllFavTracksSnapshots(user.Username)
+	favtracks := s.UserPlaylist.GetAllFavTracksSnapshots(user.Username)
 	for _, t := range *favtracks {
 		log.Printf(" ====>>> [%v]: count %d\n", t.Timestamp, len(t.Tracks))
 	}

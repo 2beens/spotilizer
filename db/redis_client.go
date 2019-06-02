@@ -15,8 +15,8 @@ var rc *redis.Client
 
 // Cookies client for all cookies related data
 var cookiesDBClient CookiesDBClient
-var usersDBClient *UsersDBClient
-var spotifyDBClient *SpotifyDBClient
+var usersDBClient UsersDBClient
+var spotifyDBClient SpotifyDBClient
 
 func InitRedisClient(flashDB bool) {
 	log.Println(" > initializing redis ...")
@@ -38,8 +38,8 @@ func InitRedisClient(flashDB bool) {
 	}
 
 	cookiesDBClient = &CookiesDB{}
-	usersDBClient = &UsersDBClient{}
-	spotifyDBClient = &SpotifyDBClient{}
+	usersDBClient = &UsersDB{}
+	spotifyDBClient = &SpotifyDB{}
 
 	log.Printf(" > connected to redis %+v\n", options)
 }
@@ -48,11 +48,11 @@ func GetCookiesDBClient() CookiesDBClient {
 	return cookiesDBClient
 }
 
-func GetUsersDBClient() *UsersDBClient {
+func GetUsersDBClient() UsersDBClient {
 	return usersDBClient
 }
 
-func GetSpotifyDBClient() *SpotifyDBClient {
+func GetSpotifyDBClient() SpotifyDBClient {
 	return spotifyDBClient
 }
 

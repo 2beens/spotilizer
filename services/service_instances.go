@@ -10,5 +10,5 @@ var UserPlaylist *SpotifyUserPlaylistService
 
 func InitServices() {
 	Users = NewUserService(db.GetCookiesDBClient(), db.GetUsersDBClient())
-	UserPlaylist = NewSpotifyUserPlaylistService()
+	UserPlaylist = NewSpotifyUserPlaylistService(db.GetSpotifyDBClient())
 }

@@ -12,9 +12,15 @@ import (
 	"gopkg.in/redis.v3"
 )
 
-type UsersDBClient struct{}
+type UsersDBClient interface {
+	SaveUser(user *m.User) (stored bool)
+	GetUser(username string) *m.User
+	GetAllUsers() *[]m.User
+}
 
-func (self UsersDBClient) SaveUser(user *m.User) (stored bool) {
+type UsersDB struct{}
+
+func (self UsersDB) SaveUser(user *m.User) (stored bool) {
 	auth, err := json.Marshal(user.Auth)
 	if err != nil {
 		fmt.Println(" >>> error while storing user info: " + err.Error())
@@ -36,7 +42,7 @@ func (self UsersDBClient) SaveUser(user *m.User) (stored bool) {
 }
 
 // GetUser returns a user object from storage (redis) by username
-func (self UsersDBClient) GetUser(username string) *m.User {
+func (self UsersDB) GetUser(username string) *m.User {
 	cmd := rc.Get("user::" + username)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Printf(" >>> failed to get user %s: %v\n", username, err)
@@ -58,7 +64,7 @@ func (self UsersDBClient) GetUser(username string) *m.User {
 	return &m.User{Username: username, Auth: auth}
 }
 
-func (self UsersDBClient) GetAllUsers() *[]m.User {
+func (self UsersDB) GetAllUsers() *[]m.User {
 	cmd := rc.Keys("user::*")
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Printf(" >>> failed to get all users: %s\n", err.Error())

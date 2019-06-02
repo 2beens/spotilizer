@@ -12,9 +12,18 @@ import (
 	"gopkg.in/redis.v3"
 )
 
-type SpotifyDBClient struct{}
+type SpotifyDBClient interface {
+	SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool)
+	SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool)
+	GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot
+	GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot
+	GetAllFavTracksSnapshots(username string) *[]m.FavTracksSnapshot
+	GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot
+}
 
-func (self SpotifyDBClient) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool) {
+type SpotifyDB struct{}
+
+func (self SpotifyDB) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool) {
 	log.Printf(" > saving fav tracks [%d] for user [%s] ...\n", len(ft.Tracks), ft.Username)
 	tracksJSON, err := json.Marshal(ft.Tracks)
 	if err != nil {
@@ -33,7 +42,7 @@ func (self SpotifyDBClient) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (save
 	return true
 }
 
-func (self SpotifyDBClient) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool) {
+func (self SpotifyDB) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool) {
 	log.Printf(" > saving playlists [%d] for user [%s] ...\n", len(ps.Playlists), ps.Username)
 	playlistsJSON, err := json.Marshal(ps.Playlists)
 	if err != nil {
@@ -52,7 +61,7 @@ func (self SpotifyDBClient) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (save
 	return true
 }
 
-func (self SpotifyDBClient) GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot {
+func (self SpotifyDB) GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot {
 	cmd := rc.Get(key)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Printf(" >>> failed to get fav tracks snapshot [%s]: %s\n", key, err.Error())
@@ -81,7 +90,7 @@ func (self SpotifyDBClient) GetFavTrakcsSnapshot(key string) *m.FavTracksSnapsho
 	return &m.FavTracksSnapshot{Username: username, Timestamp: timestamp, Tracks: *tracks}
 }
 
-func (self SpotifyDBClient) GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot {
+func (self SpotifyDB) GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot {
 	cmd := rc.Get(key)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Printf(" >>> failed to get playlist snapshot [%s]: %s\n", key, err.Error())
@@ -110,7 +119,7 @@ func (self SpotifyDBClient) GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot
 	return &m.PlaylistsSnapshot{Username: username, Timestamp: timestamp, Playlists: *playlists}
 }
 
-func (self SpotifyDBClient) GetAllFavTracksSnapshots(username string) *[]m.FavTracksSnapshot {
+func (self SpotifyDB) GetAllFavTracksSnapshots(username string) *[]m.FavTracksSnapshot {
 	snapshotsKey := fmt.Sprintf("favtracksshot::user::%s::timestamp::*", username)
 	cmd := rc.Keys(snapshotsKey)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
@@ -127,7 +136,7 @@ func (self SpotifyDBClient) GetAllFavTracksSnapshots(username string) *[]m.FavTr
 	return &favtsnapshots
 }
 
-func (self SpotifyDBClient) GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot {
+func (self SpotifyDB) GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot {
 	snapshotsKey := fmt.Sprintf("playlistsshot::user::%s::timestamp::*", username)
 	cmd := rc.Keys(snapshotsKey)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
