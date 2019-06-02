@@ -13,7 +13,8 @@ import (
 
 func GetIndexHandler(username string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		playlists := db.GetAllPlaylistsSnapshots(username)
+		var spotifyDB = db.GetSpotifyDBClient()
+		playlists := spotifyDB.GetAllPlaylistsSnapshots(username)
 		// TODO: tracks can (maybe have) to be transfeterd to web client via API, not template
 		// tracks := db.GetAllFavTracksSnapshots(username)
 		// purpously use anonymous type/struct here, for learning purposes... for now
@@ -53,17 +54,18 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func DebugHandler(w http.ResponseWriter, r *http.Request) {
+	var spotifyDB = db.GetSpotifyDBClient()
 	cookieID, _ := r.Cookie(c.CookieUserIDKey)
 	user, _ := s.Users.GetUserByCookieID(cookieID.Value)
 	log.Println("--------------- USER      ---------------------------------")
 	log.Println(user)
-	playlists := db.GetAllPlaylistsSnapshots(user.Username)
+	playlists := spotifyDB.GetAllPlaylistsSnapshots(user.Username)
 	log.Println("--------------- PLAYLISTS ---------------------------------")
 	for _, p := range *playlists {
 		log.Printf(" ====>>> [%v]: count %d\n", p.Timestamp, len(p.Playlists))
 	}
 	log.Println("--------------- TRACKS    ---------------------------------")
-	favtracks := db.GetAllFavTracksSnapshots(user.Username)
+	favtracks := spotifyDB.GetAllFavTracksSnapshots(user.Username)
 	for _, t := range *favtracks {
 		log.Printf(" ====>>> [%v]: count %d\n", t.Timestamp, len(t.Tracks))
 	}

@@ -39,6 +39,7 @@ func InitRedisClient(flashDB bool) {
 
 	cookiesDBClient = &CookiesDBClient{}
 	usersDBClient = &UsersDBClient{}
+	spotifyDBClient = &SpotifyDBClient{}
 
 	log.Printf(" > connected to redis %+v\n", options)
 }

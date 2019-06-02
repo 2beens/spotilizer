@@ -14,6 +14,7 @@ import (
 )
 
 func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
+	var spotifyDB = db.GetSpotifyDBClient()
 	user, err := s.Users.GetUserByRequestCookieID(r)
 	if err != nil {
 		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
@@ -34,7 +35,7 @@ func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
 
 	// save tracks to DB
 	tracksSnapshot := &m.FavTracksSnapshot{Username: user.Username, Timestamp: time.Now(), Tracks: tracks}
-	saved := db.SaveFavTracksSnapshot(tracksSnapshot)
+	saved := spotifyDB.SaveFavTracksSnapshot(tracksSnapshot)
 	if saved {
 		util.SendAPIOKResp(w, fmt.Sprintf("%d favorite tracks saved successfully", len(tracks)))
 	} else {
@@ -43,6 +44,7 @@ func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
+	var spotifyDB = db.GetSpotifyDBClient()
 	user, err := s.Users.GetUserByRequestCookieID(r)
 	if err != nil {
 		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
@@ -63,7 +65,7 @@ func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// save playlists to DB
 	playlistsSnapshot := &m.PlaylistsSnapshot{Username: user.Username, Timestamp: time.Now(), Playlists: playlists}
-	saved := db.SavePlaylistsSnapshot(playlistsSnapshot)
+	saved := spotifyDB.SavePlaylistsSnapshot(playlistsSnapshot)
 	if saved {
 		util.SendAPIOKResp(w, fmt.Sprintf("%d playlists saved successfully", len(playlists)))
 	} else {
