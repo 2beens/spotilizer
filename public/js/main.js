@@ -172,10 +172,12 @@ function stringOK(val) {
             $('#nav-item-login').addClass('invisible-elem');
             $('#nav-item-logout').removeClass('invisible-elem');
             $('#spotify-controls-div').removeClass('invisible-elem');
+            $('#playlists-data').removeClass('invisible-elem');
         } else {
             $('#nav-item-login').removeClass('invisible-elem');
             $('#nav-item-logout').addClass('invisible-elem');
             $('#spotify-controls-div').addClass('invisible-elem');
+            $('#playlists-data').addClass('invisible-elem');
         }
     });
 

@@ -139,8 +139,7 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 
 		util.AddCookie(&w, c.CookieUserIDKey, cookieID)
 
-		// redirect to index page with acces and refresh tokens
-		util.RenderView(w, "index", m.ViewData{Message: "Successfully logged in", Username: user.Username, Data: authOptions})
+		GetIndexHandler(user.Username)(w, r)
 	}
 }
 

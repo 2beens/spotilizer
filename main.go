@@ -121,8 +121,6 @@ func main() {
 }
 
 func gracefulShutdown(srv *http.Server) {
-	// TODO: maybe persist everything to redis db before shutdown ?
-
 	c := make(chan os.Signal, 1)
 	// we'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught
@@ -142,6 +140,6 @@ func gracefulShutdown(srv *http.Server) {
 	// doesn't block if no connections, but will otherwise wait until the timeout deadline
 	srv.Shutdown(ctx)
 
-	log.Println(" > shutting down")
+	log.Println(" > server shut down")
 	os.Exit(0)
 }

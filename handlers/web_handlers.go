@@ -11,9 +11,26 @@ import (
 	"github.com/2beens/spotilizer/util"
 )
 
+func GetIndexHandler(username string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		playlists := db.GetAllPlaylistsSnapshots(username)
+		// TODO: tracks can (maybe have) to be transfeterd to web client via API, not template
+		// tracks := db.GetAllFavTracksSnapshots(username)
+		// purpously use anonymous type/struct here, for learning purposes... for now
+		util.RenderView(w, "index", m.ViewData{Username: username, Data: struct {
+			PlaylistsSnapshots *[]m.PlaylistsSnapshot `json:"ssplaylists"`
+			// TracksSnapshots    *[]m.FavTracksSnapshot `json:"sstracks"`
+		}{
+			playlists,
+			// tracks,
+		},
+		})
+	}
+}
+
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	username, _ := util.GetUsernameByRequestCookieID(r)
-	util.RenderView(w, "index", m.ViewData{Username: username})
+	GetIndexHandler(username)(w, r)
 }
 
 func ContactHandler(w http.ResponseWriter, r *http.Request) {

@@ -13,6 +13,29 @@
     </div>
   </div>
 
+  {{if .Data}}
+    <script>
+      document.addEventListener("DOMContentLoaded", function(event) {
+        var dataRaw = `{{.Data}}`;
+        var data = JSON.parse(dataRaw);
+        console.log(' > received data:');
+        console.log(data);
+        data.ssplaylists.forEach(function(ps) {
+          $("#playlist-snapshots").append(`<li><a href="#">${ps.timestamp}: <span class="badge badge-info">${ps.playlists.length}</span> playlists</a></li>`);
+        });
+      });
+    </script>
+  {{end}}
+
+  <div class="row marketing playlists" id="playlists-data">
+    <h5>Playlists Snapshots</h5>
+    {{if .Data}}
+      <ul id="playlist-snapshots"></ul>
+    {{else}}
+      <p>No playlist snapshot saved yet...</p>
+    {{end}}
+  </div>
+
   <div class="row marketing" onclick="callDebug()">
     <div class="col-lg-6">
       <h4>Subheading</h4>

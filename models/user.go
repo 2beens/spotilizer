@@ -12,7 +12,7 @@ type User struct {
 	Playlists *[]SpPlaylist
 }
 
-func (u *User) String() string {
+func (u User) String() string {
 	tracksLen := "<nil>"
 	playlistsLen := "<nil>"
 	if u.FavTracks != nil {

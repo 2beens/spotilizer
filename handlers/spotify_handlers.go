@@ -18,14 +18,14 @@ func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
 	cookieID, err := r.Cookie(c.CookieUserIDKey)
 	if err != nil {
 		log.Printf(" >>> %s\n", fmt.Sprintf(" >>> cookie error while saving current user tracks: %s", err.Error()))
-		util.SendAPIErrorResp(w, "Not available when logged off", 400)
+		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
 		return
 	}
 
 	user, err := s.Users.GetUserByCookieID(cookieID.Value)
 	if err != nil {
 		log.Printf(" >>> %s\n", fmt.Sprintf(" >>> user/cookie error while saving current user tracks: %s", err.Error()))
-		util.SendAPIErrorResp(w, "Not available when logged off", 400)
+		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
 		return
 	}
 
@@ -47,7 +47,7 @@ func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
 	if saved {
 		util.SendAPIOKResp(w, fmt.Sprintf("%d favorite tracks saved successfully", len(tracks)))
 	} else {
-		util.SendAPIErrorResp(w, "Favorite tracks not saved. Server internal error.", 500)
+		util.SendAPIErrorResp(w, "Favorite tracks not saved. Server internal error.", http.StatusInternalServerError)
 	}
 	return
 }
@@ -56,14 +56,14 @@ func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 	cookieID, err := r.Cookie(c.CookieUserIDKey)
 	if err != nil {
 		log.Printf(" >>> %s\n", fmt.Sprintf(" >>> cookie error while saving current user playlists: %s", err.Error()))
-		util.SendAPIErrorResp(w, "Not available when logged off", 400)
+		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
 		return
 	}
 
 	user, err := s.Users.GetUserByCookieID(cookieID.Value)
 	if err != nil {
 		log.Printf(" >>> %s\n", fmt.Sprintf(" >>> user/cookie error while saving current user playlists: %s", err.Error()))
-		util.SendAPIErrorResp(w, "Not available when logged off", 400)
+		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
 		return
 	}
 
@@ -85,7 +85,7 @@ func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 	if saved {
 		util.SendAPIOKResp(w, fmt.Sprintf("%d playlists saved successfully", len(playlists)))
 	} else {
-		util.SendAPIErrorResp(w, "Playlists not saved. Server internal error.", 500)
+		util.SendAPIErrorResp(w, "Playlists not saved. Server internal error.", http.StatusInternalServerError)
 	}
 	return
 }
