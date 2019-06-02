@@ -9,21 +9,26 @@ import (
 
 	c "github.com/2beens/spotilizer/config"
 	"github.com/2beens/spotilizer/constants"
-	db "github.com/2beens/spotilizer/db"
+	"github.com/2beens/spotilizer/db"
 	m "github.com/2beens/spotilizer/models"
 )
 
 type UserService struct {
+	cookiesDB        *db.CookiesDBClient
+	usersDB          *db.UsersDBClient
 	username2userMap map[string]*m.User
 	// TODO: add cookie expiration mechanism
 	cookieID2usernameMap map[string]string
 }
 
-func NewUserService() *UserService {
+func NewUserService(cookiesDBClient *db.CookiesDBClient, usersDB *db.UsersDBClient) *UserService {
 	var us UserService
+	us.cookiesDB = cookiesDBClient
+	us.usersDB = usersDB
+
 	us.SyncWithDB()
 	us.cookieID2usernameMap = make(map[string]string)
-	us.cookieID2usernameMap = db.GetCookiesInfo()
+	us.cookieID2usernameMap = us.cookiesDB.GetCookiesInfo()
 	return &us
 }
 
@@ -66,14 +71,14 @@ func (us *UserService) GetUserByCookieID(cookieID string) (user *m.User, err err
 func (us *UserService) SyncWithDB() {
 	us.username2userMap = make(map[string]*m.User)
 	// get all users from Redis
-	for _, u := range *db.GetAllUsers() {
+	for _, u := range *us.usersDB.GetAllUsers() {
 		us.username2userMap[u.Username] = &u
 		log.Printf(" > found and added user: %s\n", u.Username)
 	}
 }
 
 func (us *UserService) StoreCookiesInfo() {
-	db.SaveCookiesInfo(us.cookieID2usernameMap)
+	us.cookiesDB.SaveCookiesInfo(us.cookieID2usernameMap)
 }
 
 func (us *UserService) Exists(username string) (found bool) {
@@ -92,11 +97,11 @@ func (us *UserService) Get(username string) (user *m.User, err error) {
 
 func (us *UserService) Add(user *m.User) {
 	us.username2userMap[user.Username] = user
-	db.SaveUser(user)
+	us.usersDB.SaveUser(user)
 }
 
 func (us *UserService) Save(user *m.User) {
-	db.SaveUser(user)
+	us.usersDB.SaveUser(user)
 }
 
 func (us *UserService) GetUserFromSpotify(ao *m.SpotifyAuthOptions) (user *m.SpUser, err error) {
