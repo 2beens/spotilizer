@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	c "github.com/2beens/spotilizer/constants"
@@ -115,6 +116,19 @@ func main() {
 	go func() {
 		log.Printf(" > server listening on: [%s]\n", ipAndPort)
 		log.Fatal(srv.ListenAndServe())
+	}()
+
+	go func() {
+		if logFileName != nil && len(*logFileName) > 0 {
+			// log output is set to file already, bail out
+			return
+		}
+		c := make(chan os.Signal, 1)
+		// SIGHUP signal is sent when a program loses its controlling terminal
+		signal.Notify(c, syscall.SIGHUP)
+		<-c
+		util.LoggingSetup("serverlog")
+		log.Println(" > controlling terminal lost, logging switched to file [serverlog.log]")
 	}()
 
 	gracefulShutdown(srv)
