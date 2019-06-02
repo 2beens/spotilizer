@@ -7,9 +7,14 @@ import (
 	"gopkg.in/redis.v3"
 )
 
-type CookiesDBClient struct{}
+type CookiesDBClient interface {
+	SaveCookiesInfo(cookieID2usernameMap map[string]string)
+	GetCookiesInfo() (cookieID2usernameMap map[string]string)
+}
 
-func (self CookiesDBClient) SaveCookiesInfo(cookieID2usernameMap map[string]string) {
+type CookiesDB struct{}
+
+func (self CookiesDB) SaveCookiesInfo(cookieID2usernameMap map[string]string) {
 	log.Println(" > storing cookies data in DB ...")
 	for id, username := range cookieID2usernameMap {
 		log.Printf(" > [%s]: %s\n", id, username)
@@ -21,7 +26,7 @@ func (self CookiesDBClient) SaveCookiesInfo(cookieID2usernameMap map[string]stri
 	}
 }
 
-func (self CookiesDBClient) GetCookiesInfo() (cookieID2usernameMap map[string]string) {
+func (self CookiesDB) GetCookiesInfo() (cookieID2usernameMap map[string]string) {
 	cookieID2usernameMap = make(map[string]string)
 	cmd := rc.Keys("cookie::*")
 	if err := cmd.Err(); err != nil && err != redis.Nil {

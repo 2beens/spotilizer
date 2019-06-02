@@ -14,14 +14,14 @@ import (
 )
 
 type UserService struct {
-	cookiesDB        *db.CookiesDBClient
+	cookiesDB        db.CookiesDBClient
 	usersDB          *db.UsersDBClient
 	username2userMap map[string]*m.User
 	// TODO: add cookie expiration mechanism
 	cookieID2usernameMap map[string]string
 }
 
-func NewUserService(cookiesDBClient *db.CookiesDBClient, usersDB *db.UsersDBClient) *UserService {
+func NewUserService(cookiesDBClient db.CookiesDBClient, usersDB *db.UsersDBClient) *UserService {
 	var us UserService
 	us.cookiesDB = cookiesDBClient
 	us.usersDB = usersDB

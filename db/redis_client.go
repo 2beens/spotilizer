@@ -14,7 +14,7 @@ import (
 var rc *redis.Client
 
 // Cookies client for all cookies related data
-var cookiesDBClient *CookiesDBClient
+var cookiesDBClient CookiesDBClient
 var usersDBClient *UsersDBClient
 var spotifyDBClient *SpotifyDBClient
 
@@ -37,14 +37,14 @@ func InitRedisClient(flashDB bool) {
 		FlushDB()
 	}
 
-	cookiesDBClient = &CookiesDBClient{}
+	cookiesDBClient = &CookiesDB{}
 	usersDBClient = &UsersDBClient{}
 	spotifyDBClient = &SpotifyDBClient{}
 
 	log.Printf(" > connected to redis %+v\n", options)
 }
 
-func GetCookiesDBClient() *CookiesDBClient {
+func GetCookiesDBClient() CookiesDBClient {
 	return cookiesDBClient
 }
 
