@@ -142,6 +142,11 @@ func SendAPIOKResp(w http.ResponseWriter, message string) {
 	SendAPIResp(w, apiResp)
 }
 
+func SendAPIOKRespWithData(w http.ResponseWriter, message string, data interface{}) {
+	apiResp := m.APIResponse{Status: 200, Message: message, Data: data}
+	SendAPIResp(w, apiResp)
+}
+
 func SendAPIErrorResp(w http.ResponseWriter, message string, status int) {
 	apiErr := m.SpAPIError{Error: m.SpError{Message: message, Status: status}}
 	SendAPIResp(w, apiErr)

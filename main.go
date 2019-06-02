@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/2beens/spotilizer/api"
 	c "github.com/2beens/spotilizer/constants"
 	db "github.com/2beens/spotilizer/db"
 	h "github.com/2beens/spotilizer/handlers"
@@ -63,6 +64,8 @@ func routerSetup() (r *mux.Router) {
 	r.HandleFunc("/refresh_token", middleware(h.RefreshTokenHandler))
 	r.HandleFunc("/save_current_playlists", middleware(h.SaveCurrentPlaylistsHandler))
 	r.HandleFunc("/save_current_tracks", middleware(h.SaveCurrentTracksHandler))
+
+	r.HandleFunc("/api/ssplaylists", middleware(api.GetPlaylistsSnapshots))
 
 	// debuging
 	r.HandleFunc("/debug", middleware(h.DebugHandler))

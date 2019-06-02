@@ -3,9 +3,12 @@ package services
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
+	"net/http"
 
 	c "github.com/2beens/spotilizer/config"
+	"github.com/2beens/spotilizer/constants"
 	db "github.com/2beens/spotilizer/db"
 	m "github.com/2beens/spotilizer/models"
 )
@@ -104,4 +107,19 @@ func (us *UserService) GetUserFromSpotify(ao *m.SpotifyAuthOptions) (user *m.SpU
 	}
 	json.Unmarshal(body, &user)
 	return user, nil
+}
+
+func (us *UserService) GetUserByRequestCookieID(r *http.Request) (user *m.User, err error) {
+	cookieID, err := r.Cookie(constants.CookieUserIDKey)
+	if err != nil {
+		log.Printf(" >>> %s\n", fmt.Sprintf(" >>> error, cannot find user by cookieID: %s", err.Error()))
+		return
+	}
+
+	user, err = us.GetUserByCookieID(cookieID.Value)
+	if err != nil {
+		log.Printf(" >>> %s\n", fmt.Sprintf(" >>> cannot find user by cookie. error: %s", err.Error()))
+		return
+	}
+	return
 }

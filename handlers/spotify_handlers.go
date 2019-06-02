@@ -8,28 +8,19 @@ import (
 
 	"github.com/2beens/spotilizer/db"
 
-	c "github.com/2beens/spotilizer/constants"
 	m "github.com/2beens/spotilizer/models"
 	s "github.com/2beens/spotilizer/services"
 	"github.com/2beens/spotilizer/util"
 )
 
 func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
-	cookieID, err := r.Cookie(c.CookieUserIDKey)
+	user, err := s.Users.GetUserByRequestCookieID(r)
 	if err != nil {
-		log.Printf(" >>> %s\n", fmt.Sprintf(" >>> cookie error while saving current user tracks: %s", err.Error()))
 		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
 		return
 	}
 
-	user, err := s.Users.GetUserByCookieID(cookieID.Value)
-	if err != nil {
-		log.Printf(" >>> %s\n", fmt.Sprintf(" >>> user/cookie error while saving current user tracks: %s", err.Error()))
-		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
-		return
-	}
-
-	log.Printf(" > get fav tracks: cookie [%s], username [%s]\n", cookieID.Value, user.Username)
+	log.Printf(" > save fav tracks: username [%s]\n", user.Username)
 
 	tracks, apiErr := s.UserPlaylist.GetSavedTracks(user.Auth)
 	if apiErr != nil {
@@ -49,25 +40,16 @@ func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		util.SendAPIErrorResp(w, "Favorite tracks not saved. Server internal error.", http.StatusInternalServerError)
 	}
-	return
 }
 
 func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
-	cookieID, err := r.Cookie(c.CookieUserIDKey)
+	user, err := s.Users.GetUserByRequestCookieID(r)
 	if err != nil {
-		log.Printf(" >>> %s\n", fmt.Sprintf(" >>> cookie error while saving current user playlists: %s", err.Error()))
 		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
 		return
 	}
 
-	user, err := s.Users.GetUserByCookieID(cookieID.Value)
-	if err != nil {
-		log.Printf(" >>> %s\n", fmt.Sprintf(" >>> user/cookie error while saving current user playlists: %s", err.Error()))
-		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
-		return
-	}
-
-	log.Printf(" > user ID: %s\n", cookieID.Value)
+	log.Printf(" > save playlists: username: %s\n", user.Username)
 
 	playlists, apiErr := s.UserPlaylist.GetCurrentUserPlaylists(user.Auth)
 	if apiErr != nil {
@@ -87,5 +69,4 @@ func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		util.SendAPIErrorResp(w, "Playlists not saved. Server internal error.", http.StatusInternalServerError)
 	}
-	return
 }
