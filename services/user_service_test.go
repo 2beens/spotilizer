@@ -8,74 +8,164 @@ import (
 	s "github.com/2beens/spotilizer/services"
 )
 
-type CookiesDBClientMock struct{}
-type UsersDBClientMock struct{}
+type cookiesDBClientMock struct{}
+type usersDBClientMock struct{}
 
-func (self UsersDBClientMock) SaveUser(user *m.User) (stored bool) {
+func (self usersDBClientMock) SaveUser(user *m.User) (stored bool) {
 	if user == nil {
 		return false
 	}
 	return true
 }
 
-func (self UsersDBClientMock) GetUser(username string) *m.User {
+func (self usersDBClientMock) GetUser(username string) *m.User {
 	auth := &m.SpotifyAuthOptions{}
 	return &m.User{Username: username, Auth: auth}
 }
 
-func (self UsersDBClientMock) GetAllUsers() *[]m.User {
+func (self usersDBClientMock) GetAllUsers() *[]m.User {
 	users := []m.User{}
 	users = append(users, *self.GetUser("user1"))
 	users = append(users, *self.GetUser("user2"))
 	return &users
 }
 
-func (self CookiesDBClientMock) SaveCookiesInfo(cookieID2usernameMap map[string]string) {
+func (self cookiesDBClientMock) SaveCookiesInfo(cookieID2usernameMap map[string]string) {
 	log.Println(" > storing cookies data in DB ...")
 	// mock
 }
 
-func (self CookiesDBClientMock) GetCookiesInfo() (cookieID2usernameMap map[string]string) {
+func (self cookiesDBClientMock) GetCookiesInfo() (cookieID2usernameMap map[string]string) {
+	log.Printf(" > cookiesDBClientMock: creating mock cookies ...")
 	cookieID2usernameMap = make(map[string]string)
-	cookieID2usernameMap["user1"] = "testcookie"
+	cookieID2usernameMap["cookieUser1"] = "user1"
+	cookieID2usernameMap["cookieUser2"] = "user2"
 	return
 }
 
-func TestUserService(t *testing.T) {
-	t.Log(" > starting test: TestUserService")
+func failNow(t *testing.T, message string) {
+	t.Error(message)
+	t.FailNow()
+}
 
-	cookiesDBClientMock := &CookiesDBClientMock{}
-	usersDBClientMock := &UsersDBClientMock{}
+func TestUserServiceCookies(t *testing.T) {
+	log.Println(" > starting test: TestUserService Cookies")
+	defer log.Println("--------------------------------------------------------")
+
+	cookiesDBClientMock := &cookiesDBClientMock{}
+	usersDBClientMock := &usersDBClientMock{}
+	userService := s.NewUserService(cookiesDBClientMock, usersDBClientMock)
+
+	if userService == nil {
+		failNow(t, " >>> error, user service is nil")
+	}
+
+	user1cookie, err := userService.GetCookieIDByUsername("user1")
+	if err != nil {
+		failNow(t, " >>> get cookie for user1 error: "+err.Error())
+	}
+	if user1cookie != "cookieUser1" {
+		failNow(t, " >>> user1cookie not equal")
+	}
+	log.Println(" > user1 cookie OK")
+
+	user1, err := userService.GetUserByCookieID(user1cookie)
+	if err != nil {
+		failNow(t, " >>> get user by cookie ID error: "+err.Error())
+	}
+	if user1 == nil {
+		failNow(t, " >>> user1 is nil")
+	}
+	log.Println(" > user1 is OK")
+
+	user2, err := userService.GetUserByCookieID("cookieUser2")
+	if err != nil {
+		failNow(t, " >>> get user by cookie ID error: "+err.Error())
+	}
+	if user2 == nil {
+		failNow(t, " >>> user2 is nil")
+	}
+	log.Println(" > user1 is OK")
+
+	user3, err := userService.GetUserByCookieID("cookieUser3")
+	if err == nil || user3 != nil {
+		failNow(t, " >>> user3 should not exist")
+	}
+	log.Println(" > user3 not found, OK")
+
+	userService.Add(&m.User{Username: "user3", Auth: &m.SpotifyAuthOptions{}})
+	userService.AddUserCookie("cookieUser3", "user3")
+	user3, err = userService.GetUserByCookieID("cookieUser3")
+	if err != nil {
+		failNow(t, " >>> get user by cookie ID error: "+err.Error())
+	}
+	if user3 == nil {
+		failNow(t, " >>> user3 is nil")
+	}
+	log.Println(" > user3 is OK")
+
+	un1, found := userService.GetUsernameByCookieID("cookieUser1")
+	if len(un1) == 0 || !found {
+		failNow(t, " >>> cannot find user1 by it's cookie ID")
+	}
+	log.Println(" > user1 usernname is OK")
+
+	userService.RemoveUserCookie("cookieUser1")
+	un1, found = userService.GetUsernameByCookieID("cookieUser1")
+	if len(un1) > 0 || found {
+		failNow(t, " >>> error, cookie ID for user1 should be removed")
+	}
+	log.Println(" > user1 cookie removed, OK")
+}
+
+func TestUserServiceUsers(t *testing.T) {
+	log.Println(" > starting test: TestUserService Users")
+	defer log.Println("--------------------------------------------------------")
+
+	cookiesDBClientMock := &cookiesDBClientMock{}
+	usersDBClientMock := &usersDBClientMock{}
 	userService := s.NewUserService(cookiesDBClientMock, usersDBClientMock)
 
 	user1, _ := userService.Get("user1")
 	if user1 == nil {
-		t.Error(" >>> user1 is nil")
-	} else {
-		t.Log(" > user1 is OK")
+		failNow(t, " >>> user1 is nil")
 	}
+	log.Println(" > user1 is OK")
 
 	// non existing user
 	testuser, _ := userService.Get("testuser")
-	if testuser == nil {
-		t.Log(" > testuser is nil, OK")
-	} else {
-		t.Error(" > testuser should be nil")
+	if testuser != nil {
+		failNow(t, " >>> error, testuser should be nil")
 	}
+	log.Println(" > testuser is nil, OK")
 
 	user2, _ := userService.Get("user2")
 	if user2 == nil {
-		t.Error(" >>> user2 is nil")
-	} else {
-		t.Log(" > user2 is OK")
+		failNow(t, " >>> user2 is nil")
 	}
+	log.Println(" > user2 is OK")
 
 	// add user, and then try to get it
-	userService.Add(&m.User{Username: "user3", Auth: &m.SpotifyAuthOptions{}})
-	user3, _ := userService.Get("user3")
-	if user3 == nil {
-		t.Error(" >>> user3 is nil")
-	} else {
-		t.Log(" > user3 is OK")
+	user3, err := userService.Get("user3")
+	if user3 != nil || err == nil {
+		failNow(t, " >>> error, user3 is not nil")
 	}
+	userService.Add(&m.User{Username: "user3", Auth: &m.SpotifyAuthOptions{}})
+	user3, _ = userService.Get("user3")
+	if user3 == nil {
+		failNow(t, " >>> user3 is nil")
+	}
+	log.Println(" > user3 is OK")
+
+	found := userService.Exists("user3")
+	if !found {
+		failNow(t, " >>> error, user3 shoud be found")
+	}
+	log.Println(" > user3 found, OK")
+
+	found = userService.Exists("user4")
+	if found {
+		failNow(t, " >>> error, user4 shoud not be found")
+	}
+	log.Println(" > user4 not found, OK")
 }

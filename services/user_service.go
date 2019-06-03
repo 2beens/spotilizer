@@ -77,7 +77,7 @@ func (us *UserService) SyncWithDB() {
 	}
 }
 
-func (us *UserService) StoreCookiesInfo() {
+func (us *UserService) StoreCookiesToDB() {
 	us.cookiesDB.SaveCookiesInfo(us.cookieID2usernameMap)
 }
 
@@ -100,8 +100,8 @@ func (us *UserService) Add(user *m.User) {
 	us.usersDB.SaveUser(user)
 }
 
-func (us *UserService) Save(user *m.User) {
-	us.usersDB.SaveUser(user)
+func (us *UserService) Save(user *m.User) (stored bool) {
+	return us.usersDB.SaveUser(user)
 }
 
 func (us *UserService) GetUserFromSpotify(ao *m.SpotifyAuthOptions) (user *m.SpUser, err error) {

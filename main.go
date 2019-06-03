@@ -147,7 +147,7 @@ func gracefulShutdown(srv *http.Server) {
 	<-c
 
 	// store users cookies data
-	s.Users.StoreCookiesInfo()
+	s.Users.StoreCookiesToDB()
 
 	// the duration for which the server gracefully wait for existing connections to finish
 	maxWaitDuration := time.Second * 15
