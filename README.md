@@ -71,7 +71,7 @@ By default, logger output is terminal (can be changed to file. see source code `
 
 :point_right: Observe terminal output for what happens in the server
 
-## Testing, Static code analysis ...
+## :mag_right: Testing, Static code analysis ...
 #### Linter
 `golangci-lint` is used. Make sure it's installed: [GolangCI Lint Installation](https://github.com/golangci/golangci-lint#install). 
 
