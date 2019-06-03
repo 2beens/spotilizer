@@ -67,5 +67,5 @@ func DebugHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf(" ====>>> [%v]: count %d\n", t.Timestamp, len(t.Tracks))
 	}
 	log.Println("-------------------------------------------------------------")
-	http.Redirect(w, r, "/", 302)
+	http.Redirect(w, r, "/", http.StatusFound)
 }

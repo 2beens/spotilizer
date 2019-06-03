@@ -30,9 +30,9 @@ type SpotifyUserPlaylistService struct {
 func NewSpotifyUserPlaylistService(spotifyDB db.SpotifyDBClient) *SpotifyUserPlaylistService {
 	var ps SpotifyUserPlaylistService
 	ps.spotifyDB = spotifyDB
-	ps.spotifyAPIURL = c.Get().SpotifyApiURL
-	ps.urlCurrentUserPlaylists = c.Get().URLCurrentUserPlaylists
-	ps.urlCurrentUserSavedTracks = c.Get().URLCurrentUserSavedTracks
+	ps.spotifyAPIURL = c.Conf.SpotifyAPIURL
+	ps.urlCurrentUserPlaylists = c.Conf.URLCurrentUserPlaylists
+	ps.urlCurrentUserSavedTracks = c.Conf.URLCurrentUserSavedTracks
 	return &ps
 }
 
@@ -66,7 +66,7 @@ func (ups SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(authOptions *
 			return playlists, nil
 		}
 
-		// safety mechanism agains infinite loop - if no new tracks are added, bail out
+		// safety mechanism against infinite loop - if no new tracks are added, bail out
 		if prevCount == len(playlists) {
 			log.Println(" > no new tracks coming in, bail out")
 			return playlists, nil
@@ -106,7 +106,7 @@ func (ups SpotifyUserPlaylistService) DownloadSavedFavTracks(authOptions *m.Spot
 			return tracks, nil
 		}
 
-		// safety mechanism agains infinite loop - if no new tracks are added, bail out
+		// safety mechanism against infinite loop - if no new tracks are added, bail out
 		if prevCount == len(tracks) {
 			log.Println(" > no new tracks coming in, bail out")
 			return tracks, nil
@@ -117,18 +117,18 @@ func (ups SpotifyUserPlaylistService) DownloadSavedFavTracks(authOptions *m.Spot
 	}
 }
 
-func (self SpotifyUserPlaylistService) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool) {
-	return self.spotifyDB.SaveFavTracksSnapshot(ft)
+func (ups SpotifyUserPlaylistService) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool) {
+	return ups.spotifyDB.SaveFavTracksSnapshot(ft)
 }
 
-func (self SpotifyUserPlaylistService) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool) {
-	return self.spotifyDB.SavePlaylistsSnapshot(ps)
+func (ups SpotifyUserPlaylistService) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool) {
+	return ups.spotifyDB.SavePlaylistsSnapshot(ps)
 }
 
-func (self SpotifyUserPlaylistService) GetAllFavTracksSnapshots(username string) *[]m.FavTracksSnapshot {
-	return self.spotifyDB.GetAllFavTracksSnapshots(username)
+func (ups SpotifyUserPlaylistService) GetAllFavTracksSnapshots(username string) *[]m.FavTracksSnapshot {
+	return ups.spotifyDB.GetAllFavTracksSnapshots(username)
 }
 
-func (self SpotifyUserPlaylistService) GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot {
-	return self.spotifyDB.GetAllPlaylistsSnapshots(username)
+func (ups SpotifyUserPlaylistService) GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot {
+	return ups.spotifyDB.GetAllPlaylistsSnapshots(username)
 }

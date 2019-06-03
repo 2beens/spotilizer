@@ -17,13 +17,13 @@ linters-settings:
   # detecting duplicated code
   # dupl:
   #   threshold: 100
-  goconst:
-    min-len: 2
-    min-occurrences: 2
+  # goconst:
+  #   min-len: 2
+  #   min-occurrences: 2
   misspell:
     locale: US
   lll:
-    line-length: 140
+    line-length: 200
   # gocritic:
   #   enabled-tags:
   #     - performance

@@ -20,7 +20,7 @@ type UsersDBClient interface {
 
 type UsersDB struct{}
 
-func (self UsersDB) SaveUser(user *m.User) (stored bool) {
+func (uDB UsersDB) SaveUser(user *m.User) (stored bool) {
 	auth, err := json.Marshal(user.Auth)
 	if err != nil {
 		fmt.Println(" >>> error while storing user info: " + err.Error())
@@ -35,14 +35,14 @@ func (self UsersDB) SaveUser(user *m.User) (stored bool) {
 		return false
 	}
 
-	// TODO: save user tracks, playlists, and other data ...
+	// TODO: save user tracks, playlists, and other data ... ??
 
 	log.Printf(" > user [%s] saved to DB\n", user.Username)
 	return true
 }
 
 // GetUser returns a user object from storage (redis) by username
-func (self UsersDB) GetUser(username string) *m.User {
+func (uDB UsersDB) GetUser(username string) *m.User {
 	cmd := rc.Get("user::" + username)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Printf(" >>> failed to get user %s: %v\n", username, err)
@@ -64,7 +64,7 @@ func (self UsersDB) GetUser(username string) *m.User {
 	return &m.User{Username: username, Auth: auth}
 }
 
-func (self UsersDB) GetAllUsers() *[]m.User {
+func (uDB UsersDB) GetAllUsers() *[]m.User {
 	cmd := rc.Keys("user::*")
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Printf(" >>> failed to get all users: %s\n", err.Error())
@@ -73,7 +73,7 @@ func (self UsersDB) GetAllUsers() *[]m.User {
 	users := []m.User{}
 	for _, userKey := range cmd.Val() {
 		username := strings.Split(userKey, "::")[1]
-		users = append(users, *self.GetUser(username))
+		users = append(users, *uDB.GetUser(username))
 	}
 	return &users
 }

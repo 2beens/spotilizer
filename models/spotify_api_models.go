@@ -40,7 +40,7 @@ type SpTrack struct {
 	DurationMs       int           `json:"duration_ms"`
 	Explicit         bool          `json:"explicit"`
 	ExternalIds      SpExternalIds `json:"external_ids"`
-	ExternalUrls     SpUrl         `json:"external_urls"`
+	ExternalUrls     SpURL         `json:"external_urls"`
 	Href             string        `json:"href"`
 	ID               string        `json:"id"`
 	IsLocal          bool          `json:"is_local"`
@@ -56,7 +56,7 @@ type SpAlbum struct {
 	AlbumType            string     `json:"album_type"`
 	Artists              []SpArtist `json:"artists"`
 	AvailableMarkets     []string   `json:"available_markets"`
-	ExternalUrls         SpUrl      `json:"external_urls"`
+	ExternalUrls         SpURL      `json:"external_urls"`
 	Href                 string     `json:"href"`
 	ID                   string     `json:"id"`
 	Images               []SpImage  `json:"images"`
@@ -70,7 +70,7 @@ type SpAlbum struct {
 
 type SpPlaylist struct {
 	Collaborative bool        `json:"collaborative"`
-	ExternalUrls  SpUrl       `json:"external_urls"`
+	ExternalUrls  SpURL       `json:"external_urls"`
 	Href          string      `json:"href"`
 	ID            string      `json:"id"`
 	Images        []SpImage   `json:"images"`
@@ -93,7 +93,7 @@ type SpTracks struct {
 	Total int    `json:"total"`
 }
 
-type SpUrl struct {
+type SpURL struct {
 	Spotify string `json:"spotify"`
 }
 
@@ -104,7 +104,7 @@ type SpImage struct {
 }
 
 type SpArtist struct {
-	ExternalUrls SpUrl  `json:"external_urls"`
+	ExternalUrls SpURL  `json:"external_urls"`
 	Href         string `json:"href"`
 	ID           string `json:"id"`
 	Name         string `json:"name"`
@@ -127,7 +127,7 @@ type SpUser struct {
 	DisplayName     string                   `json:"display_name"`
 	Email           string                   `json:"email"`
 	ExplicitContent SpExplicitContentOptions `json:"explicit_content"`
-	ExternalUrls    SpUrl                    `json:"external_urls"`
+	ExternalUrls    SpURL                    `json:"external_urls"`
 	Followers       SpUserFollowers          `json:"followers"`
 	Href            string                   `json:"href"`
 	ID              string                   `json:"id"`

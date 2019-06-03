@@ -70,7 +70,7 @@ func routerSetup() (r *mux.Router) {
 	// debuging
 	r.HandleFunc("/debug", middleware(h.DebugHandler))
 
-	return
+	return r
 }
 
 /****************** M A I N ************************************************************************/
@@ -98,7 +98,7 @@ func main() {
 		log.Println(err)
 		return
 	}
-	h.SetCliendIdAndSecret(clientID, clientSecret)
+	h.SetCliendIDAndSecret(clientID, clientSecret)
 
 	// redis setup
 	db.InitRedisClient(*flashDB)
@@ -155,7 +155,10 @@ func gracefulShutdown(srv *http.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), maxWaitDuration)
 	defer cancel()
 	// doesn't block if no connections, but will otherwise wait until the timeout deadline
-	srv.Shutdown(ctx)
+	err := srv.Shutdown(ctx)
+	if err != nil {
+		log.Println(" >>> failed to gracefully shutdown")
+	}
 
 	log.Println(" > server shut down")
 	os.Exit(0)

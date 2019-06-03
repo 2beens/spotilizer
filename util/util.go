@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"math"
 	"math/rand"
@@ -128,26 +129,29 @@ func RenderErrorView(w http.ResponseWriter, username string, title string, statu
 	RenderView(w, "error", m.ErrorViewData{Title: title, Error: fmt.Sprintf("Status: [%d]: %s", status, message), Username: username})
 }
 
-func SendAPIResp(w http.ResponseWriter, data interface{}) {
+func SendAPIResp(w io.Writer, data interface{}) {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		log.Printf(" >>> Error while sending API response: %s\n", err.Error())
 		return
 	}
-	w.Write(dataBytes)
+	_, err = w.Write(dataBytes)
+	if err != nil {
+		log.Println(" >>> error, failed to send API response. Writer error.")
+	}
 }
 
-func SendAPIOKResp(w http.ResponseWriter, message string) {
+func SendAPIOKResp(w io.Writer, message string) {
 	apiResp := m.APIResponse{Status: 200, Message: message}
 	SendAPIResp(w, apiResp)
 }
 
-func SendAPIOKRespWithData(w http.ResponseWriter, message string, data interface{}) {
+func SendAPIOKRespWithData(w io.Writer, message string, data interface{}) {
 	apiResp := m.APIResponse{Status: 200, Message: message, Data: data}
 	SendAPIResp(w, apiResp)
 }
 
-func SendAPIErrorResp(w http.ResponseWriter, message string, status int) {
+func SendAPIErrorResp(w io.Writer, message string, status int) {
 	apiErr := m.SpAPIError{Error: m.SpError{Message: message, Status: status}}
 	SendAPIResp(w, apiErr)
 }

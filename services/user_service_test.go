@@ -11,31 +11,28 @@ import (
 type cookiesDBClientMock struct{}
 type usersDBClientMock struct{}
 
-func (self usersDBClientMock) SaveUser(user *m.User) (stored bool) {
-	if user == nil {
-		return false
-	}
-	return true
+func (uDB usersDBClientMock) SaveUser(user *m.User) (stored bool) {
+	return user != nil
 }
 
-func (self usersDBClientMock) GetUser(username string) *m.User {
+func (uDB usersDBClientMock) GetUser(username string) *m.User {
 	auth := &m.SpotifyAuthOptions{}
 	return &m.User{Username: username, Auth: auth}
 }
 
-func (self usersDBClientMock) GetAllUsers() *[]m.User {
+func (uDB usersDBClientMock) GetAllUsers() *[]m.User {
 	users := []m.User{}
-	users = append(users, *self.GetUser("user1"))
-	users = append(users, *self.GetUser("user2"))
+	users = append(users, *uDB.GetUser("user1"))
+	users = append(users, *uDB.GetUser("user2"))
 	return &users
 }
 
-func (self cookiesDBClientMock) SaveCookiesInfo(cookieID2usernameMap map[string]string) {
+func (cDB cookiesDBClientMock) SaveCookiesInfo(cookieID2usernameMap map[string]string) {
 	log.Println(" > storing cookies data in DB ...")
 	// mock
 }
 
-func (self cookiesDBClientMock) GetCookiesInfo() (cookieID2usernameMap map[string]string) {
+func (cDB cookiesDBClientMock) GetCookiesInfo() (cookieID2usernameMap map[string]string) {
 	log.Printf(" > cookiesDBClientMock: creating mock cookies ...")
 	cookieID2usernameMap = make(map[string]string)
 	cookieID2usernameMap["cookieUser1"] = "user1"

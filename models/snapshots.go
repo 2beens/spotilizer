@@ -9,7 +9,7 @@ type PlaylistsSnapshot struct {
 	Playlists []SpPlaylist `json:"playlists"`
 }
 
-// FavTracksSnapshot is an object representing the list of favourite saved trackes of a user
+// FavTracksSnapshot is an object representing the list of favorite saved tracks of a user
 type FavTracksSnapshot struct {
 	Username  string         `json:"username"`
 	Timestamp time.Time      `json:"timestamp"`

@@ -20,7 +20,7 @@ import (
 var clientID string
 var clientSecret string
 
-func SetCliendIdAndSecret(cID string, cSecret string) {
+func SetCliendIDAndSecret(cID string, cSecret string) {
 	clientID = cID
 	clientSecret = cSecret
 }
@@ -39,7 +39,7 @@ func GetSpotifyLoginHandler(serverURL string) func(w http.ResponseWriter, r *htt
 
 		redirectURL := "https://accounts.spotify.com/authorize?" + q.Encode()
 		log.Println(" > /login, redirect to: " + redirectURL)
-		http.Redirect(w, r, redirectURL, 302)
+		http.Redirect(w, r, redirectURL, http.StatusFound)
 	}
 }
 
@@ -61,7 +61,11 @@ func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 	data := url.Values{}
 	data.Set("refresh_token", user.Auth.RefreshToken)
 	data.Set("grant_type", "refresh_token")
-	newAuthOptions := getAccessToken(data)
+	newAuthOptions, authErr := getAccessToken(data)
+	if authErr != nil {
+		util.SendAPIErrorResp(w, "Internal server error during refresh token. Try again later.", http.StatusInternalServerError)
+		return
+	}
 	user.Auth = newAuthOptions
 
 	s.Users.Save(user)
@@ -102,7 +106,11 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		data.Set("code", code[0])
 		data.Set("redirect_uri", fmt.Sprintf("%s/callback", serverURL))
 		data.Set("grant_type", "authorization_code")
-		authOptions := getAccessToken(data)
+		authOptions, authErr := getAccessToken(data)
+		if authErr != nil {
+			util.RenderErrorView(w, "", "Login Failed", http.StatusInternalServerError, "Internal server error during login. Try again later.")
+			return
+		}
 
 		// get user info
 		log.Println(" > getting user info from SP ...")
@@ -143,11 +151,15 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 	}
 }
 
-func getAccessToken(data url.Values) *m.SpotifyAuthOptions {
+func getAccessToken(data url.Values) (auth *m.SpotifyAuthOptions, err error) {
 	body := postReq(data, "https://accounts.spotify.com", "/api/token/")
-	authOptions := &m.SpotifyAuthOptions{}
-	json.Unmarshal(body, &authOptions)
-	return authOptions
+	auth = &m.SpotifyAuthOptions{}
+	err = json.Unmarshal(body, &auth)
+	if err != nil {
+		log.Println(" >>> error while unmarshaling auth options: " + err.Error())
+		auth = nil
+	}
+	return
 }
 
 func postReq(data url.Values, uri string, path string) []byte {

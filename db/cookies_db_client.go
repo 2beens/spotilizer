@@ -14,7 +14,7 @@ type CookiesDBClient interface {
 
 type CookiesDB struct{}
 
-func (self CookiesDB) SaveCookiesInfo(cookieID2usernameMap map[string]string) {
+func (cDB CookiesDB) SaveCookiesInfo(cookieID2usernameMap map[string]string) {
 	log.Println(" > storing cookies data in DB ...")
 	for id, username := range cookieID2usernameMap {
 		log.Printf(" > [%s]: %s\n", id, username)
@@ -26,7 +26,7 @@ func (self CookiesDB) SaveCookiesInfo(cookieID2usernameMap map[string]string) {
 	}
 }
 
-func (self CookiesDB) GetCookiesInfo() (cookieID2usernameMap map[string]string) {
+func (cDB CookiesDB) GetCookiesInfo() (cookieID2usernameMap map[string]string) {
 	cookieID2usernameMap = make(map[string]string)
 	cmd := rc.Keys("cookie::*")
 	if err := cmd.Err(); err != nil && err != redis.Nil {

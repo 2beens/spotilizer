@@ -72,7 +72,8 @@ func (us *UserService) SyncWithDB() {
 	us.username2userMap = make(map[string]*m.User)
 	// get all users from Redis
 	for _, u := range *us.usersDB.GetAllUsers() {
-		us.username2userMap[u.Username] = &u
+		user := u
+		us.username2userMap[u.Username] = &user
 		log.Printf(" > found and added user: %s\n", u.Username)
 	}
 }
@@ -105,12 +106,16 @@ func (us *UserService) Save(user *m.User) (stored bool) {
 }
 
 func (us *UserService) GetUserFromSpotify(ao *m.SpotifyAuthOptions) (user *m.SpUser, err error) {
-	body, err := getFromSpotify(c.Get().SpotifyApiURL, c.Get().URLCurrentUser, ao)
+	body, err := getFromSpotify(c.Conf.SpotifyAPIURL, c.Conf.URLCurrentUser, ao)
 	if err != nil {
-		log.Printf(" >>> error getting current user playlists. details: %v\n", err)
+		log.Printf(" >>> error getting current user playlists. details: %s\n", err.Error())
 		return nil, err
 	}
-	json.Unmarshal(body, &user)
+	err = json.Unmarshal(body, &user)
+	if err != nil {
+		log.Printf(" >>> error getting current user playlists. details: %s\n", err.Error())
+		return nil, err
+	}
 	return user, nil
 }
 
