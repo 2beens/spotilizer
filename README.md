@@ -1,4 +1,6 @@
 # :notes: spotilizer
+[![Build Status](https://travis-ci.com/2beens/spotilizer.svg?branch=master)](https://travis-ci.com/2beens/spotilizer)
+
 Study **golang** through using **Spotify API** and **Redis**.
 
 A small project which aims to help managing personal Spotify lists and tracks, but mostly to do what I love to do and study **Go** in the process.
