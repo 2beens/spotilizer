@@ -32,14 +32,14 @@ func getFromSpotify(apiURL string, path string, authOptions *m.SpotifyAuthOption
 	errChannel := make(chan error)
 
 	go func() {
-		resp, err := client.Do(req)
-		if err != nil {
-			errChannel <- err
+		resp, reqErr := client.Do(req)
+		if reqErr != nil {
+			errChannel <- reqErr
 			return
 		}
-		body, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			errChannel <- err
+		body, reqErr = ioutil.ReadAll(resp.Body)
+		if reqErr != nil {
+			errChannel <- reqErr
 			return
 		}
 		respChannel <- body
