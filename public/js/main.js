@@ -142,9 +142,12 @@ function stringOK(val) {
     return val !== undefined && val !== null && val.length > 0;
 }
 
-(function () {
+function isLoggedIn() {
     var cookieID = getCookie("spotilizer-user-id");
-    console.log(' > main script function: cookie ID: ' + cookieID);
+    return stringOK(cookieID) && stringOK(window.username);
+}
+
+(function () {
     window.accessToken = getCookie("accessToken");
     window.refreshToken = getCookie("refreshToken");
 
@@ -167,8 +170,8 @@ function stringOK(val) {
             toastr.info('Page lodaded ...', 'Spotilizer', {timeOut: 1000})
         }
 
-        if (stringOK(cookieID) && stringOK(window.username)) {
-            console.log(' > cookieID: ' + cookieID + ', username: ' + username);
+        if (isLoggedIn()) {
+            console.log(' > user is logged in!');
             $('#nav-item-login').addClass('invisible-elem');
             $('#nav-item-logout').removeClass('invisible-elem');
             $('#spotify-controls-div').removeClass('invisible-elem');
@@ -180,6 +183,4 @@ function stringOK(val) {
             $('#playlists-data').addClass('invisible-elem');
         }
     });
-
-    console.log(' > main script function: finished');
 })()

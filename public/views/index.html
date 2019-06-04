@@ -1,4 +1,6 @@
 {{define "content"}}
+  <script src="public/js/index.js"></script>
+
   <div class="jumbotron">
     <h1 class="display-3">Spotify Playlists Analyzer</h1>
     <p class="lead">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
@@ -13,27 +15,9 @@
     </div>
   </div>
 
-  {{if .Data}}
-    <script>
-      document.addEventListener("DOMContentLoaded", function(event) {
-        var dataRaw = `{{.Data}}`;
-        var data = JSON.parse(dataRaw);
-        console.log(' > received data:');
-        console.log(data);
-        data.ssplaylists.forEach(function(ps) {
-          $("#playlist-snapshots").append(`<li><a href="#">${ps.timestamp}: <span class="badge badge-info">${ps.playlists.length}</span> playlists</a></li>`);
-        });
-      });
-    </script>
-  {{end}}
-
   <div class="row marketing playlists" id="playlists-data">
-    <h5>Playlists Snapshots</h5>
-    {{if .Data}}
-      <ul id="playlist-snapshots"></ul>
-    {{else}}
-      <p>No playlist snapshot saved yet...</p>
-    {{end}}
+    <h5>Stored Playlists Snapshots</h5>
+    <ul id="playlist-snapshots"></ul>
   </div>
 
   <div class="row marketing" onclick="callDebug()">

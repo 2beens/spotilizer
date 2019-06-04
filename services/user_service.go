@@ -122,7 +122,7 @@ func (us *UserService) GetUserFromSpotify(ao *m.SpotifyAuthOptions) (user *m.SpU
 func (us *UserService) GetUserByRequestCookieID(r *http.Request) (user *m.User, err error) {
 	cookieID, err := r.Cookie(constants.CookieUserIDKey)
 	if err != nil {
-		log.Printf(" >>> %s\n", fmt.Sprintf(" >>> error, cannot find user by cookieID: %s", err.Error()))
+		log.Printf(" >>> error, cannot find user by cookieID: %s\n", err.Error())
 		return
 	}
 

@@ -1,29 +1,26 @@
 package api
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
-	"github.com/2beens/spotilizer/db"
 	"github.com/2beens/spotilizer/models"
 	"github.com/2beens/spotilizer/services"
 	"github.com/2beens/spotilizer/util"
 )
 
-var spotifyDB = db.GetSpotifyDBClient()
-
 func GetPlaylistsSnapshots(w http.ResponseWriter, r *http.Request) {
+	log.Println(" > API: getting user playists snapshots ...")
 	user, err := services.Users.GetUserByRequestCookieID(r)
 	if err != nil {
-		log.Printf(" >>> %s\n", fmt.Sprintf(" >>> user/cookie error while saving current user tracks: %s", err.Error()))
+		log.Printf(" >>> user/cookie error while saving current user tracks: %s", err.Error())
 		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
 		return
 	}
 
 	log.Printf(" > get playlists snapshots: username [%s]\n", user.Username)
 
-	ssplaylistsRaw := spotifyDB.GetAllPlaylistsSnapshots(user.Username)
+	ssplaylistsRaw := services.UserPlaylist.GetAllPlaylistsSnapshots(user.Username)
 	ssplaylists := []models.DTOPlaylistSnapshot{}
 	for _, plssRaw := range *ssplaylistsRaw {
 		plss := models.DTOPlaylistSnapshot{

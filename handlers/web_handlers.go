@@ -12,18 +12,7 @@ import (
 
 func GetIndexHandler(username string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		playlists := s.UserPlaylist.GetAllPlaylistsSnapshots(username)
-		// TODO: tracks can (maybe have) to be transfeterd to web client via API, not template
-		// tracks := db.GetAllFavTracksSnapshots(username)
-		// purpously use anonymous type/struct here, for learning purposes... for now
-		util.RenderView(w, "index", m.ViewData{Username: username, Data: struct {
-			PlaylistsSnapshots *[]m.PlaylistsSnapshot `json:"ssplaylists"`
-			// TracksSnapshots    *[]m.FavTracksSnapshot `json:"sstracks"`
-		}{
-			playlists,
-			// tracks,
-		},
-		})
+		util.RenderView(w, "index", m.ViewData{Username: username})
 	}
 }
 
