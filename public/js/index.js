@@ -13,7 +13,6 @@ function populatePlaylistSnapshots() {
         },
         success: function(response) {
             var responseObj = JSON.parse(response);
-            console.warn(responseObj);
             if (responseObj.error) {
                 console.error(' >>> populate playlists snapshots error: ' + responseObj.error.message);
                 toastr.error(responseObj.error.message, 'Populate playlists snapshots error');
