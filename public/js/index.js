@@ -1,3 +1,34 @@
+function populateFavTracksSnapshots() {
+    var tracksSnapshotsUL = $('#tracks-snapshots');
+    if (!tracksSnapshotsUL) {
+        return;
+    }
+    var cookieID = getCookie("spotilizer-user-id");
+    console.log(' > populating fav tracks snapshots. cookie ID: ' + cookieID);
+    $.ajax({
+        url: '/api/ssfavtracks',
+        headers: {
+            'Authorization': 'Bearer ' + window.accessToken
+        },
+        success: function(response) {
+            var responseObj = JSON.parse(response);
+            if (responseObj.error) {
+                console.error(' >>> populate fav tracks snapshots error: ' + responseObj.error.message);
+                toastr.error(responseObj.error.message, 'Populate favorite tracks snapshots error');
+                return;
+            }
+            responseObj.data.forEach(function(ts) {
+                var timestamp = new Date(ts.timestamp * 1000);
+                var timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
+                tracksSnapshotsUL.append(`<li><a href="#">${timestampStr}: <span class="badge badge-info">${ts.tracks.length}</span> playlists</a></li>`);
+            });
+        },
+        error: function(xhr,status,error) {
+            console.error(' >>> populate playlists snapshots, status: ' + status + ', error: ' + error);
+        }
+    });
+}
+
 function populatePlaylistSnapshots() {
     var playlistSnapshotsUL = $('#playlist-snapshots');
     if (!playlistSnapshotsUL) {
@@ -76,17 +107,23 @@ function saveCurrentPlaylists() {
 }
 
 document.addEventListener('DOMContentLoaded', function(event) {
+    // start both population functions in parallel
+    setTimeout(function() {
+        if (isLoggedIn()) {
+            populateFavTracksSnapshots();
+        }
+    }, 400);
     setTimeout(function() {
         if (isLoggedIn()) {
             populatePlaylistSnapshots();
         }
-    }, 500);
+    }, 650);
 
     if (isLoggedIn()) {
         $('#spotify-controls-div').removeClass('invisible-elem');
-        $('#playlists-data').removeClass('invisible-elem');
+        $('#snapshots-data').removeClass('invisible-elem');
     } else {
         $('#spotify-controls-div').addClass('invisible-elem');
-        $('#playlists-data').addClass('invisible-elem');
+        $('#snapshots-data').addClass('invisible-elem');
     }
 });
