@@ -49,7 +49,7 @@ function makeRequest(queryUrl, successf, errorf) {
         },
         success: successf,
         complete: function() {
-            console.log(' ---> call completed!');
+            console.log(' ---> call completed: ' + queryUrl);
         },
         error: errorf
     });
@@ -87,54 +87,10 @@ function refreshTokenFunc() {
         //       when, e.g. internet connection is gone
         if (lastCalledFunc !== null) {
             lastCalledFunc();
+            lastCalledFunc = null;
         }
     }, function(xhr, status, error) {
         toastr.error("Status: " + status + ", error: " + JSON.stringify(error), 'Refresh token error');
-    });
-}
-
-function saveCurrentPlaylists() {
-    lastCalledFunc = saveCurrentPlaylists;
-    makeRequest("/save_current_playlists", function(response) {
-        console.log(' > received from server: ' + response);
-        var respObj = JSON.parse(response);
-        if(checkIfRefreshTokenNeeded(respObj)) {
-            console.log(' > refresh token needed ...');
-            refreshTokenFunc();
-            return;
-        }
-        if (respObj.error) {
-            toastr.error(respObj.error.message, 'Save current playlists error');
-        } else {
-            toastr.success(respObj.message, 'Save current playlists');
-        }
-    }, function(xhr, status, error) {
-        toastr.error("Status: " + status + ", error: " + JSON.stringify(error), 'Save current playlists error');
-    });
-}
-
-function saveCurrentTracks() {
-    lastCalledFunc = saveCurrentTracks;
-    makeRequest("/save_current_tracks", function(response) {
-        console.log(' > received from server: ' + response);
-        var respObj = JSON.parse(response);
-        if(checkIfRefreshTokenNeeded(respObj)) {
-            console.log(' > refresh token needed ...');
-            refreshTokenFunc();
-            return;
-        }
-        if (respObj.error) {
-            toastr.error(respObj.error.message, 'Save fav tracks error');
-        } else {
-            toastr.success(respObj.message, 'Save fav tracks');
-        }
-    });
-}
-
-function callDebug() {
-    console.log(' > calling debug function on server ...');
-    makeRequest('/debug', function(response) {
-        console.log(' > received from server: ' + response);
     });
 }
 
@@ -174,13 +130,9 @@ function isLoggedIn() {
             console.log(' > user is logged in!');
             $('#nav-item-login').addClass('invisible-elem');
             $('#nav-item-logout').removeClass('invisible-elem');
-            $('#spotify-controls-div').removeClass('invisible-elem');
-            $('#playlists-data').removeClass('invisible-elem');
         } else {
             $('#nav-item-login').removeClass('invisible-elem');
             $('#nav-item-logout').addClass('invisible-elem');
-            $('#spotify-controls-div').addClass('invisible-elem');
-            $('#playlists-data').addClass('invisible-elem');
         }
     });
 })()

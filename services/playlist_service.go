@@ -125,10 +125,10 @@ func (ups SpotifyUserPlaylistService) SavePlaylistsSnapshot(ps *m.PlaylistsSnaps
 	return ups.spotifyDB.SavePlaylistsSnapshot(ps)
 }
 
-func (ups SpotifyUserPlaylistService) GetAllFavTracksSnapshots(username string) *[]m.FavTracksSnapshot {
+func (ups SpotifyUserPlaylistService) GetAllFavTracksSnapshots(username string) []m.FavTracksSnapshot {
 	return ups.spotifyDB.GetAllFavTracksSnapshots(username)
 }
 
-func (ups SpotifyUserPlaylistService) GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot {
+func (ups SpotifyUserPlaylistService) GetAllPlaylistsSnapshots(username string) []m.PlaylistsSnapshot {
 	return ups.spotifyDB.GetAllPlaylistsSnapshots(username)
 }

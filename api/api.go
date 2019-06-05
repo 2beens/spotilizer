@@ -13,7 +13,7 @@ func GetPlaylistsSnapshots(w http.ResponseWriter, r *http.Request) {
 	log.Println(" > API: getting user playists snapshots ...")
 	user, err := services.Users.GetUserByRequestCookieID(r)
 	if err != nil {
-		log.Printf(" >>> user/cookie error while saving current user tracks: %s", err.Error())
+		log.Printf(" >>> user/cookie error while getting playlists snapshots: %s\n", err.Error())
 		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
 		return
 	}
@@ -22,23 +22,46 @@ func GetPlaylistsSnapshots(w http.ResponseWriter, r *http.Request) {
 
 	ssplaylistsRaw := services.UserPlaylist.GetAllPlaylistsSnapshots(user.Username)
 	ssplaylists := []models.DTOPlaylistSnapshot{}
-	for _, plssRaw := range *ssplaylistsRaw {
+	for _, plssRaw := range ssplaylistsRaw {
 		plss := models.DTOPlaylistSnapshot{
 			Timestamp: plssRaw.Timestamp.Unix(),
 			Playlists: []models.DTOPlaylist{},
 		}
 		for _, plRaw := range plssRaw.Playlists {
-			pl := models.DTOPlaylist{
-				ID:         plRaw.ID,
-				Name:       plRaw.Name,
-				URI:        plRaw.URI,
-				TracksHref: plRaw.Tracks.Href,
-				Tracks:     []models.DTOTrack{},
-			}
-			plss.Playlists = append(plss.Playlists, pl)
+			plTrakcs := []models.DTOTrack{}
+			// TODO: download tracks
+
+			plss.Playlists = append(plss.Playlists, models.SpPlaylist2dtoPlaylist(plRaw, plTrakcs))
 		}
 		ssplaylists = append(ssplaylists, plss)
 	}
 
 	util.SendAPIOKRespWithData(w, "success", ssplaylists)
+}
+
+func GetFavTracksSnapshots(w http.ResponseWriter, r *http.Request) {
+	log.Println(" > API: getting user fav tracks snapshots ...")
+	user, err := services.Users.GetUserByRequestCookieID(r)
+	if err != nil {
+		log.Printf(" >>> user/cookie error while getting fav tracks snapshots: %s\n", err.Error())
+		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
+		return
+	}
+
+	log.Printf(" > get fav tracks snapshots: username [%s]\n", user.Username)
+
+	sstracksRaw := services.UserPlaylist.GetAllFavTracksSnapshots(user.Username)
+	sstracks := []models.DTOFavTracksSnapshot{}
+	for _, tracksssRaw := range sstracksRaw {
+		tracksss := models.DTOFavTracksSnapshot{
+			Timestamp: tracksssRaw.Timestamp.Unix(),
+			Tracks:    []models.DTOAddedTrack{},
+		}
+		for _, trRaw := range tracksssRaw.Tracks {
+			tracksss.Tracks = append(tracksss.Tracks, models.SpAddedTrack2dtoAddedTrack(trRaw))
+		}
+		sstracks = append(sstracks, tracksss)
+	}
+
+	util.SendAPIOKRespWithData(w, "success", sstracks)
 }

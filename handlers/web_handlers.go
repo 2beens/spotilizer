@@ -47,12 +47,12 @@ func DebugHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println(user)
 	playlists := s.UserPlaylist.GetAllPlaylistsSnapshots(user.Username)
 	log.Println("--------------- PLAYLISTS ---------------------------------")
-	for _, p := range *playlists {
+	for _, p := range playlists {
 		log.Printf(" ====>>> [%v]: count %d\n", p.Timestamp, len(p.Playlists))
 	}
 	log.Println("--------------- TRACKS    ---------------------------------")
 	favtracks := s.UserPlaylist.GetAllFavTracksSnapshots(user.Username)
-	for _, t := range *favtracks {
+	for _, t := range favtracks {
 		log.Printf(" ====>>> [%v]: count %d\n", t.Timestamp, len(t.Tracks))
 	}
 	log.Println("-------------------------------------------------------------")

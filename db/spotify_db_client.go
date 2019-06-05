@@ -17,8 +17,8 @@ type SpotifyDBClient interface {
 	SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool)
 	GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot
 	GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot
-	GetAllFavTracksSnapshots(username string) *[]m.FavTracksSnapshot
-	GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot
+	GetAllFavTracksSnapshots(username string) []m.FavTracksSnapshot
+	GetAllPlaylistsSnapshots(username string) []m.PlaylistsSnapshot
 }
 
 type SpotifyDB struct{}
@@ -119,7 +119,7 @@ func (sDB SpotifyDB) GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot {
 	return &m.PlaylistsSnapshot{Username: username, Timestamp: timestamp, Playlists: *playlists}
 }
 
-func (sDB SpotifyDB) GetAllFavTracksSnapshots(username string) *[]m.FavTracksSnapshot {
+func (sDB SpotifyDB) GetAllFavTracksSnapshots(username string) []m.FavTracksSnapshot {
 	snapshotsKey := fmt.Sprintf("favtracksshot::user::%s::timestamp::*", username)
 	cmd := rc.Keys(snapshotsKey)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
@@ -133,10 +133,10 @@ func (sDB SpotifyDB) GetAllFavTracksSnapshots(username string) *[]m.FavTracksSna
 			favtsnapshots = append(favtsnapshots, *ft)
 		}
 	}
-	return &favtsnapshots
+	return favtsnapshots
 }
 
-func (sDB SpotifyDB) GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot {
+func (sDB SpotifyDB) GetAllPlaylistsSnapshots(username string) []m.PlaylistsSnapshot {
 	snapshotsKey := fmt.Sprintf("playlistsshot::user::%s::timestamp::*", username)
 	cmd := rc.Keys(snapshotsKey)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
@@ -150,5 +150,5 @@ func (sDB SpotifyDB) GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSna
 			plsnapshots = append(plsnapshots, *ps)
 		}
 	}
-	return &plsnapshots
+	return plsnapshots
 }
