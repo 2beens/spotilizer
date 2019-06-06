@@ -109,7 +109,7 @@ func (sDB SpotifyDB) GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot {
 	timestamp := time.Unix(timestampInt, 0)
 
 	playlistsJSON := cmd.Val()
-	playlists := &[]m.SpPlaylist{}
+	playlists := &[]m.PlaylistSnapshot{}
 	err = json.Unmarshal([]byte(playlistsJSON), playlists)
 	if err != nil {
 		log.Printf(" >>> failed to unmarshal playlists for snapshot [%s]: %s\n", key, err.Error())

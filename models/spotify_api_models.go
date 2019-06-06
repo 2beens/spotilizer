@@ -146,3 +146,38 @@ type SpUserFollowers struct {
 	Href  string `json:"href"`
 	Total int    `json:"total"`
 }
+
+type SpGetPlaylistTracksResp struct {
+	Href     string            `json:"href"`
+	Items    []SpPlaylistTrack `json:"items"`
+	Limit    int               `json:"limit"`
+	Next     interface{}       `json:"next"`
+	Offset   int               `json:"offset"`
+	Previous interface{}       `json:"previous"`
+	Total    int               `json:"total"`
+}
+
+type SpPlaylistTrack struct {
+	AddedAt        time.Time        `json:"added_at"`
+	AddedBy        SpAddedBy        `json:"added_by"`
+	IsLocal        bool             `json:"is_local"`
+	PrimaryColor   interface{}      `json:"primary_color"`
+	Track          SpTrack          `json:"track"`
+	VideoThumbnail SpVideoThumbnail `json:"video_thumbnail"`
+}
+
+type SpAddedBy struct {
+	ExternalUrls SpExternalUrls `json:"external_urls"`
+	Href         string         `json:"href"`
+	ID           string         `json:"id"`
+	Type         string         `json:"type"`
+	URI          string         `json:"uri"`
+}
+
+type SpExternalUrls struct {
+	Spotify string `json:"spotify"`
+}
+
+type SpVideoThumbnail struct {
+	URL interface{} `json:"url"`
+}

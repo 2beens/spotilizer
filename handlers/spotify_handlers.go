@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/2beens/spotilizer/models"
 	m "github.com/2beens/spotilizer/models"
 	s "github.com/2beens/spotilizer/services"
 	"github.com/2beens/spotilizer/util"
@@ -28,7 +29,6 @@ func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf(" > tracks count: %d\n", len(tracks))
-	user.FavTracks = &tracks
 
 	// save tracks to DB
 	tracksSnapshot := &m.FavTracksSnapshot{Username: user.Username, Timestamp: time.Now(), Tracks: tracks}
@@ -57,10 +57,21 @@ func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf(" > playlists count: %d\n", len(playlists))
-	user.Playlists = &playlists
+
+	snapshotPlaylists := []models.PlaylistSnapshot{}
+	for _, pl := range playlists {
+		plSnapshot := models.PlaylistSnapshot{
+			Playlist: pl,
+			Tracks:   []models.SpPlaylistTrack{},
+		}
+
+		// TODO: get tracks
+
+		snapshotPlaylists = append(snapshotPlaylists, plSnapshot)
+	}
 
 	// save playlists to DB
-	playlistsSnapshot := &m.PlaylistsSnapshot{Username: user.Username, Timestamp: time.Now(), Playlists: playlists}
+	playlistsSnapshot := &m.PlaylistsSnapshot{Username: user.Username, Timestamp: time.Now(), Playlists: snapshotPlaylists}
 	saved := s.UserPlaylist.SavePlaylistsSnapshot(playlistsSnapshot)
 	if saved {
 		util.SendAPIOKResp(w, fmt.Sprintf("%d playlists saved successfully", len(playlists)))

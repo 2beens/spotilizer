@@ -1,13 +1,15 @@
 package models
 
-func SpPlaylist2dtoPlaylist(spPlaylist SpPlaylist, tracks []DTOTrack) DTOPlaylist {
+func SpPlaylist2dtoPlaylist(spPlaylist SpPlaylist, tracks []SpPlaylistTrack) DTOPlaylist {
 	dtoPlaylist := DTOPlaylist{
 		ID:         spPlaylist.ID,
 		Name:       spPlaylist.Name,
 		URI:        spPlaylist.URI,
 		TracksHref: spPlaylist.Tracks.Href,
-		Tracks:     tracks,
+		// Tracks:     tracks,
 	}
+
+	//TODO: tracks
 
 	return dtoPlaylist
 }
