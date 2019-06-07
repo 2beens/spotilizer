@@ -50,6 +50,7 @@ linters:
 # https://github.com/golangci/golangci/wiki/Configuration
 service:
   golangci-lint-version: 1.16.x # use the fixed version to not introduce new linters unexpectedly
-  project-path: github.com/2beens/spotilizer
+  project-path: github.com/gorilla/mux
   prepare:
-    - go get github.com/gorilla/mux
+    - apt-get update && apt-get install -y libcurl4-gnutls-dev
+    - dep ensure
