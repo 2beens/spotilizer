@@ -28,10 +28,7 @@ func GetPlaylistsSnapshots(w http.ResponseWriter, r *http.Request) {
 			Playlists: []models.DTOPlaylist{},
 		}
 		for _, plRaw := range plssRaw.Playlists {
-			plTrakcs := []models.DTOTrack{}
-			// TODO: download tracks
-
-			plss.Playlists = append(plss.Playlists, models.SpPlaylist2dtoPlaylist(plRaw, plTrakcs))
+			plss.Playlists = append(plss.Playlists, models.SpPlaylist2dtoPlaylist(plRaw.Playlist, plRaw.Tracks))
 		}
 		ssplaylists = append(ssplaylists, plss)
 	}
@@ -55,10 +52,10 @@ func GetFavTracksSnapshots(w http.ResponseWriter, r *http.Request) {
 	for _, tracksssRaw := range sstracksRaw {
 		tracksss := models.DTOFavTracksSnapshot{
 			Timestamp: tracksssRaw.Timestamp.Unix(),
-			Tracks:    []models.DTOAddedTrack{},
+			Tracks:    []models.DTOTrack{},
 		}
 		for _, trRaw := range tracksssRaw.Tracks {
-			tracksss.Tracks = append(tracksss.Tracks, models.SpAddedTrack2dtoAddedTrack(trRaw))
+			tracksss.Tracks = append(tracksss.Tracks, models.SpAddedTrack2dtoTrack(trRaw))
 		}
 		sstracks = append(sstracks, tracksss)
 	}

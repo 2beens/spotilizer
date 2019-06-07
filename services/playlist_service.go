@@ -44,10 +44,9 @@ func (ups SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(authOptions *
 		path := fmt.Sprintf("%s?offset=%d&limit=50", ups.urlCurrentUserPlaylists, offset)
 		body, err := getFromSpotify(ups.spotifyAPIURL, path, authOptions)
 		if err != nil {
-			errMsg := fmt.Sprintf(" >>> error getting current user playlists. details: %v", err)
+			errMsg := fmt.Sprintf(" >>> error getting current user playlists. details: %s", err.Error())
 			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
 		}
-
 		if apiErr, isError := getAPIError(body); isError {
 			log.Printf(" >>> API error: status [%d] -> [%s]\n", apiErr.Error.Status, apiErr.Error.Message)
 			return nil, &apiErr
@@ -56,7 +55,7 @@ func (ups SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(authOptions *
 		var response m.SpGetCurrentPlaylistsResp
 		err = json.Unmarshal(body, &response)
 		if err != nil {
-			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get playlists response: %v", err)
+			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get playlists response: %s", err.Error())
 			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
 		}
 
@@ -77,6 +76,43 @@ func (ups SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(authOptions *
 	}
 }
 
+func (ups SpotifyUserPlaylistService) DownloadPlaylistTracks(authOptions *m.SpotifyAuthOptions, href string, total int) (tracks []m.SpPlaylistTrack, err *m.SpAPIError) {
+	tracks = []m.SpPlaylistTrack{}
+	prevCount := 0
+	nextHref := href
+	for {
+		body, err := getFromSpotify(nextHref, "", authOptions)
+		if err != nil {
+			errMsg := fmt.Sprintf(" >>> error getting playlist tracks. details: %s", err.Error())
+			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
+		}
+		if apiErr, isError := getAPIError(body); isError {
+			log.Printf(" >>> API getting playlist tracks error: status [%d] -> [%s]\n", apiErr.Error.Status, apiErr.Error.Message)
+			return nil, &apiErr
+		}
+
+		var response m.SpGetPlaylistTracksResp
+		err = json.Unmarshal(body, &response)
+		if err != nil {
+			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get playlist tracks response: %s", err.Error())
+			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
+		}
+
+		tracks = append(tracks, response.Items...)
+		if len(response.Next) == 0 || len(tracks) >= total {
+			return tracks, nil
+		}
+		nextHref = response.Next
+
+		// safety mechanism against infinite loop - if no new tracks are added, bail out
+		if prevCount == len(tracks) {
+			log.Println(" > no new tracks coming in, bail out")
+			return tracks, nil
+		}
+		prevCount = len(tracks)
+	}
+}
+
 func (ups SpotifyUserPlaylistService) DownloadSavedFavTracks(authOptions *m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err *m.SpAPIError) {
 	offset := 0
 	prevCount := 0
@@ -84,10 +120,9 @@ func (ups SpotifyUserPlaylistService) DownloadSavedFavTracks(authOptions *m.Spot
 		path := fmt.Sprintf("%s?offset=%d&limit=50", ups.urlCurrentUserSavedTracks, offset)
 		body, err := getFromSpotify(ups.spotifyAPIURL, path, authOptions)
 		if err != nil {
-			errMsg := fmt.Sprintf(" >>> error getting current user tracks. details: %v", err)
+			errMsg := fmt.Sprintf(" >>> error getting current user tracks. details: %s", err.Error())
 			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
 		}
-
 		if apiErr, isError := getAPIError(body); isError {
 			log.Printf(" >>> API error: status [%d] -> [%s]\n", apiErr.Error.Status, apiErr.Error.Message)
 			return nil, &apiErr
@@ -96,7 +131,7 @@ func (ups SpotifyUserPlaylistService) DownloadSavedFavTracks(authOptions *m.Spot
 		var response m.SpGetSavedTracksResp
 		err = json.Unmarshal(body, &response)
 		if err != nil {
-			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get tracks response: %v", err)
+			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get tracks response: %s", err.Error())
 			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
 		}
 

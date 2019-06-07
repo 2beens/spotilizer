@@ -14,8 +14,18 @@ type SpGetCurrentPlaylistsResp struct {
 	Total    int          `json:"total"`
 }
 
-// TODO: these two responses are basically the same, the only diff being the items
+// TODO: these "SpGet**" struct responses are basically the same, the only diff being the items
 // see if those can be merged into one type (maybe somehow by using []interface{} for items)
+
+type SpGetPlaylistTracksResp struct {
+	Href     string            `json:"href"`
+	Items    []SpPlaylistTrack `json:"items"`
+	Limit    int               `json:"limit"`
+	Next     string            `json:"next"`
+	Offset   int               `json:"offset"`
+	Previous string            `json:"previous"`
+	Total    int               `json:"total"`
+}
 
 type SpGetSavedTracksResp struct {
 	Href     string         `json:"href"`
@@ -145,4 +155,29 @@ type SpExplicitContentOptions struct {
 type SpUserFollowers struct {
 	Href  string `json:"href"`
 	Total int    `json:"total"`
+}
+
+type SpPlaylistTrack struct {
+	AddedAt        time.Time        `json:"added_at"`
+	AddedBy        SpAddedBy        `json:"added_by"`
+	IsLocal        bool             `json:"is_local"`
+	PrimaryColor   interface{}      `json:"primary_color"`
+	Track          SpTrack          `json:"track"`
+	VideoThumbnail SpVideoThumbnail `json:"video_thumbnail"`
+}
+
+type SpAddedBy struct {
+	ExternalUrls SpExternalUrls `json:"external_urls"`
+	Href         string         `json:"href"`
+	ID           string         `json:"id"`
+	Type         string         `json:"type"`
+	URI          string         `json:"uri"`
+}
+
+type SpExternalUrls struct {
+	Spotify string `json:"spotify"`
+}
+
+type SpVideoThumbnail struct {
+	URL interface{} `json:"url"`
 }

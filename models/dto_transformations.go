@@ -1,21 +1,38 @@
 package models
 
-func SpPlaylist2dtoPlaylist(spPlaylist SpPlaylist, tracks []DTOTrack) DTOPlaylist {
+func SpPlaylist2dtoPlaylist(spPlaylist SpPlaylist, tracks []SpPlaylistTrack) DTOPlaylist {
 	dtoPlaylist := DTOPlaylist{
 		ID:         spPlaylist.ID,
 		Name:       spPlaylist.Name,
 		URI:        spPlaylist.URI,
 		TracksHref: spPlaylist.Tracks.Href,
-		Tracks:     tracks,
+		Tracks:     []DTOTrack{},
+	}
+
+	for _, t := range tracks {
+		dtoPlaylist.Tracks = append(dtoPlaylist.Tracks, SpPlaylistTrack2dtoPlaylistTrack(t))
 	}
 
 	return dtoPlaylist
 }
 
-func SpAddedTrack2dtoAddedTrack(spAddedTrack SpAddedTrack) DTOAddedTrack {
-	return DTOAddedTrack{
-		AddedAt: spAddedTrack.AddedAt.Unix(),
-		Track:   SpTrack2dtoTrack(spAddedTrack.Track),
+func SpPlaylistTrack2dtoPlaylistTrack(spPlTrack SpPlaylistTrack) DTOTrack {
+	dtoTrack := DTOTrack{
+		AddedAt: spPlTrack.AddedAt.Unix(),
+		AddedBy: spPlTrack.AddedBy.ID,
+	}
+	return dtoTrack
+}
+
+func SpAddedTrack2dtoTrack(spAddedTrack SpAddedTrack) DTOTrack {
+	return DTOTrack{
+		AddedAt:     spAddedTrack.AddedAt.Unix(),
+		ID:          spAddedTrack.Track.ID,
+		DurationMs:  spAddedTrack.Track.DurationMs,
+		Name:        spAddedTrack.Track.Name,
+		TrackNumber: spAddedTrack.Track.TrackNumber,
+		URI:         spAddedTrack.Track.URI,
+		Artists:     SpArtists2dtoArtists(spAddedTrack.Track.Artists),
 	}
 }
 
