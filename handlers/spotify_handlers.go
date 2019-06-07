@@ -60,13 +60,16 @@ func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 
 	snapshotPlaylists := []models.PlaylistSnapshot{}
 	for _, pl := range playlists {
+		playlistTracks, apiErr := s.UserPlaylist.DownloadPlaylistTracks(user.Auth, pl.Tracks.Href, pl.Tracks.Total)
+		if apiErr != nil {
+			log.Printf(" >>> error while saving current user playlists: %v\n", apiErr)
+			playlistTracks = []models.SpPlaylistTrack{}
+		}
+		log.Printf(" > received [%d] tracks for playlist [%s]\n", len(playlistTracks), pl.Name)
 		plSnapshot := models.PlaylistSnapshot{
 			Playlist: pl,
-			Tracks:   []models.SpPlaylistTrack{},
+			Tracks:   playlistTracks,
 		}
-
-		// TODO: get tracks
-
 		snapshotPlaylists = append(snapshotPlaylists, plSnapshot)
 	}
 

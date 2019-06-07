@@ -14,8 +14,18 @@ type SpGetCurrentPlaylistsResp struct {
 	Total    int          `json:"total"`
 }
 
-// TODO: these two responses are basically the same, the only diff being the items
+// TODO: these "SpGet**" struct responses are basically the same, the only diff being the items
 // see if those can be merged into one type (maybe somehow by using []interface{} for items)
+
+type SpGetPlaylistTracksResp struct {
+	Href     string            `json:"href"`
+	Items    []SpPlaylistTrack `json:"items"`
+	Limit    int               `json:"limit"`
+	Next     string            `json:"next"`
+	Offset   int               `json:"offset"`
+	Previous string            `json:"previous"`
+	Total    int               `json:"total"`
+}
 
 type SpGetSavedTracksResp struct {
 	Href     string         `json:"href"`
@@ -145,16 +155,6 @@ type SpExplicitContentOptions struct {
 type SpUserFollowers struct {
 	Href  string `json:"href"`
 	Total int    `json:"total"`
-}
-
-type SpGetPlaylistTracksResp struct {
-	Href     string            `json:"href"`
-	Items    []SpPlaylistTrack `json:"items"`
-	Limit    int               `json:"limit"`
-	Next     interface{}       `json:"next"`
-	Offset   int               `json:"offset"`
-	Previous interface{}       `json:"previous"`
-	Total    int               `json:"total"`
 }
 
 type SpPlaylistTrack struct {

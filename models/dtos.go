@@ -6,8 +6,8 @@ type DTOPlaylistSnapshot struct {
 }
 
 type DTOFavTracksSnapshot struct {
-	Timestamp int64           `json:"timestamp"`
-	Tracks    []DTOAddedTrack `json:"tracks"`
+	Timestamp int64      `json:"timestamp"`
+	Tracks    []DTOTrack `json:"tracks"`
 }
 
 type DTOPlaylist struct {
@@ -18,13 +18,11 @@ type DTOPlaylist struct {
 	Tracks     []DTOTrack `json:"tracks"`
 }
 
-type DTOAddedTrack struct {
-	AddedAt int64    `json:"added_at"`
-	Track   DTOTrack `json:"track"`
-}
-
 type DTOTrack struct {
+	AddedAt     int64       `json:"added_at"`
+	AddedBy     string      `json:"added_by"`
 	Artists     []DTOArtist `json:"artists"`
+	Album       string      `json:"album"`
 	URI         string      `json:"uri"`
 	ID          string      `json:"id"`
 	TrackNumber int         `json:"track_number"`

@@ -28,27 +28,6 @@ func GetPlaylistsSnapshots(w http.ResponseWriter, r *http.Request) {
 			Playlists: []models.DTOPlaylist{},
 		}
 		for _, plRaw := range plssRaw.Playlists {
-			// TODO: download tracks (maybe get a different API, not to send all data at once)
-			// plTracks = append(plTracks, models.DTOTrack{URI: plRaw.Tracks.Href})
-			// tracksBody, err := services.GetFromSpotify(plRaw.Tracks.Href, "", user.Auth)
-			// if err != nil {
-			// 	log.Printf(" >>> error, cannot get playlist tracks, user [%s], for playlist [%s]\n", user.Username, plRaw.Name)
-			// 	continue
-			// }
-			// apiErr, isError := services.GetAPIError(tracksBody)
-			// if isError {
-			// 	// TODO: refresh token in case of expired (status 401, The access token expired)
-			// 	log.Printf(" >>> error, cannot get playlist tracks, user [%s], for playlist [%s]. Error: [status %v] %s\n",
-			// 		user.Username, plRaw.Name, apiErr.Error.Status, apiErr.Error.Message)
-			// 	continue
-			// }
-
-			// playlistTracksRaw := &models.SpGetPlaylistTracksResp{}
-			// err = json.Unmarshal(tracksBody, &playlistTracksRaw)
-			// if err != nil {
-			// 	log.Printf(" >>> error, cannot get playlist tracks, user [%s], for playlist [%s]\n", user.Username, plRaw.Name)
-			// }
-
 			plss.Playlists = append(plss.Playlists, models.SpPlaylist2dtoPlaylist(plRaw.Playlist, plRaw.Tracks))
 		}
 		ssplaylists = append(ssplaylists, plss)
@@ -73,10 +52,10 @@ func GetFavTracksSnapshots(w http.ResponseWriter, r *http.Request) {
 	for _, tracksssRaw := range sstracksRaw {
 		tracksss := models.DTOFavTracksSnapshot{
 			Timestamp: tracksssRaw.Timestamp.Unix(),
-			Tracks:    []models.DTOAddedTrack{},
+			Tracks:    []models.DTOTrack{},
 		}
 		for _, trRaw := range tracksssRaw.Tracks {
-			tracksss.Tracks = append(tracksss.Tracks, models.SpAddedTrack2dtoAddedTrack(trRaw))
+			tracksss.Tracks = append(tracksss.Tracks, models.SpAddedTrack2dtoTrack(trRaw))
 		}
 		sstracks = append(sstracks, tracksss)
 	}
