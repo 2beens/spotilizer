@@ -1,8 +1,4 @@
-function populateFavTracksSnapshots() {
-    var tracksSnapshotsUL = $('#tracks-snapshots');
-    if (!tracksSnapshotsUL) {
-        return;
-    }
+function downloadFavTracksSnapshots() {
     var cookieID = getCookie("spotilizer-user-id");
     console.log(' > populating fav tracks snapshots. cookie ID: ' + cookieID);
     $.ajax({
@@ -17,11 +13,9 @@ function populateFavTracksSnapshots() {
                 toastr.error(responseObj.error.message, 'Populate favorite tracks snapshots error');
                 return;
             }
-            responseObj.data.forEach(function(ts) {
-                var timestamp = new Date(ts.timestamp * 1000);
-                var timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
-                tracksSnapshotsUL.append(`<li><a href="#">${timestampStr}: <span class="badge badge-info">${ts.tracks.length}</span> playlists</a></li>`);
-            });
+            ssTracks = responseObj.data;
+            localStorage.setItem("ssTracks", JSON.stringify(ssTracks));
+            populateFavTracksSnapshots();
         },
         error: function(xhr,status,error) {
             console.error(' >>> populate playlists snapshots, status: ' + status + ', error: ' + error);
@@ -29,11 +23,7 @@ function populateFavTracksSnapshots() {
     });
 }
 
-function populatePlaylistSnapshots() {
-    var playlistSnapshotsUL = $('#playlist-snapshots');
-    if (!playlistSnapshotsUL) {
-        return;
-    }
+function downloadPlaylistSnapshots() {
     var cookieID = getCookie("spotilizer-user-id");
     console.log(' > populating playlistts snapshots. cookie ID: ' + cookieID);
 
@@ -44,21 +34,53 @@ function populatePlaylistSnapshots() {
         },
         success: function(response) {
             var responseObj = JSON.parse(response);
+            console.warn(' > received playlists:')
+            console.warn(responseObj);
             if (responseObj.error) {
                 console.error(' >>> populate playlists snapshots error: ' + responseObj.error.message);
                 toastr.error(responseObj.error.message, 'Populate playlists snapshots error');
                 return;
             }
-            responseObj.data.forEach(function(ps) {
-                var timestamp = new Date(ps.timestamp * 1000);
-                var timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
-                playlistSnapshotsUL.append(`<li><a href="#">${timestampStr}: <span class="badge badge-info">${ps.playlists.length}</span> playlists</a></li>`);
-            });
+            ssPlaylists = responseObj.data;
+            localStorage.setItem("ssPlaylists", JSON.stringify(ssPlaylists));
+            populatePlaylistSnapshots();
         },
         error: function(xhr,status,error) {
             console.error(' >>> populate playlists snapshots, status: ' + status + ', error: ' + error);
         }
     });
+}
+
+function populateFavTracksSnapshots() {
+    var tracksSnapshotsUL = $('#tracks-snapshots');
+    if (!tracksSnapshotsUL || !ssTracks) {
+        return;
+    }
+    ssTracks.forEach(function(ts) {
+        var timestamp = new Date(ts.timestamp * 1000);
+        var timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
+        tracksSnapshotsUL.append(`<li onclick="showFavTracksSnapshot('${ts.timestamp}')">${timestampStr}: <span class="badge badge-info">${ts.tracks.length}</span> playlists</li>`);
+    });
+}
+
+function populatePlaylistSnapshots() {
+    var playlistSnapshotsUL = $('#playlist-snapshots');
+    if (!playlistSnapshotsUL || !ssPlaylists) {
+        return;
+    }
+    ssPlaylists.forEach(function(ps) {
+        var timestamp = new Date(ps.timestamp * 1000);
+        var timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
+        playlistSnapshotsUL.append(`<li onclick="showPlaylistSnapshot(${ps.timestamp})">${timestampStr}: <span class="badge badge-info">${ps.playlists.length}</span> playlists</li>`);
+    });
+}
+
+function showPlaylistSnapshot(timestamp) {
+    console.log(timestamp);
+}
+
+function showFavTracksSnapshot(timestamp) {
+    console.log(timestamp);
 }
 
 function callDebug() {
@@ -106,24 +128,49 @@ function saveCurrentPlaylists() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function(event) {
+var ssPlaylists = null;
+var ssTracks = null;
+function getDataFromLocalStorage() {
+    ssPlaylistsJson = localStorage.getItem("ssPlaylists");
+    ssTracksJson = localStorage.getItem("ssTracks");
+    countPlaylists = 0;
+    countTracks = 0;
+    if (ssPlaylistsJson) {
+        ssPlaylists = JSON.parse(ssPlaylistsJson);
+        countPlaylists = ssPlaylists.length;
+    }
+    if (ssTracksJson) {
+        ssTracks = JSON.parse(ssTracksJson);
+        countTracks = ssTracks.length;
+    }
+    console.info(` > gotten [${countPlaylists}] playlists and [${countTracks}] fav tracks from dataStorage`)
+}
+
+function refreshData() {
     // start both population functions in parallel
     setTimeout(function() {
         if (isLoggedIn()) {
-            populateFavTracksSnapshots();
+            downloadFavTracksSnapshots();
         }
     }, 400);
     setTimeout(function() {
         if (isLoggedIn()) {
-            populatePlaylistSnapshots();
+            downloadPlaylistSnapshots();
         }
     }, 650);
+}
 
+document.addEventListener('DOMContentLoaded', function(event) {
     if (isLoggedIn()) {
         $('#spotify-controls-div').removeClass('invisible-elem');
+        $('#refresh-button-div').removeClass('invisible-elem');
         $('#snapshots-data').removeClass('invisible-elem');
+        getDataFromLocalStorage();
+        populateFavTracksSnapshots();
+        populatePlaylistSnapshots();
     } else {
         $('#spotify-controls-div').addClass('invisible-elem');
+        $('#refresh-button-div').addClass('invisible-elem');
         $('#snapshots-data').addClass('invisible-elem');
     }
 });
