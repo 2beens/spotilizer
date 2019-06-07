@@ -50,5 +50,6 @@ linters:
 # https://github.com/golangci/golangci/wiki/Configuration
 service:
   golangci-lint-version: 1.16.x # use the fixed version to not introduce new linters unexpectedly
+  project-path: github.com/2beens/spotilizer
   prepare:
-    - echo "no preparation needed for this repo yet"
+    - go get github.com/gorilla/mux
