@@ -56,6 +56,7 @@ function populateFavTracksSnapshots() {
     if (!tracksSnapshotsUL || !ssTracks) {
         return;
     }
+    tracksSnapshotsUL.empty();
     ssTracks.forEach(function(ts) {
         var timestamp = new Date(ts.timestamp * 1000);
         var timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
@@ -68,6 +69,7 @@ function populatePlaylistSnapshots() {
     if (!playlistSnapshotsUL || !ssPlaylists) {
         return;
     }
+    playlistSnapshotsUL.empty();
     ssPlaylists.forEach(function(ps) {
         var timestamp = new Date(ps.timestamp * 1000);
         var timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
