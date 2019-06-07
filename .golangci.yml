@@ -50,7 +50,5 @@ linters:
 # https://github.com/golangci/golangci/wiki/Configuration
 service:
   golangci-lint-version: 1.16.x # use the fixed version to not introduce new linters unexpectedly
-  project-path: github.com/gorilla/mux
   prepare:
-    - apt-get update && apt-get install -y libcurl4-gnutls-dev
-    - dep ensure
+    - echo "no preparation needed for this repo yet"
