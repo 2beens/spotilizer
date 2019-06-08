@@ -66,3 +66,30 @@ func TestGetFromSpotify(t *testing.T) {
 
 	log.Println(" > TestGetFromSpotify: tests finished!")
 }
+
+func TestGetAPIError(t *testing.T) {
+	log.Println(" > TestGetAPIError: starting ...")
+
+	apiErrJSON := []byte(`{"error": {"status": 401, "message": "Test API Error"}}`)
+	apiErr, isErr := getAPIError(apiErrJSON)
+	assert.True(t, isErr, "API Response not received")
+	if assert.NotNil(t, apiErr, "API Error should not be nil") {
+		log.Println(" > API error response not nil, OK")
+	}
+	assert.Equal(t, "Test API Error", apiErr.Error.Message, "API Error message not correct")
+	assert.Equal(t, 401, apiErr.Error.Status, "API Error status not correct")
+
+	apiErrJSONWrong1 := []byte(`{"status": 401, "message": "Test API Error"}`)
+	apiErr, isErr = getAPIError(apiErrJSONWrong1)
+	if assert.False(t, isErr, "API Response 1, err should not be false") {
+		log.Println(" > API error 1, wrong JSON, isErr false, OK")
+	}
+
+	apiErrJSONWrong2 := []byte(`some text which is not JSON at all`)
+	apiErr, isErr = getAPIError(apiErrJSONWrong2)
+	if assert.False(t, isErr, "API Response 2, err should not be false") {
+		log.Println(" > API error 2, wrong JSON, isErr false, OK")
+	}
+
+	log.Println(" > TestGetAPIError: tests finished!")
+}
