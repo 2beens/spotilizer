@@ -3,7 +3,7 @@
 
   <div class="jumbotron">
     <h1 class="display-3">Spotify Playlists Analyzer</h1>
-    <p class="lead">Cras justo odio, dapibus ac facilisis in, egestas eget quam. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
+    <p class="lead">Save snapshots of your favorite songs and playlists, then use them to analyse and modify the current ones.</p>
   </div>
 
   <div class="row spotify-controls" id="spotify-controls-div">
@@ -15,7 +15,7 @@
     </div>
   </div>
 
-  <div class="row marketing playlists" id="snapshots-data">
+  <div class="row playlists" id="snapshots-data">
       <div class="col-lg-6">
         <h5>Stored Playlists Snapshots</h5>
         <ul id="playlist-snapshots"></ul>
@@ -30,6 +30,13 @@
     </div>
     <div class="col-sm-4">
       <a style="cursor: pointer" class="btn btn-info" role="button" onclick="refreshData()" style="position: absolute; top: 20px;">Refresh</a>
+    </div>
+  </div>
+
+  <div class="row snapshot-details">
+    <div class="col-log-8">
+      <ul id="snapshot-details-ul" class="list-group">
+      </ul>
     </div>
   </div>
 

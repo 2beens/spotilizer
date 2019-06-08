@@ -15,6 +15,7 @@ function downloadFavTracksSnapshots() {
             }
             ssTracks = responseObj.data;
             localStorage.setItem("ssTracks", JSON.stringify(ssTracks));
+            fillFavTracksSnapshotsMaps();
             populateFavTracksSnapshots();
         },
         error: function(xhr,status,error) {
@@ -34,8 +35,6 @@ function downloadPlaylistSnapshots() {
         },
         success: function(response) {
             var responseObj = JSON.parse(response);
-            console.warn(' > received playlists:')
-            console.warn(responseObj);
             if (responseObj.error) {
                 console.error(' >>> populate playlists snapshots error: ' + responseObj.error.message);
                 toastr.error(responseObj.error.message, 'Populate playlists snapshots error');
@@ -43,12 +42,38 @@ function downloadPlaylistSnapshots() {
             }
             ssPlaylists = responseObj.data;
             localStorage.setItem("ssPlaylists", JSON.stringify(ssPlaylists));
+            fillPlaylistsSnapshotsMaps();
             populatePlaylistSnapshots();
         },
         error: function(xhr,status,error) {
             console.error(' >>> populate playlists snapshots, status: ' + status + ', error: ' + error);
         }
     });
+}
+
+function fillFavTracksSnapshotsMaps() {
+    ssTimestamp2tracksMap.clear();
+    if (!ssTracks) {
+        return;
+    }
+    ssTracks.forEach(function(tracksSnapshot) {
+        ssTimestamp2tracksMap.set(tracksSnapshot.timestamp, tracksSnapshot.tracks);
+    });
+}
+
+function fillPlaylistsSnapshotsMaps() {
+    ssTimestamp2playlistsMap.clear();
+    if (!ssPlaylists) {
+        return;
+    }
+    ssPlaylists.forEach(function(playlistsSnapshot) {
+        ssTimestamp2playlistsMap.set(playlistsSnapshot.timestamp, playlistsSnapshot.playlists);
+    });
+}
+
+function fillSnapshotsMaps() {
+    fillFavTracksSnapshotsMaps();
+    fillPlaylistsSnapshotsMaps();
 }
 
 function populateFavTracksSnapshots() {
@@ -60,7 +85,10 @@ function populateFavTracksSnapshots() {
     ssTracks.forEach(function(ts) {
         var timestamp = new Date(ts.timestamp * 1000);
         var timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
-        tracksSnapshotsUL.append(`<li onclick="showFavTracksSnapshot('${ts.timestamp}')">${timestampStr}: <span class="badge badge-info">${ts.tracks.length}</span> playlists</li>`);
+        tracksSnapshotsUL.append(`
+            <li class="snapshot-item" onclick="showFavTracksSnapshot(${ts.timestamp})">
+                ${timestampStr}: <span class="badge badge-info" style="margin-left: 15px;">${ts.tracks.length}</span> tracks
+            </li>`);
     });
 }
 
@@ -73,16 +101,42 @@ function populatePlaylistSnapshots() {
     ssPlaylists.forEach(function(ps) {
         var timestamp = new Date(ps.timestamp * 1000);
         var timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
-        playlistSnapshotsUL.append(`<li onclick="showPlaylistSnapshot(${ps.timestamp})">${timestampStr}: <span class="badge badge-info">${ps.playlists.length}</span> playlists</li>`);
+        playlistSnapshotsUL.append(`<li class="snapshot-item" onclick="showPlaylistSnapshot(${ps.timestamp})">
+            ${timestampStr}: <span class="badge badge-info" style="margin-left: 15px;">${ps.playlists.length}</span> playlists
+        </li>`);
     });
 }
 
 function showPlaylistSnapshot(timestamp) {
     console.log(timestamp);
+    var playlistsSnapshot = ssTimestamp2playlistsMap.get(timestamp);
+    console.warn(playlistsSnapshot);
+    var ssDetailsList = $('#snapshot-details-ul');
+    ssDetailsList.empty();
+    playlistsSnapshot.forEach(function(p) {
+        ssDetailsList.append(`
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                ${p.name}
+                <span style="margin-left: 20px;" class="badge badge-primary badge-pill">${p.tracks.length}</span>
+            </li>
+        `);
+    });
 }
 
 function showFavTracksSnapshot(timestamp) {
     console.log(timestamp);
+    var tracksSnapshot = ssTimestamp2tracksMap.get(timestamp);
+    console.warn(tracksSnapshot);
+    var ssDetailsList = $('#snapshot-details-ul');
+    ssDetailsList.empty();
+    tracksSnapshot.forEach(function(t) {
+        ssDetailsList.append(`
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                ${t.artists[0].name} - ${t.name}
+                <span style="margin-left: 20px;" class="badge badge-primary badge-pill">${t.added_at}</span>
+            </li>
+        `);
+    });
 }
 
 function callDebug() {
@@ -132,6 +186,8 @@ function saveCurrentPlaylists() {
 
 var ssPlaylists = null;
 var ssTracks = null;
+var ssTimestamp2playlistsMap = new Map();
+var ssTimestamp2tracksMap = new Map();
 function getDataFromLocalStorage() {
     ssPlaylistsJson = localStorage.getItem("ssPlaylists");
     ssTracksJson = localStorage.getItem("ssTracks");
@@ -145,6 +201,7 @@ function getDataFromLocalStorage() {
         ssTracks = JSON.parse(ssTracksJson);
         countTracks = ssTracks.length;
     }
+    fillSnapshotsMaps();
     console.info(` > gotten [${countPlaylists}] playlists and [${countTracks}] fav tracks from dataStorage`)
 }
 
