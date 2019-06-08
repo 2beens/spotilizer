@@ -21,7 +21,7 @@ func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf(" > save fav tracks: username [%s]\n", user.Username)
 
-	tracks, apiErr := s.UserPlaylist.DownloadSavedFavTracks(user.Auth)
+	tracks, apiErr := s.UserPlaylist.DownloadSavedFavTracks(user.Auth.AccessToken)
 	if apiErr != nil {
 		log.Printf(" >>> error while saving current user tracks: %v\n", apiErr)
 		util.SendAPIErrorResp(w, apiErr.Error.Message, apiErr.Error.Status)
@@ -49,7 +49,7 @@ func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf(" > save playlists: username: %s\n", user.Username)
 
-	playlists, apiErr := s.UserPlaylist.DownloadCurrentUserPlaylists(user.Auth)
+	playlists, apiErr := s.UserPlaylist.DownloadCurrentUserPlaylists(user.Auth.AccessToken)
 	if apiErr != nil {
 		log.Printf(" >>> error while saving current user playlists: %v\n", apiErr)
 		util.SendAPIErrorResp(w, apiErr.Error.Message, apiErr.Error.Status)
@@ -60,7 +60,7 @@ func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 
 	snapshotPlaylists := []models.PlaylistSnapshot{}
 	for _, pl := range playlists {
-		playlistTracks, apiErr := s.UserPlaylist.DownloadPlaylistTracks(user.Auth, pl.Tracks.Href, pl.Tracks.Total)
+		playlistTracks, apiErr := s.UserPlaylist.DownloadPlaylistTracks(user.Auth.AccessToken, pl.Tracks.Href, pl.Tracks.Total)
 		if apiErr != nil {
 			log.Printf(" >>> error while saving current user playlists: %v\n", apiErr)
 			playlistTracks = []models.SpPlaylistTrack{}
