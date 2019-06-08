@@ -37,12 +37,12 @@ func NewSpotifyUserPlaylistService(spotifyDB db.SpotifyDBClient) *SpotifyUserPla
 }
 
 // DownloadCurrentUserPlaylists more info: https://developer.spotify.com/console/get-current-user-playlists/
-func (ups SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(authOptions *m.SpotifyAuthOptions) (playlists []m.SpPlaylist, err *m.SpAPIError) {
+func (ups SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(accessToken string) (playlists []m.SpPlaylist, err *m.SpAPIError) {
 	offset := 0
 	prevCount := 0
 	for {
 		path := fmt.Sprintf("%s?offset=%d&limit=50", ups.urlCurrentUserPlaylists, offset)
-		body, err := getFromSpotify(ups.spotifyAPIURL, path, authOptions)
+		body, err := getFromSpotify(ups.spotifyAPIURL, path, accessToken)
 		if err != nil {
 			errMsg := fmt.Sprintf(" >>> error getting current user playlists. details: %s", err.Error())
 			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
@@ -76,12 +76,12 @@ func (ups SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(authOptions *
 	}
 }
 
-func (ups SpotifyUserPlaylistService) DownloadPlaylistTracks(authOptions *m.SpotifyAuthOptions, href string, total int) (tracks []m.SpPlaylistTrack, err *m.SpAPIError) {
+func (ups SpotifyUserPlaylistService) DownloadPlaylistTracks(accessToken string, href string, total int) (tracks []m.SpPlaylistTrack, err *m.SpAPIError) {
 	tracks = []m.SpPlaylistTrack{}
 	prevCount := 0
 	nextHref := href
 	for {
-		body, err := getFromSpotify(nextHref, "", authOptions)
+		body, err := getFromSpotify(nextHref, "", accessToken)
 		if err != nil {
 			errMsg := fmt.Sprintf(" >>> error getting playlist tracks. details: %s", err.Error())
 			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
@@ -113,12 +113,12 @@ func (ups SpotifyUserPlaylistService) DownloadPlaylistTracks(authOptions *m.Spot
 	}
 }
 
-func (ups SpotifyUserPlaylistService) DownloadSavedFavTracks(authOptions *m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err *m.SpAPIError) {
+func (ups SpotifyUserPlaylistService) DownloadSavedFavTracks(accessToken string) (tracks []m.SpAddedTrack, err *m.SpAPIError) {
 	offset := 0
 	prevCount := 0
 	for {
 		path := fmt.Sprintf("%s?offset=%d&limit=50", ups.urlCurrentUserSavedTracks, offset)
-		body, err := getFromSpotify(ups.spotifyAPIURL, path, authOptions)
+		body, err := getFromSpotify(ups.spotifyAPIURL, path, accessToken)
 		if err != nil {
 			errMsg := fmt.Sprintf(" >>> error getting current user tracks. details: %s", err.Error())
 			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}

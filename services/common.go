@@ -3,46 +3,32 @@ package services
 import (
 	"encoding/json"
 	"errors"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 
-	m "github.com/2beens/spotilizer/models"
+	"github.com/2beens/spotilizer/models"
 )
-
-const requestTimeoutSeconds = 30
 
 type httpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-type requestCreator interface {
-	NewRequest(method, url string, body io.Reader) (*http.Request, error)
-}
-
-type newRequestCreator struct{}
-
-func (nrc newRequestCreator) NewRequest(method, url string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(method, url, body)
-	return req, err
-}
-
 type requestClient struct {
 	httpClient
-	requestCreator
+	requestTimeoutSeconds int
 }
 
 var reqClient = requestClient{
 	// clients should be reused instead of created as needed
 	// https://golang.org/pkg/net/http/#Client
-	httpClient:     &http.Client{},
-	requestCreator: newRequestCreator{},
+	httpClient:            &http.Client{},
+	requestTimeoutSeconds: 30,
 }
 
-func getFromSpotify(apiURL string, path string, authOptions *m.SpotifyAuthOptions) (body []byte, err error) {
-	req, err := reqClient.requestCreator.NewRequest("GET", apiURL+path, nil)
+func getFromSpotify(apiURL string, path string, accessToken string) (body []byte, err error) {
+	req, err := http.NewRequest("GET", apiURL+path, nil)
 	if err != nil {
 		log.Printf(" >>> error getting spotify response. details: %v\n", err)
 		return nil, err
@@ -50,11 +36,11 @@ func getFromSpotify(apiURL string, path string, authOptions *m.SpotifyAuthOption
 
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", "Bearer "+authOptions.AccessToken)
+	req.Header.Add("Authorization", "Bearer "+accessToken)
 
 	// complicating this function on purpose to demonstrante the usage of channels and goroutines
 	// through implementing a request timeout mechanism
-	timeoutChan := time.After(time.Duration(requestTimeoutSeconds) * time.Second)
+	timeoutChan := time.After(time.Duration(reqClient.requestTimeoutSeconds) * time.Second)
 	respChannel := make(chan []byte)
 	errChannel := make(chan error)
 
@@ -82,10 +68,10 @@ func getFromSpotify(apiURL string, path string, authOptions *m.SpotifyAuthOption
 	}
 }
 
-func getAPIError(body []byte) (spErr m.SpAPIError, isError bool) {
+func getAPIError(body []byte) (spErr models.SpAPIError, isError bool) {
 	err := json.Unmarshal(body, &spErr)
 	if err == nil && len(spErr.Error.Message) > 0 && spErr.Error.Status > 0 {
 		return spErr, true
 	}
-	return m.SpAPIError{}, false
+	return models.SpAPIError{}, false
 }

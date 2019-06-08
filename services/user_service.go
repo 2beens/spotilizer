@@ -105,8 +105,8 @@ func (us *UserService) Save(user *m.User) (stored bool) {
 	return us.usersDB.SaveUser(user)
 }
 
-func (us *UserService) GetUserFromSpotify(ao *m.SpotifyAuthOptions) (user *m.SpUser, err error) {
-	body, err := getFromSpotify(c.Conf.SpotifyAPIURL, c.Conf.URLCurrentUser, ao)
+func (us *UserService) GetUserFromSpotify(accessToken string) (user *m.SpUser, err error) {
+	body, err := getFromSpotify(c.Conf.SpotifyAPIURL, c.Conf.URLCurrentUser, accessToken)
 	if err != nil {
 		log.Printf(" >>> error getting current user playlists. details: %s\n", err.Error())
 		return nil, err

@@ -114,7 +114,7 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 
 		// get user info
 		log.Println(" > getting user info from SP ...")
-		spUser, userErr := s.Users.GetUserFromSpotify(authOptions)
+		spUser, userErr := s.Users.GetUserFromSpotify(authOptions.AccessToken)
 		if userErr != nil {
 			log.Println(" >>> error, cannot get user info from Spotify API.")
 			util.RenderView(w, "error", m.ErrorViewData{Title: "Spotify Login",
