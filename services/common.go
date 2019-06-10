@@ -28,6 +28,7 @@ var reqClient = requestClient{
 }
 
 func getFromSpotify(apiURL string, path string, accessToken string) (body []byte, err error) {
+	log.Println(" > getting from Spotify API: " + path)
 	req, err := http.NewRequest("GET", apiURL+path, nil)
 	if err != nil {
 		log.Printf(" >>> error getting spotify response. details: %v\n", err)

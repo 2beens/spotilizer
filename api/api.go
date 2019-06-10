@@ -7,7 +7,20 @@ import (
 	"github.com/2beens/spotilizer/models"
 	"github.com/2beens/spotilizer/services"
 	"github.com/2beens/spotilizer/util"
+	"github.com/gorilla/mux"
 )
+
+func DeletePlaylistSnapshot(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	timestamp := vars["timestamp"]
+	log.Println(" > deleting playlist: " + timestamp)
+}
+
+func DeleteFavTracksSnapshots(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	timestamp := vars["timestamp"]
+	log.Println(" > deleting fav tracks: " + timestamp)
+}
 
 func GetPlaylistsSnapshots(w http.ResponseWriter, r *http.Request) {
 	log.Println(" > API: getting user playists snapshots ...")

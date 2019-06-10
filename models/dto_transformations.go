@@ -18,8 +18,14 @@ func SpPlaylist2dtoPlaylist(spPlaylist SpPlaylist, tracks []SpPlaylistTrack) DTO
 
 func SpPlaylistTrack2dtoPlaylistTrack(spPlTrack SpPlaylistTrack) DTOTrack {
 	dtoTrack := DTOTrack{
-		AddedAt: spPlTrack.AddedAt.Unix(),
-		AddedBy: spPlTrack.AddedBy.ID,
+		AddedAt:     spPlTrack.AddedAt.Unix(),
+		AddedBy:     spPlTrack.AddedBy.ID,
+		ID:          spPlTrack.Track.ID,
+		DurationMs:  spPlTrack.Track.DurationMs,
+		Name:        spPlTrack.Track.Name,
+		TrackNumber: spPlTrack.Track.TrackNumber,
+		URI:         spPlTrack.Track.URI,
+		Artists:     SpArtists2dtoArtists(spPlTrack.Track.Artists),
 	}
 	return dtoTrack
 }

@@ -49,14 +49,6 @@ func routerSetup() (r *mux.Router) {
 	r.HandleFunc("/about", middleware(h.AboutHandler))
 	r.HandleFunc("/contact", middleware(h.ContactHandler))
 
-	// router example usage with params (remove later)
-	r.HandleFunc("/books/{title}/page/{page}", middleware(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		title := vars["title"] // the book title slug
-		page := vars["page"]   // the page
-		log.Printf(" > received title [%s] and page [%s]\n", title, page)
-	})).Methods("GET")
-
 	// spotify API
 	r.HandleFunc("/login", middleware(h.GetSpotifyLoginHandler(serverURL)))
 	r.HandleFunc("/logout", middleware(h.LogoutHandler))
@@ -66,7 +58,9 @@ func routerSetup() (r *mux.Router) {
 	r.HandleFunc("/save_current_tracks", middleware(h.SaveCurrentTracksHandler))
 
 	r.HandleFunc("/api/ssplaylists", middleware(api.GetPlaylistsSnapshots))
+	r.HandleFunc("/api/ssplaylists/{timestamp}", middleware(api.DeletePlaylistSnapshot)).Methods("DELETE")
 	r.HandleFunc("/api/ssfavtracks", middleware(api.GetFavTracksSnapshots))
+	r.HandleFunc("/api/ssfavtracks/{timestamp}", middleware(api.DeleteFavTracksSnapshots)).Methods("DELETE")
 
 	// debuging
 	r.HandleFunc("/debug", middleware(h.DebugHandler))

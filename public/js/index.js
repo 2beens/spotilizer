@@ -1,5 +1,9 @@
 function downloadFavTracksSnapshots() {
     var cookieID = getCookie("spotilizer-user-id");
+    if (!window.accessToken || !cookieID) {
+        toastr.error('Not logged in.', 'Populate favorite tracks snapshots error');
+        return;
+    }
     console.log(' > populating fav tracks snapshots. cookie ID: ' + cookieID);
     $.ajax({
         url: '/api/ssfavtracks',
@@ -26,8 +30,11 @@ function downloadFavTracksSnapshots() {
 
 function downloadPlaylistSnapshots() {
     var cookieID = getCookie("spotilizer-user-id");
+    if (!window.accessToken || !cookieID) {
+        toastr.error('Not logged in.', 'Populate playlists snapshots error');
+        return;
+    }
     console.log(' > populating playlistts snapshots. cookie ID: ' + cookieID);
-
     $.ajax({
         url: '/api/ssplaylists',
         headers: {
@@ -47,6 +54,35 @@ function downloadPlaylistSnapshots() {
         },
         error: function(xhr,status,error) {
             console.error(' >>> populate playlists snapshots, status: ' + status + ', error: ' + error);
+        }
+    });
+}
+
+function deletePlaylistSnapshot(timestamp) {
+    var cookieID = getCookie("spotilizer-user-id");
+    if (!window.accessToken || !cookieID) {
+        toastr.error('Not logged in.', 'Delete playlist snapshot error');
+        return;
+    }
+    console.log(' > delete playlist snapshot. cookie ID: ' + cookieID);
+    $.ajax({
+        url: '/api/ssplaylists/' + timestamp,
+        type: 'DELETE',
+        headers: {
+            'Authorization': 'Bearer ' + window.accessToken
+        },
+        success: function(response) {
+            console.log(' > received from server:');
+            console.log(response);
+            var responseObj = JSON.parse(response);
+            if (responseObj.error) {
+                console.error(' >>> delete playlist snapshot error: ' + responseObj.error.message);
+                toastr.error(responseObj.error.message, 'Delete playlist snapshot error');
+                return;
+            }
+        },
+        error: function(xhr,status,error) {
+            console.error(' >>> delete playlist snapshot error, status: ' + status + ', error: ' + error);
         }
     });
 }
@@ -101,9 +137,17 @@ function populatePlaylistSnapshots() {
     ssPlaylists.forEach(function(ps) {
         var timestamp = new Date(ps.timestamp * 1000);
         var timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
-        playlistSnapshotsUL.append(`<li class="snapshot-item" onclick="showPlaylistSnapshot(${ps.timestamp})">
-            ${timestampStr}: <span class="badge badge-info" style="margin-left: 15px;">${ps.playlists.length}</span> playlists
-        </li>`);
+        playlistSnapshotsUL.append(`
+            <li style="list-style-type:none;">
+            <div class="row">
+                <div class="snapshot-item col-sm-9" onclick="showPlaylistSnapshot(${ps.timestamp})">
+                    ${timestampStr}: <span class="badge badge-info" style="margin-left: 15px;">${ps.playlists.length}</span> playlists
+                </div>
+                <div class="col-sm-3">
+                    <button style="height: 20px; padding-top: 0px;" type="button" class="btn btn-danger btn-sm" onclick="deletePlaylistSnapshot(${ps.timestamp})">Del</button>
+                </div>
+            </div>
+            </li>`);
     });
 }
 
