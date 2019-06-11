@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -10,16 +11,60 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func DeletePlaylistSnapshot(w http.ResponseWriter, r *http.Request) {
+func DeletePlaylistsSnapshot(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	timestamp := vars["timestamp"]
-	log.Println(" > deleting playlist: " + timestamp)
+	log.Println(" > deleting playlists: " + timestamp)
+	user, err := services.Users.GetUserByRequestCookieID(r)
+	if err != nil {
+		log.Printf(" >>> user/cookie error while trying to delete playlists snapshot: %s\n", err.Error())
+		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
+		return
+	}
+
+	log.Printf(" > delete playlists snapshot [%s]: username [%s]\n", timestamp, user.Username)
+
+	snapshot, err := services.UserPlaylist.DeletePlaylistsSnapshot(user.Username, timestamp)
+	if err != nil {
+		log.Printf(" >>> error while trying to delete playlists snapshot: %s\n", err.Error())
+		util.SendAPIErrorResp(w, "Error occured: "+err.Error(), http.StatusNotFound)
+		return
+	}
+	if snapshot == nil {
+		log.Println(" >>> error while trying to delete playlists snapshot: snapshot is nil")
+		util.SendAPIErrorResp(w, "Playlists snapshot not deleted: not found ", http.StatusNotFound)
+		return
+	}
+
+	util.SendAPIOKResp(w, fmt.Sprintf("Playlists snapshot [%s] successfully deleted.", snapshot.Timestamp))
 }
 
 func DeleteFavTracksSnapshots(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	timestamp := vars["timestamp"]
 	log.Println(" > deleting fav tracks: " + timestamp)
+	user, err := services.Users.GetUserByRequestCookieID(r)
+	if err != nil {
+		log.Printf(" >>> user/cookie error while trying to delete fav. tracks snapshot: %s\n", err.Error())
+		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
+		return
+	}
+
+	log.Printf(" > delete fav tracks snapshot [%s]: username [%s]\n", timestamp, user.Username)
+
+	snapshot, err := services.UserPlaylist.DeleteFavTracksSnapshot(user.Username, timestamp)
+	if err != nil {
+		log.Printf(" >>> error while trying to delete fav. tracks snapshot: %s\n", err.Error())
+		util.SendAPIErrorResp(w, "Error occured: "+err.Error(), http.StatusNotFound)
+		return
+	}
+	if snapshot == nil {
+		log.Println(" >>> error while trying to delete fav. tracks snapshot: snapshot is nil")
+		util.SendAPIErrorResp(w, "Favorite tracks snapshot not deleted: not found ", http.StatusNotFound)
+		return
+	}
+
+	util.SendAPIOKResp(w, fmt.Sprintf("Favorite tracks snapshot [%s] successfully deleted.", snapshot.Timestamp))
 }
 
 func GetPlaylistsSnapshots(w http.ResponseWriter, r *http.Request) {

@@ -15,6 +15,8 @@ import (
 type SpotifyDBClient interface {
 	SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool)
 	SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool)
+	DeletePlaylistsSnapshot(username string, timestamp string) (*m.PlaylistsSnapshot, error)
+	DeleteFavTracksSnapshot(username string, timestamp string) (*m.FavTracksSnapshot, error)
 	GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot
 	GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot
 	GetAllFavTracksSnapshots(username string) []m.FavTracksSnapshot
@@ -59,6 +61,50 @@ func (sDB SpotifyDB) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool)
 	}
 	log.Printf(" > user [%s] playlists snapshot saved to DB\n", ps.Username)
 	return true
+}
+
+func (sDB SpotifyDB) DeletePlaylistsSnapshot(username string, timestamp string) (*m.PlaylistsSnapshot, error) {
+	log.Printf(" > deleting playlist snapshot [%s] ...\n", timestamp)
+	snapshotKey := fmt.Sprintf("playlistsshot::user::%s::timestamp::%s", username, timestamp)
+	snapshot := sDB.GetPlaylistSnapshot(snapshotKey)
+	if snapshot == nil {
+		return nil, fmt.Errorf("snapshot [%s] not found", timestamp)
+	}
+
+	cmd := rc.Del(snapshotKey)
+	if err := cmd.Err(); err != nil {
+		log.Printf(" >>> failed to delete playlists snapshot [%s] for user [%s]: %s\n", timestamp, username, err.Error())
+		return nil, err
+	}
+
+	deletedRecordsCount := cmd.Val()
+	if deletedRecordsCount == 0 {
+		return snapshot, fmt.Errorf("snapshot [%s] found, but not deleted", snapshot.Timestamp)
+	}
+
+	return snapshot, nil
+}
+
+func (sDB SpotifyDB) DeleteFavTracksSnapshot(username string, timestamp string) (*m.FavTracksSnapshot, error) {
+	log.Printf(" > deleting fav tracks snapshot [%s] ...\n", timestamp)
+	snapshotKey := fmt.Sprintf("favtracksshot::user::%s::timestamp::%s", username, timestamp)
+	snapshot := sDB.GetFavTrakcsSnapshot(snapshotKey)
+	if snapshot == nil {
+		return nil, fmt.Errorf("snapshot [%s] not found", timestamp)
+	}
+
+	cmd := rc.Del(snapshotKey)
+	if err := cmd.Err(); err != nil {
+		log.Printf(" >>> failed to delete fav tracks snapshot [%s] for user [%s]: %s\n", timestamp, username, err.Error())
+		return nil, err
+	}
+
+	deletedRecordsCount := cmd.Val()
+	if deletedRecordsCount == 0 {
+		return snapshot, fmt.Errorf("snapshot [%s] found, but not deleted", snapshot.Timestamp)
+	}
+
+	return snapshot, nil
 }
 
 func (sDB SpotifyDB) GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot {

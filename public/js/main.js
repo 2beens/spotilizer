@@ -44,9 +44,6 @@ function makeRequest(queryUrl, successf, errorf) {
     }
     $.ajax({
         url: queryUrl,
-        headers: {
-            'Authorization': 'Bearer ' + window.accessToken
-        },
         success: successf,
         complete: function() {
             console.log(' ---> call completed: ' + queryUrl);
@@ -104,9 +101,6 @@ function isLoggedIn() {
 }
 
 (function () {
-    window.accessToken = getCookie("accessToken");
-    window.refreshToken = getCookie("refreshToken");
-
     // remove unnecessary path info during login or logout
     if (window.location.pathname === '/callback' || window.location.pathname === '/logout') {
         history.pushState({}, null, "/");

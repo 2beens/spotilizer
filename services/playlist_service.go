@@ -167,3 +167,11 @@ func (ups SpotifyUserPlaylistService) GetAllFavTracksSnapshots(username string) 
 func (ups SpotifyUserPlaylistService) GetAllPlaylistsSnapshots(username string) []m.PlaylistsSnapshot {
 	return ups.spotifyDB.GetAllPlaylistsSnapshots(username)
 }
+
+func (ups SpotifyUserPlaylistService) DeletePlaylistsSnapshot(username string, timestamp string) (*m.PlaylistsSnapshot, error) {
+	return ups.spotifyDB.DeletePlaylistsSnapshot(username, timestamp)
+}
+
+func (ups SpotifyUserPlaylistService) DeleteFavTracksSnapshot(username string, timestamp string) (*m.FavTracksSnapshot, error) {
+	return ups.spotifyDB.DeleteFavTracksSnapshot(username, timestamp)
+}
