@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"math"
 	"math/rand"
 	"net/http"
@@ -17,6 +16,8 @@ import (
 	c "github.com/2beens/spotilizer/constants"
 	m "github.com/2beens/spotilizer/models"
 	s "github.com/2beens/spotilizer/services"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // GenerateRandomString generates a random string containing numbers and letters
@@ -94,7 +95,6 @@ func LoggingSetup(logFileName string) {
 	}
 
 	log.SetOutput(logFile)
-	log.SetFlags(5)
 }
 
 // templates cheatsheet

@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,6 +17,7 @@ import (
 	s "github.com/2beens/spotilizer/services"
 	"github.com/2beens/spotilizer/util"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 var serverURL = fmt.Sprintf("%s://%s:%s", c.Protocol, c.IPAddress, c.Port)
@@ -86,12 +86,20 @@ func main() {
 	}
 
 	util.LoggingSetup(*logFileName)
+	// logrus has seven logging levels:
+	//		Trace, Debug, Info, Warning, Error, Fatal, Panic
+	log.SetLevel(log.TraceLevel)
+
+	// logging example with fields
+	// log.WithFields(log.Fields{
+	// 	"omg":    true,
+	// 	"number": 122,
+	// }).Warn("The group's number increased tremendously!")
 
 	// read spotify client ID & Secret
 	clientID, clientSecret, err := util.ReadSpotifyAuthData()
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal(err)
 	}
 	h.SetCliendIDAndSecret(clientID, clientSecret)
 
@@ -103,7 +111,7 @@ func main() {
 	router := routerSetup()
 
 	ipAndPort := fmt.Sprintf("%s:%s", c.IPAddress, c.Port)
-	srv := &http.Server{
+	httpServer := &http.Server{
 		Handler:      router,
 		Addr:         ipAndPort,
 		WriteTimeout: 15 * time.Second,
@@ -112,8 +120,8 @@ func main() {
 
 	// run our server in a goroutine so that it doesn't block
 	go func() {
-		log.Printf(" > server listening on: [%s]\n", ipAndPort)
-		log.Fatal(srv.ListenAndServe())
+		log.Infof(" > server listening on: [%s]", ipAndPort)
+		log.Fatal(httpServer.ListenAndServe())
 	}()
 
 	go func() {
@@ -126,13 +134,13 @@ func main() {
 		signal.Notify(c, syscall.SIGHUP)
 		<-c
 		util.LoggingSetup("serverlog")
-		log.Println(" > controlling terminal lost, logging switched to file [serverlog.log]")
+		log.Warn(" > controlling terminal lost, logging switched to file [serverlog.log]")
 	}()
 
-	gracefulShutdown(srv)
+	gracefulShutdown(httpServer)
 }
 
-func gracefulShutdown(srv *http.Server) {
+func gracefulShutdown(httpServer *http.Server) {
 	c := make(chan os.Signal, 1)
 	// we'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught
@@ -150,11 +158,11 @@ func gracefulShutdown(srv *http.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), maxWaitDuration)
 	defer cancel()
 	// doesn't block if no connections, but will otherwise wait until the timeout deadline
-	err := srv.Shutdown(ctx)
+	err := httpServer.Shutdown(ctx)
 	if err != nil {
-		log.Println(" >>> failed to gracefully shutdown")
+		log.Error(" >>> failed to gracefully shutdown")
 	}
 
-	log.Println(" > server shut down")
+	log.Info(" > server shut down")
 	os.Exit(0)
 }

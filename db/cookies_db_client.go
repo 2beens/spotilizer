@@ -1,8 +1,9 @@
 package db
 
 import (
-	"log"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"gopkg.in/redis.v3"
 )

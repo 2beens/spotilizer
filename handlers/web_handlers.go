@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 
 	c "github.com/2beens/spotilizer/constants"
 	m "github.com/2beens/spotilizer/models"
@@ -43,18 +44,18 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 func DebugHandler(w http.ResponseWriter, r *http.Request) {
 	cookieID, _ := r.Cookie(c.CookieUserIDKey)
 	user, _ := s.Users.GetUserByCookieID(cookieID.Value)
-	log.Println("--------------- USER      ---------------------------------")
-	log.Println(user)
+	log.Infoln("--------------- USER      ---------------------------------")
+	log.Infoln(user)
 	playlists := s.UserPlaylist.GetAllPlaylistsSnapshots(user.Username)
-	log.Println("--------------- PLAYLISTS ---------------------------------")
+	log.Infoln("--------------- PLAYLISTS ---------------------------------")
 	for _, p := range playlists {
-		log.Printf(" ====>>> [%v]: count %d\n", p.Timestamp, len(p.Playlists))
+		log.Infof(" ====>>> [%v]: count %d\n", p.Timestamp, len(p.Playlists))
 	}
-	log.Println("--------------- TRACKS    ---------------------------------")
+	log.Infoln("--------------- TRACKS    ---------------------------------")
 	favtracks := s.UserPlaylist.GetAllFavTracksSnapshots(user.Username)
 	for _, t := range favtracks {
-		log.Printf(" ====>>> [%v]: count %d\n", t.Timestamp, len(t.Tracks))
+		log.Infof(" ====>>> [%v]: count %d\n", t.Timestamp, len(t.Tracks))
 	}
-	log.Println("-------------------------------------------------------------")
+	log.Infoln("-------------------------------------------------------------")
 	http.Redirect(w, r, "/", http.StatusFound)
 }

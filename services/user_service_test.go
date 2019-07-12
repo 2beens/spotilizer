@@ -1,8 +1,9 @@
 package services_test
 
 import (
-	"log"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 
 	m "github.com/2beens/spotilizer/models"
 	s "github.com/2beens/spotilizer/services"

@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	c "github.com/2beens/spotilizer/constants"
 	m "github.com/2beens/spotilizer/models"
@@ -38,7 +39,7 @@ func GetSpotifyLoginHandler(serverURL string) func(w http.ResponseWriter, r *htt
 		q.Add("state", state)
 
 		redirectURL := "https://accounts.spotify.com/authorize?" + q.Encode()
-		log.Println(" > /login, redirect to: " + redirectURL)
+		log.Trace(" > /login, redirect to: " + redirectURL)
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 	}
 }
@@ -46,17 +47,17 @@ func GetSpotifyLoginHandler(serverURL string) func(w http.ResponseWriter, r *htt
 func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 	cookieID, err := r.Cookie(c.CookieUserIDKey)
 	if err != nil {
-		log.Printf(" > refresh token failed, cannot find user by cookie ID, error: [%s]\n", err.Error())
+		log.Debugf(" > refresh token failed, cannot find user by cookie ID, error: [%s]", err.Error())
 		util.SendAPIErrorResp(w, "Cannot find user by cookie, refresh token failed", 400)
 		return
 	}
 	user, err := s.Users.GetUserByCookieID(cookieID.Value)
 	if err != nil {
-		log.Println(" > refresh token failed, cannot find user by cookie ID")
+		log.Debugf(" > refresh token failed, cannot find user by cookie ID [%s]", cookieID.Value)
 		util.SendAPIErrorResp(w, "Cannot find user by cookie, refresh token failed", 400)
 		return
 	}
-	log.Println(" > refresh token, value: " + user.Auth.RefreshToken)
+	log.Traceln(" > refresh token, value: " + user.Auth.RefreshToken)
 
 	data := url.Values{}
 	data.Set("refresh_token", user.Auth.RefreshToken)
@@ -70,6 +71,7 @@ func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.Users.Save(user)
 
+	log.Tracef(" > refresh token success for user [%s]", user.Username)
 	util.SendAPIOKResp(w, "success")
 }
 
@@ -78,7 +80,7 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		q := r.URL.Query()
 		err, ok := q["error"]
 		if ok {
-			log.Printf(" > login failed, error: [%v]\n", err)
+			log.Infof(" > login failed, error: [%v]", err)
 			util.RenderView(w, "error", m.ErrorViewData{Title: "Spotify Login",
 				Error: "Login to Spotify failed: " + strings.Join(err, ", ")})
 			return
@@ -88,14 +90,14 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		state, stateOk := q["state"]
 		storedStateCookie, sStateCookieErr := r.Cookie(c.CookieStateKey)
 		if !codeOk || !stateOk {
-			log.Println(" > login failed, error: some of the mandatory params not found")
+			log.Debug(" > login failed, error: some of the mandatory params not found")
 			util.RenderView(w, "error", m.ErrorViewData{Title: "Spotify Login",
 				Error: "Login to Spotify failed: login failed, error: some of the mandatory params not found"})
 			return
 		}
 
 		if storedStateCookie == nil || storedStateCookie.Value != state[0] || sStateCookieErr != nil {
-			log.Printf(" > login failed, error: state cookie not found or state mismatch. more details [%v]\n", err)
+			log.Debugf(" > login failed, error: state cookie not found or state mismatch. more details [%v]", err)
 			util.RenderView(w, "error", m.ErrorViewData{Title: "Spotify Login",
 				Error: "Login to Spotify failed: state cookie not found or state mismatch"})
 			return
@@ -113,15 +115,15 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		}
 
 		// get user info
-		log.Println(" > getting user info from SP ...")
+		log.Debugln(" > getting user info from SP ...")
 		spUser, userErr := s.Users.GetUserFromSpotify(authOptions.AccessToken)
 		if userErr != nil {
-			log.Println(" >>> error, cannot get user info from Spotify API.")
+			log.Debugf(" >>> error, cannot get user info from Spotify API.")
 			util.RenderView(w, "error", m.ErrorViewData{Title: "Spotify Login",
 				Error: "Login to Spotify failed: error, cannot get user info from Spotify API"})
 			return
 		}
-		log.Printf(" > gotten user [%s]\n", spUser.ID)
+		log.Debugf(" > gotten user [%s]\n", spUser.ID)
 
 		var cookieID string
 		user, _ := s.Users.Get(spUser.ID)
@@ -130,15 +132,15 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 			user = &m.User{Username: spUser.ID, Auth: authOptions}
 			s.Users.Add(user)
 			s.Users.AddUserCookie(cookieID, user.Username)
-			log.Printf(" > new user [%s] created and stored. cookie [%s]\n", user.Username, cookieID)
+			log.Debugf(" > new user [%s] created and stored. cookie [%s]", user.Username, cookieID)
 		} else {
 			cID, cErr := s.Users.GetCookieIDByUsername(user.Username)
 			if cErr != nil {
 				cookieID = util.GenerateRandomString(45)
-				log.Printf(" > generating and seding new cookie ID [%s] to client\n", cookieID)
+				log.Debugf(" > generating and seding new cookie ID [%s] to client", cookieID)
 				s.Users.AddUserCookie(cookieID, user.Username)
 			} else {
-				log.Println(" > using previous cookie ID: " + cID)
+				log.Debug(" > using previous cookie ID: " + cID)
 			}
 			cookieID = cID
 			user.Auth = authOptions
@@ -156,7 +158,7 @@ func getAccessToken(data url.Values) (auth *m.SpotifyAuthOptions, err error) {
 	auth = &m.SpotifyAuthOptions{}
 	err = json.Unmarshal(body, &auth)
 	if err != nil {
-		log.Println(" >>> error while unmarshaling auth options: " + err.Error())
+		log.Warn(" >>> error while unmarshaling auth options: " + err.Error())
 		auth = nil
 	}
 	return
@@ -175,7 +177,7 @@ func postReq(data url.Values, uri string, path string) []byte {
 
 	resp, err := client.Do(r)
 	if err != nil {
-		log.Printf(" >>> error making an auth post req: %v\n", err)
+		log.Infof(" >>> error making an auth post req: %s", err.Error())
 		// TODO: return error and check for it later
 		return nil
 	}

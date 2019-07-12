@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/2beens/spotilizer/models"
 	m "github.com/2beens/spotilizer/models"
@@ -19,16 +20,16 @@ func SaveCurrentTracksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf(" > save fav tracks: username [%s]\n", user.Username)
+	log.Debugf(" > save fav tracks: username [%s]", user.Username)
 
 	tracks, apiErr := s.UserPlaylist.DownloadSavedFavTracks(user.Auth.AccessToken)
 	if apiErr != nil {
-		log.Printf(" >>> error while saving current user tracks: %v\n", apiErr)
+		log.Infof(" >>> error while saving current user tracks: %v", apiErr)
 		util.SendAPIErrorResp(w, apiErr.Error.Message, apiErr.Error.Status)
 		return
 	}
 
-	log.Printf(" > tracks count: %d\n", len(tracks))
+	log.Tracef(" > tracks count: %d", len(tracks))
 
 	// save tracks to DB
 	tracksSnapshot := &m.FavTracksSnapshot{Username: user.Username, Timestamp: time.Now(), Tracks: tracks}
@@ -47,25 +48,25 @@ func SaveCurrentPlaylistsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf(" > save playlists: username: %s\n", user.Username)
+	log.Debugf(" > save playlists: username: %s", user.Username)
 
 	playlists, apiErr := s.UserPlaylist.DownloadCurrentUserPlaylists(user.Auth.AccessToken)
 	if apiErr != nil {
-		log.Printf(" >>> error while saving current user playlists: %v\n", apiErr)
+		log.Infof(" >>> error while saving current user playlists: %v", apiErr)
 		util.SendAPIErrorResp(w, apiErr.Error.Message, apiErr.Error.Status)
 		return
 	}
 
-	log.Printf(" > playlists count: %d\n", len(playlists))
+	log.Tracef(" > playlists count: %d", len(playlists))
 
 	snapshotPlaylists := []models.PlaylistSnapshot{}
 	for _, pl := range playlists {
 		playlistTracks, apiErr := s.UserPlaylist.DownloadPlaylistTracks(user.Auth.AccessToken, pl.Tracks.Href, pl.Tracks.Total)
 		if apiErr != nil {
-			log.Printf(" >>> error while saving current user playlists: %v\n", apiErr)
+			log.Warnf(" >>> error while saving current user playlists: %v", apiErr)
 			playlistTracks = []models.SpPlaylistTrack{}
 		}
-		log.Printf(" > received [%d] tracks for playlist [%s]\n", len(playlistTracks), pl.Name)
+		log.Tracef(" > received [%d] tracks for playlist [%s]", len(playlistTracks), pl.Name)
 		plSnapshot := models.PlaylistSnapshot{
 			Playlist: pl,
 			Tracks:   playlistTracks,

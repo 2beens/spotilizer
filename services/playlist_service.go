@@ -3,7 +3,8 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+
+	log "github.com/sirupsen/logrus"
 
 	c "github.com/2beens/spotilizer/config"
 	"github.com/2beens/spotilizer/db"

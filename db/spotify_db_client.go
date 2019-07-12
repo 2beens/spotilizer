@@ -3,10 +3,11 @@ package db
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	m "github.com/2beens/spotilizer/models"
 	"gopkg.in/redis.v3"

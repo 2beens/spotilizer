@@ -2,7 +2,8 @@ package db
 
 import (
 	"fmt"
-	"log"
+
+	log "github.com/sirupsen/logrus"
 
 	c "github.com/2beens/spotilizer/constants"
 

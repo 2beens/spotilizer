@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/2beens/spotilizer/models"
+	log "github.com/sirupsen/logrus"
 )
 
 type httpClient interface {
@@ -28,10 +28,10 @@ var reqClient = requestClient{
 }
 
 func getFromSpotify(apiURL string, path string, accessToken string) (body []byte, err error) {
-	log.Println(" > getting from Spotify API: " + path)
+	log.Tracef(" > getting from Spotify API [%s]: %s", apiURL, path)
 	req, err := http.NewRequest("GET", apiURL+path, nil)
 	if err != nil {
-		log.Printf(" >>> error getting spotify response. details: %v\n", err)
+		log.Infof(" >>> error getting spotify response. details: %s", err.Error())
 		return nil, err
 	}
 
