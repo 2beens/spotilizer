@@ -4,37 +4,31 @@ import (
 	"time"
 )
 
+type SpResponse struct {
+	Href     string `json:"href"`
+	Limit    int    `json:"limit"`
+	Next     string `json:"next"`
+	Offset   int    `json:"offset"`
+	Previous string `json:"previous"`
+	Total    int    `json:"total"`
+}
+
 type SpGetCurrentPlaylistsResp struct {
-	Href     string       `json:"href"`
-	Items    []SpPlaylist `json:"items"`
-	Limit    int          `json:"limit"`
-	Next     string       `json:"next"`
-	Offset   int          `json:"offset"`
-	Previous string       `json:"previous"`
-	Total    int          `json:"total"`
+	SpResponse
+	Items []SpPlaylist `json:"items"`
 }
 
 // TODO: these "SpGet**" struct responses are basically the same, the only diff being the items
 // see if those can be merged into one type (maybe somehow by using []interface{} for items)
 
 type SpGetPlaylistTracksResp struct {
-	Href     string            `json:"href"`
-	Items    []SpPlaylistTrack `json:"items"`
-	Limit    int               `json:"limit"`
-	Next     string            `json:"next"`
-	Offset   int               `json:"offset"`
-	Previous string            `json:"previous"`
-	Total    int               `json:"total"`
+	SpResponse
+	Items []SpPlaylistTrack `json:"items"`
 }
 
 type SpGetSavedTracksResp struct {
-	Href     string         `json:"href"`
-	Items    []SpAddedTrack `json:"items"`
-	Limit    int            `json:"limit"`
-	Next     string         `json:"next"`
-	Offset   int            `json:"offset"`
-	Previous string         `json:"previous"`
-	Total    int            `json:"total"`
+	SpResponse
+	Items []SpAddedTrack `json:"items"`
 }
 
 type SpAddedTrack struct {
