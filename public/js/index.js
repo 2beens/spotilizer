@@ -114,7 +114,7 @@ function populateFavTracksSnapshots() {
         var timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
         tracksSnapshotsUL.append(`
             <li class="snapshot-item" onclick="showFavTracksSnapshot(${ts.timestamp})">
-                ${timestampStr}: <span class="badge badge-info" style="margin-left: 15px;">${ts.tracks.length}</span> tracks
+                ${timestampStr}: <span class="badge badge-info" style="margin-left: 15px;">${ts.tracks_count}</span> tracks
             </li>`);
     });
 }

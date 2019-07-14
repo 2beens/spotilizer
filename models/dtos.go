@@ -6,8 +6,9 @@ type DTOPlaylistSnapshot struct {
 }
 
 type DTOFavTracksSnapshot struct {
-	Timestamp int64      `json:"timestamp"`
-	Tracks    []DTOTrack `json:"tracks"`
+	Timestamp   int64      `json:"timestamp"`
+	TracksCount int        `json:"tracks_count"`
+	Tracks      []DTOTrack `json:"tracks"`
 }
 
 type DTOPlaylist struct {
