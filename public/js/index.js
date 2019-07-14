@@ -16,7 +16,7 @@ function downloadFavTracksSnapshots() {
             }
             ssTracks = responseObj.data;
             localStorage.setItem("ssTracks", JSON.stringify(ssTracks));
-            fillFavTracksSnapshotsMaps();
+            fillFavTracksSnapshotsMap();
             populateFavTracksSnapshots();
         },
         error: function(xhr,status,error) {
@@ -43,11 +43,39 @@ function downloadPlaylistSnapshots() {
             }
             ssPlaylists = responseObj.data;
             localStorage.setItem("ssPlaylists", JSON.stringify(ssPlaylists));
-            fillPlaylistsSnapshotsMaps();
+            fillPlaylistsSnapshotsMap();
             populatePlaylistSnapshots();
         },
         error: function(xhr,status,error) {
             console.error(' >>> populate playlists snapshots, status: ' + status + ', error: ' + error);
+        }
+    });
+}
+
+function deleteFavTracksSnapshot(timestamp) {
+    var cookieID = getCookie("spotilizer-user-id");
+    if (!cookieID) {
+        toastr.error('Not logged in.', 'Delete fav tracks snapshot error');
+        return;
+    }
+    console.log(' > delete fav tracks snapshot. cookie ID: ' + cookieID);
+    $.ajax({
+        url: '/api/ssfavtracks/' + timestamp,
+        type: 'DELETE',
+        success: function(response) {
+            console.log(' > received from server:');
+            console.log(response);
+            var responseObj = JSON.parse(response);
+            if (responseObj.error) {
+                console.error(' >>> delete playlist snapshot error: ' + responseObj.error.message);
+                toastr.error(responseObj.error.message, 'Delete playlist snapshot error');
+            } else {
+                downloadFavTracksSnapshots();
+                toastr.success(responseObj.message, 'Delete favorite tracks snapshot');
+            }
+        },
+        error: function(xhr,status,error) {
+            console.error(' >>> delete playlist snapshot error, status: ' + status + ', error: ' + error);
         }
     });
 }
@@ -69,7 +97,9 @@ function deletePlaylistSnapshot(timestamp) {
             if (responseObj.error) {
                 console.error(' >>> delete playlist snapshot error: ' + responseObj.error.message);
                 toastr.error(responseObj.error.message, 'Delete playlist snapshot error');
-                return;
+            } else {
+                downloadPlaylistSnapshots();
+                toastr.success(responseObj.message, 'Delete playists snapshot');
             }
         },
         error: function(xhr,status,error) {
@@ -78,7 +108,7 @@ function deletePlaylistSnapshot(timestamp) {
     });
 }
 
-function fillFavTracksSnapshotsMaps() {
+function fillFavTracksSnapshotsMap() {
     ssTimestamp2tracksMap.clear();
     if (!ssTracks) {
         return;
@@ -88,7 +118,7 @@ function fillFavTracksSnapshotsMaps() {
     });
 }
 
-function fillPlaylistsSnapshotsMaps() {
+function fillPlaylistsSnapshotsMap() {
     ssTimestamp2playlistsMap.clear();
     if (!ssPlaylists) {
         return;
@@ -99,8 +129,8 @@ function fillPlaylistsSnapshotsMaps() {
 }
 
 function fillSnapshotsMaps() {
-    fillFavTracksSnapshotsMaps();
-    fillPlaylistsSnapshotsMaps();
+    fillFavTracksSnapshotsMap();
+    fillPlaylistsSnapshotsMap();
 }
 
 function populateFavTracksSnapshots() {
@@ -113,8 +143,15 @@ function populateFavTracksSnapshots() {
         var timestamp = new Date(ts.timestamp * 1000);
         var timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
         tracksSnapshotsUL.append(`
-            <li class="snapshot-item" onclick="showFavTracksSnapshot(${ts.timestamp})">
-                ${timestampStr}: <span class="badge badge-info" style="margin-left: 15px;">${ts.tracks_count}</span> tracks
+            <li style="list-style-type:none;">
+            <div class="row">
+                <div class="snapshot-item col-sm-9" onclick="showFavTracksSnapshot(${ts.timestamp})">
+                    ${timestampStr}: <span class="badge badge-info" style="margin-left: 15px;">${ts.tracks_count}</span> tracks
+                </div>
+                <div class="col-sm-3">
+                    <button style="height: 20px; padding-top: 0px;" type="button" class="btn btn-danger btn-sm" onclick="deleteFavTracksSnapshot(${ts.timestamp})">Del</button>
+                </div>
+            </div>
             </li>`);
     });
 }
