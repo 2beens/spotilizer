@@ -57,13 +57,15 @@ func routerSetup() (r *mux.Router) {
 	r.HandleFunc("/save_current_playlists", h.SaveCurrentPlaylistsHandler)
 	r.HandleFunc("/save_current_tracks", h.SaveCurrentTracksHandler)
 
-	r.HandleFunc("/api/ssplaylists", api.GetPlaylistsSnapshotsHandler(false))
-	r.HandleFunc("/api/ssplaylists/full", api.GetPlaylistsSnapshotsHandler(true))
-	r.HandleFunc("/api/ssplaylists/{timestamp}", api.DeletePlaylistsSnapshot).Methods("DELETE")
-	r.HandleFunc("/api/ssfavtracks", api.GetFavTracksSnapshotsHandler(false))
-	r.HandleFunc("/api/ssfavtracks/full", api.GetFavTracksSnapshotsHandler(true))
-	r.HandleFunc("/api/ssfavtracks/{timestamp}", api.GetFavTracksSnapshot).Methods("GET")
-	r.HandleFunc("/api/ssfavtracks/{timestamp}", api.DeleteFavTracksSnapshots).Methods("DELETE")
+	apiFavTracksHandler := api.NewFavTracksHandler()
+	apiPlaylistsHandler := api.NewPlaylistsHandler()
+
+	r.Handle("/api/ssplaylists", apiPlaylistsHandler)
+	r.Handle("/api/ssplaylists/full", apiPlaylistsHandler)
+	r.Handle("/api/ssplaylists/{timestamp}", apiPlaylistsHandler)
+	r.Handle("/api/ssfavtracks", apiFavTracksHandler)
+	r.Handle("/api/ssfavtracks/full", apiFavTracksHandler)
+	r.Handle("/api/ssfavtracks/{timestamp}", apiFavTracksHandler)
 
 	// debuging
 	r.HandleFunc("/debug", h.DebugHandler)
