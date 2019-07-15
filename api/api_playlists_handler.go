@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -30,9 +31,9 @@ func (handler *PlaylistsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	case "GET":
 		switch r.URL.Path {
 		case "/api/ssplaylists":
-			handler.getPlaylistsSnapshotsHandler(user.Username, false, w, r)
+			handler.getPlaylistsSnapshotsHandler(user.Username, false, w)
 		default:
-			handler.getPlaylistsSnapshotsHandler(user.Username, true, w, r)
+			handler.getPlaylistsSnapshotsHandler(user.Username, true, w)
 		}
 	case "DELETE":
 		handler.deletePlaylistsSnapshot(user.Username, w, r)
@@ -41,7 +42,7 @@ func (handler *PlaylistsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (handler *PlaylistsHandler) deletePlaylistsSnapshot(username string, w http.ResponseWriter, r *http.Request) {
+func (handler *PlaylistsHandler) deletePlaylistsSnapshot(username string, w io.Writer, r *http.Request) {
 	vars := mux.Vars(r)
 	timestamp := vars["timestamp"]
 	log.Debugf(" > delete playlists snapshot [%s]: username [%s]", timestamp, username)
@@ -61,7 +62,7 @@ func (handler *PlaylistsHandler) deletePlaylistsSnapshot(username string, w http
 	util.SendAPIOKResp(w, fmt.Sprintf("Playlists snapshot [%s] successfully deleted.", snapshot.Timestamp))
 }
 
-func (handler *PlaylistsHandler) getPlaylistsSnapshotsHandler(username string, loadAllData bool, w http.ResponseWriter, r *http.Request) {
+func (handler *PlaylistsHandler) getPlaylistsSnapshotsHandler(username string, loadAllData bool, w io.Writer) {
 	log.Debugf(" > get playlists snapshots: username [%s]", username)
 	ssplaylists := handler.preparePlaylistsSnapshots(username, loadAllData)
 	util.SendAPIOKRespWithData(w, "success", ssplaylists)

@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/2beens/spotilizer/models"
@@ -42,7 +43,7 @@ func (handler *FavTracksHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (handler *FavTracksHandler) getFavTracksSnapshot(username string, w http.ResponseWriter, r *http.Request) {
+func (handler *FavTracksHandler) getFavTracksSnapshot(username string, w io.Writer, r *http.Request) {
 	vars := mux.Vars(r)
 	timestamp := vars["timestamp"]
 	log.Debugf(" > get fav tracks snapshot [%s]: username [%s]", timestamp, username)
@@ -62,7 +63,7 @@ func (handler *FavTracksHandler) getFavTracksSnapshot(username string, w http.Re
 	util.SendAPIOKRespWithData(w, "success", snapshot)
 }
 
-func (handler *FavTracksHandler) getFavTracksSnapshotsHandler(username string, loadAllData bool, w http.ResponseWriter) {
+func (handler *FavTracksHandler) getFavTracksSnapshotsHandler(username string, loadAllData bool, w io.Writer) {
 	log.WithFields(log.Fields{
 		"loadAllData": loadAllData,
 	}).Debugf(" > get fav tracks snapshots: username [%s]", username)
@@ -86,7 +87,7 @@ func (handler *FavTracksHandler) getFavTracksSnapshotsHandler(username string, l
 	util.SendAPIOKRespWithData(w, "success", sstracks)
 }
 
-func (handler *FavTracksHandler) deleteFavTracksSnapshots(username string, w http.ResponseWriter, r *http.Request) {
+func (handler *FavTracksHandler) deleteFavTracksSnapshots(username string, w io.Writer, r *http.Request) {
 	vars := mux.Vars(r)
 	timestamp := vars["timestamp"]
 	log.Debugf(" > delete fav tracks snapshot [%s]: username [%s]", timestamp, username)
