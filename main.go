@@ -22,9 +22,8 @@ import (
 
 var serverURL = fmt.Sprintf("%s://%s:%s", c.Protocol, c.IPAddress, c.Port)
 
-// middleware function wrapping a handler functiomn and logging the request path
-func middleware(f http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var cookieIDval string
 		cookieID, err := r.Cookie(c.CookieUserIDKey)
 		if err != nil {
@@ -33,8 +32,9 @@ func middleware(f http.HandlerFunc) http.HandlerFunc {
 			cookieIDval = cookieID.Value
 		}
 		log.Printf(" ====> request path: [%s], cookieID: [%s]\n", r.URL.Path, cookieIDval)
-		f(w, r)
-	}
+		// call the next handler, which can be another middleware in the chain, or the final handler
+		next.ServeHTTP(w, r)
+	})
 }
 
 func routerSetup() (r *mux.Router) {
@@ -45,28 +45,31 @@ func routerSetup() (r *mux.Router) {
 	r.PathPrefix("/public/").Handler(http.StripPrefix("/public/", fs))
 
 	// web content
-	r.HandleFunc("/", middleware(h.IndexHandler))
-	r.HandleFunc("/about", middleware(h.AboutHandler))
-	r.HandleFunc("/contact", middleware(h.ContactHandler))
+	r.HandleFunc("/", h.IndexHandler)
+	r.HandleFunc("/about", h.AboutHandler)
+	r.HandleFunc("/contact", h.ContactHandler)
 
 	// spotify API
-	r.HandleFunc("/login", middleware(h.GetSpotifyLoginHandler(serverURL)))
-	r.HandleFunc("/logout", middleware(h.LogoutHandler))
-	r.HandleFunc("/callback", middleware(h.GetSpotifyCallbackHandler(serverURL)))
-	r.HandleFunc("/refresh_token", middleware(h.RefreshTokenHandler))
-	r.HandleFunc("/save_current_playlists", middleware(h.SaveCurrentPlaylistsHandler))
-	r.HandleFunc("/save_current_tracks", middleware(h.SaveCurrentTracksHandler))
+	r.HandleFunc("/login", h.GetSpotifyLoginHandler(serverURL))
+	r.HandleFunc("/logout", h.LogoutHandler)
+	r.HandleFunc("/callback", h.GetSpotifyCallbackHandler(serverURL))
+	r.HandleFunc("/refresh_token", h.RefreshTokenHandler)
+	r.HandleFunc("/save_current_playlists", h.SaveCurrentPlaylistsHandler)
+	r.HandleFunc("/save_current_tracks", h.SaveCurrentTracksHandler)
 
-	r.HandleFunc("/api/ssplaylists", middleware(api.GetPlaylistsSnapshotsHandler(false)))
-	r.HandleFunc("/api/ssplaylists/full", middleware(api.GetPlaylistsSnapshotsHandler(true)))
-	r.HandleFunc("/api/ssplaylists/{timestamp}", middleware(api.DeletePlaylistsSnapshot)).Methods("DELETE")
-	r.HandleFunc("/api/ssfavtracks", middleware(api.GetFavTracksSnapshotsHandler(false)))
-	r.HandleFunc("/api/ssfavtracks/full", middleware(api.GetFavTracksSnapshotsHandler(true)))
-	r.HandleFunc("/api/ssfavtracks/{timestamp}", middleware(api.GetFavTracksSnapshot)).Methods("GET")
-	r.HandleFunc("/api/ssfavtracks/{timestamp}", middleware(api.DeleteFavTracksSnapshots)).Methods("DELETE")
+	r.HandleFunc("/api/ssplaylists", api.GetPlaylistsSnapshotsHandler(false))
+	r.HandleFunc("/api/ssplaylists/full", api.GetPlaylistsSnapshotsHandler(true))
+	r.HandleFunc("/api/ssplaylists/{timestamp}", api.DeletePlaylistsSnapshot).Methods("DELETE")
+	r.HandleFunc("/api/ssfavtracks", api.GetFavTracksSnapshotsHandler(false))
+	r.HandleFunc("/api/ssfavtracks/full", api.GetFavTracksSnapshotsHandler(true))
+	r.HandleFunc("/api/ssfavtracks/{timestamp}", api.GetFavTracksSnapshot).Methods("GET")
+	r.HandleFunc("/api/ssfavtracks/{timestamp}", api.DeleteFavTracksSnapshots).Methods("DELETE")
 
 	// debuging
-	r.HandleFunc("/debug", middleware(h.DebugHandler))
+	r.HandleFunc("/debug", h.DebugHandler)
+
+	// middleware
+	r.Use(loggingMiddleware)
 
 	return r
 }
