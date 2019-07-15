@@ -52,6 +52,41 @@ function downloadPlaylistSnapshots() {
     });
 }
 
+function getFavTracksSnapshot(timestamp, callback) {
+    var tracksSnapshot = ssTimestamp2tracksMap.get(timestamp);
+    if (tracksSnapshot.length > 0) {
+        callback(tracksSnapshot);
+        return;
+    }
+
+    var cookieID = getCookie("spotilizer-user-id");
+    if (!cookieID) {
+        toastr.error('Not logged in.', 'Get fav tracks snapshot error');
+        return;
+    }
+    console.log(' > get fav tracks snapshot. cookie ID: ' + cookieID);
+    $.ajax({
+        url: '/api/ssfavtracks/' + timestamp,
+        type: 'GET',
+        success: function(response) {
+            var responseObj = JSON.parse(response);
+            if (responseObj.error) {
+                console.error(' >>> get playlist snapshot error: ' + responseObj.error.message);
+                toastr.error(responseObj.error.message, 'Get playlist snapshot error');
+            } else {
+                tracksSnapshot = responseObj.data.tracks;
+                ssTimestamp2tracksMap.set(timestamp, tracksSnapshot);
+                toastr.success(responseObj.message, 'Get favorite tracks snapshot');
+            }
+            callback(tracksSnapshot);
+        },
+        error: function(xhr,status,error) {
+            console.error(' >>> get playlist snapshot error, status: ' + status + ', error: ' + error);
+            callback(tracksSnapshot);
+        }
+    });
+}
+
 function deleteFavTracksSnapshot(timestamp) {
     var cookieID = getCookie("spotilizer-user-id");
     if (!cookieID) {
@@ -146,7 +181,7 @@ function populateFavTracksSnapshots() {
             <li style="list-style-type:none;">
             <div class="row">
                 <div class="snapshot-item col-sm-9" onclick="showFavTracksSnapshot(${ts.timestamp})">
-                    ${timestampStr}: <span class="badge badge-info" style="margin-left: 15px;">${ts.tracks_count}</span> tracks
+                    ${timestampStr} <span class="badge badge-info" style="margin-left: 15px;">${ts.tracks_count}</span> tracks
                 </div>
                 <div class="col-sm-3">
                     <button style="height: 20px; padding-top: 0px;" type="button" class="btn btn-danger btn-sm" onclick="deleteFavTracksSnapshot(${ts.timestamp})">Del</button>
@@ -169,7 +204,7 @@ function populatePlaylistSnapshots() {
             <li style="list-style-type:none;">
             <div class="row">
                 <div class="snapshot-item col-sm-9" onclick="showPlaylistSnapshot(${ps.timestamp})">
-                    ${timestampStr}: <span class="badge badge-info" style="margin-left: 15px;">${ps.playlists.length}</span> playlists
+                    ${timestampStr} <span class="badge badge-info" style="margin-left: 15px;">${ps.playlists.length}</span> playlists
                 </div>
                 <div class="col-sm-3">
                     <button style="height: 20px; padding-top: 0px;" type="button" class="btn btn-danger btn-sm" onclick="deletePlaylistSnapshot(${ps.timestamp})">Del</button>
@@ -196,18 +231,22 @@ function showPlaylistSnapshot(timestamp) {
 }
 
 function showFavTracksSnapshot(timestamp) {
-    console.log(timestamp);
-    var tracksSnapshot = ssTimestamp2tracksMap.get(timestamp);
-    console.warn(tracksSnapshot);
-    var ssDetailsList = $('#snapshot-details-ul');
-    ssDetailsList.empty();
-    tracksSnapshot.forEach(function(t) {
-        ssDetailsList.append(`
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                ${t.artists[0].name} - ${t.name}
-                <span style="margin-left: 20px;" class="badge badge-primary badge-pill">${t.added_at}</span>
-            </li>
-        `);
+    getFavTracksSnapshot(timestamp, function(tracksSnapshot) {
+        var ssDetailsList = $('#snapshot-details-ul');
+        ssDetailsList.empty();
+        tracksSnapshot.forEach(function(t) {
+            var artistName = t.track.artists
+                .map(function(a) {
+                    return a.name;
+                })
+                .join(", ");
+            ssDetailsList.append(`
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    ${artistName} - ${t.track.name}
+                    <span style="margin-left: 20px;" class="badge badge-primary badge-pill">${new Date(t.added_at).toLocaleString()}</span>
+                </li>
+            `);
+        });
     });
 }
 

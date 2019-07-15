@@ -14,6 +14,7 @@ import (
 type UserPlaylistService interface {
 	DownloadCurrentUserPlaylists(authOptions *m.SpotifyAuthOptions) (response m.SpGetCurrentPlaylistsResp, err error)
 	DownloadSavedFavTracks(authOptions *m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err error)
+	GetFavTrakcsSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error)
 	GetAllFavTracksSnapshots(username string) *[]m.FavTracksSnapshot
 	GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot
 	SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool)
@@ -38,7 +39,7 @@ func NewSpotifyUserPlaylistService(spotifyDB db.SpotifyDBClient) *SpotifyUserPla
 }
 
 // DownloadCurrentUserPlaylists more info: https://developer.spotify.com/console/get-current-user-playlists/
-func (ups SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(accessToken string) (playlists []m.SpPlaylist, err *m.SpAPIError) {
+func (ups *SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(accessToken string) (playlists []m.SpPlaylist, err *m.SpAPIError) {
 	offset := 0
 	prevCount := 0
 	for {
@@ -77,7 +78,7 @@ func (ups SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(accessToken s
 	}
 }
 
-func (ups SpotifyUserPlaylistService) DownloadPlaylistTracks(accessToken string, href string, total int) (tracks []m.SpPlaylistTrack, err *m.SpAPIError) {
+func (ups *SpotifyUserPlaylistService) DownloadPlaylistTracks(accessToken string, href string, total int) (tracks []m.SpPlaylistTrack, err *m.SpAPIError) {
 	tracks = []m.SpPlaylistTrack{}
 	prevCount := 0
 	nextHref := href
@@ -114,7 +115,7 @@ func (ups SpotifyUserPlaylistService) DownloadPlaylistTracks(accessToken string,
 	}
 }
 
-func (ups SpotifyUserPlaylistService) DownloadSavedFavTracks(accessToken string) (tracks []m.SpAddedTrack, err *m.SpAPIError) {
+func (ups *SpotifyUserPlaylistService) DownloadSavedFavTracks(accessToken string) (tracks []m.SpAddedTrack, err *m.SpAPIError) {
 	offset := 0
 	prevCount := 0
 	for {
@@ -153,26 +154,30 @@ func (ups SpotifyUserPlaylistService) DownloadSavedFavTracks(accessToken string)
 	}
 }
 
-func (ups SpotifyUserPlaylistService) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool) {
+func (ups *SpotifyUserPlaylistService) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool) {
 	return ups.spotifyDB.SaveFavTracksSnapshot(ft)
 }
 
-func (ups SpotifyUserPlaylistService) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool) {
+func (ups *SpotifyUserPlaylistService) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool) {
 	return ups.spotifyDB.SavePlaylistsSnapshot(ps)
 }
 
-func (ups SpotifyUserPlaylistService) GetAllFavTracksSnapshots(username string) []m.FavTracksSnapshot {
+func (ups *SpotifyUserPlaylistService) GetFavTrakcsSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error) {
+	return ups.spotifyDB.GetFavTrakcsSnapshotByTimestamp(username, timestamp)
+}
+
+func (ups *SpotifyUserPlaylistService) GetAllFavTracksSnapshots(username string) []m.FavTracksSnapshot {
 	return ups.spotifyDB.GetAllFavTracksSnapshots(username)
 }
 
-func (ups SpotifyUserPlaylistService) GetAllPlaylistsSnapshots(username string) []m.PlaylistsSnapshot {
+func (ups *SpotifyUserPlaylistService) GetAllPlaylistsSnapshots(username string) []m.PlaylistsSnapshot {
 	return ups.spotifyDB.GetAllPlaylistsSnapshots(username)
 }
 
-func (ups SpotifyUserPlaylistService) DeletePlaylistsSnapshot(username string, timestamp string) (*m.PlaylistsSnapshot, error) {
+func (ups *SpotifyUserPlaylistService) DeletePlaylistsSnapshot(username string, timestamp string) (*m.PlaylistsSnapshot, error) {
 	return ups.spotifyDB.DeletePlaylistsSnapshot(username, timestamp)
 }
 
-func (ups SpotifyUserPlaylistService) DeleteFavTracksSnapshot(username string, timestamp string) (*m.FavTracksSnapshot, error) {
+func (ups *SpotifyUserPlaylistService) DeleteFavTracksSnapshot(username string, timestamp string) (*m.FavTracksSnapshot, error) {
 	return ups.spotifyDB.DeleteFavTracksSnapshot(username, timestamp)
 }

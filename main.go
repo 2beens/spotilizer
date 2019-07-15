@@ -62,6 +62,7 @@ func routerSetup() (r *mux.Router) {
 	r.HandleFunc("/api/ssplaylists/{timestamp}", middleware(api.DeletePlaylistsSnapshot)).Methods("DELETE")
 	r.HandleFunc("/api/ssfavtracks", middleware(api.GetFavTracksSnapshotsHandler(false)))
 	r.HandleFunc("/api/ssfavtracks/full", middleware(api.GetFavTracksSnapshotsHandler(true)))
+	r.HandleFunc("/api/ssfavtracks/{timestamp}", middleware(api.GetFavTracksSnapshot)).Methods("GET")
 	r.HandleFunc("/api/ssfavtracks/{timestamp}", middleware(api.DeleteFavTracksSnapshots)).Methods("DELETE")
 
 	// debuging

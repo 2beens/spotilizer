@@ -15,7 +15,7 @@ import (
 func DeletePlaylistsSnapshot(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	timestamp := vars["timestamp"]
-	log.Debugln(" > deleting playlists: " + timestamp)
+	log.Tracef(" > deleting playlists: " + timestamp)
 	user, err := services.Users.GetUserByRequestCookieID(r)
 	if err != nil {
 		log.Errorf(" >>> user/cookie error while trying to delete playlists snapshot: %s", err.Error())
@@ -40,10 +40,38 @@ func DeletePlaylistsSnapshot(w http.ResponseWriter, r *http.Request) {
 	util.SendAPIOKResp(w, fmt.Sprintf("Playlists snapshot [%s] successfully deleted.", snapshot.Timestamp))
 }
 
+func GetFavTracksSnapshot(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	timestamp := vars["timestamp"]
+	log.Tracef(" > getting fav tracks: " + timestamp)
+	user, err := services.Users.GetUserByRequestCookieID(r)
+	if err != nil {
+		log.Errorf(" >>> user/cookie error while trying to get fav. tracks snapshot: %s", err.Error())
+		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
+		return
+	}
+
+	log.Debugf(" > get fav tracks snapshot [%s]: username [%s]", timestamp, user.Username)
+
+	snapshot, err := services.UserPlaylist.GetFavTrakcsSnapshotByTimestamp(user.Username, timestamp)
+	if err != nil {
+		log.Errorf(" >>> error while trying to get fav. tracks snapshot: %s", err.Error())
+		util.SendAPIErrorResp(w, "Error occured: "+err.Error(), http.StatusNotFound)
+		return
+	}
+	if snapshot == nil {
+		log.Errorf(" >>> error while trying to get fav. tracks snapshot: snapshot is nil")
+		util.SendAPIErrorResp(w, "Favorite tracks snapshot not found ", http.StatusNotFound)
+		return
+	}
+
+	util.SendAPIOKRespWithData(w, "success", snapshot)
+}
+
 func DeleteFavTracksSnapshots(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	timestamp := vars["timestamp"]
-	log.Debugln(" > deleting fav tracks: " + timestamp)
+	log.Tracef(" > deleting fav tracks: " + timestamp)
 	user, err := services.Users.GetUserByRequestCookieID(r)
 	if err != nil {
 		log.Errorf(" >>> user/cookie error while trying to delete fav. tracks snapshot: %s", err.Error())

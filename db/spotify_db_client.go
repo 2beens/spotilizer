@@ -18,6 +18,7 @@ type SpotifyDBClient interface {
 	SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool)
 	DeletePlaylistsSnapshot(username string, timestamp string) (*m.PlaylistsSnapshot, error)
 	DeleteFavTracksSnapshot(username string, timestamp string) (*m.FavTracksSnapshot, error)
+	GetFavTrakcsSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error)
 	GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot
 	GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot
 	GetAllFavTracksSnapshots(username string) []m.FavTracksSnapshot
@@ -27,7 +28,7 @@ type SpotifyDBClient interface {
 type SpotifyDB struct{}
 
 func (sDB SpotifyDB) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool) {
-	log.Printf(" > saving fav tracks [%d] for user [%s] ...\n", len(ft.Tracks), ft.Username)
+	log.Tracef(" > saving fav tracks [%d] for user [%s] ...\n", len(ft.Tracks), ft.Username)
 	tracksJSON, err := json.Marshal(ft.Tracks)
 	if err != nil {
 		log.Println(" >>> json marshalling error saving tracks to DB for user: " + ft.Username)
@@ -35,18 +36,18 @@ func (sDB SpotifyDB) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool)
 	}
 	timestamp := strconv.FormatInt(ft.Timestamp.Unix(), 10)
 	snapshotKey := fmt.Sprintf("favtracksshot::user::%s::timestamp::%s", ft.Username, timestamp)
-	log.Printf(" > saving new playlist snapshot: [%s]\n", snapshotKey)
+	log.Tracef(" > saving new playlist snapshot: [%s]\n", snapshotKey)
 	cmd := rc.Set(snapshotKey, string(tracksJSON), 0)
 	if err := cmd.Err(); err != nil {
 		log.Printf(" >>> failed to store tracks snapshot for user: %s\n", ft.Username)
 		return false
 	}
-	log.Printf(" > user [%s] fav tracks snapshot saved to DB\n", ft.Username)
+	log.Debugf(" > user [%s] fav tracks snapshot saved to DB\n", ft.Username)
 	return true
 }
 
 func (sDB SpotifyDB) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool) {
-	log.Printf(" > saving playlists [%d] for user [%s] ...\n", len(ps.Playlists), ps.Username)
+	log.Tracef(" > saving playlists [%d] for user [%s] ...\n", len(ps.Playlists), ps.Username)
 	playlistsJSON, err := json.Marshal(ps.Playlists)
 	if err != nil {
 		log.Println(" >>> json marshalling error saving playlists to DB for user: " + ps.Username)
@@ -54,18 +55,18 @@ func (sDB SpotifyDB) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool)
 	}
 	timestamp := strconv.FormatInt(ps.Timestamp.Unix(), 10)
 	snapshotKey := fmt.Sprintf("playlistsshot::user::%s::timestamp::%s", ps.Username, timestamp)
-	log.Printf(" > saving new playlist snapshot: [%s]\n", snapshotKey)
+	log.Tracef(" > saving new playlist snapshot: [%s]\n", snapshotKey)
 	cmd := rc.Set(snapshotKey, string(playlistsJSON), 0)
 	if err := cmd.Err(); err != nil {
 		log.Printf(" >>> failed to store playlists snapshot for user: %s\n", ps.Username)
 		return false
 	}
-	log.Printf(" > user [%s] playlists snapshot saved to DB\n", ps.Username)
+	log.Debugf(" > user [%s] playlists snapshot saved to DB\n", ps.Username)
 	return true
 }
 
 func (sDB SpotifyDB) DeletePlaylistsSnapshot(username string, timestamp string) (*m.PlaylistsSnapshot, error) {
-	log.Printf(" > deleting playlist snapshot [%s] ...\n", timestamp)
+	log.Tracef(" > deleting playlist snapshot [%s] ...\n", timestamp)
 	snapshotKey := fmt.Sprintf("playlistsshot::user::%s::timestamp::%s", username, timestamp)
 	snapshot := sDB.GetPlaylistSnapshot(snapshotKey)
 	if snapshot == nil {
@@ -74,7 +75,7 @@ func (sDB SpotifyDB) DeletePlaylistsSnapshot(username string, timestamp string) 
 
 	cmd := rc.Del(snapshotKey)
 	if err := cmd.Err(); err != nil {
-		log.Printf(" >>> failed to delete playlists snapshot [%s] for user [%s]: %s\n", timestamp, username, err.Error())
+		log.Debugf(" >>> failed to delete playlists snapshot [%s] for user [%s]: %s\n", timestamp, username, err.Error())
 		return nil, err
 	}
 
@@ -87,7 +88,7 @@ func (sDB SpotifyDB) DeletePlaylistsSnapshot(username string, timestamp string) 
 }
 
 func (sDB SpotifyDB) DeleteFavTracksSnapshot(username string, timestamp string) (*m.FavTracksSnapshot, error) {
-	log.Printf(" > deleting fav tracks snapshot [%s] ...\n", timestamp)
+	log.Tracef(" > deleting fav tracks snapshot [%s] ...\n", timestamp)
 	snapshotKey := fmt.Sprintf("favtracksshot::user::%s::timestamp::%s", username, timestamp)
 	snapshot := sDB.GetFavTrakcsSnapshot(snapshotKey)
 	if snapshot == nil {
@@ -96,7 +97,7 @@ func (sDB SpotifyDB) DeleteFavTracksSnapshot(username string, timestamp string) 
 
 	cmd := rc.Del(snapshotKey)
 	if err := cmd.Err(); err != nil {
-		log.Printf(" >>> failed to delete fav tracks snapshot [%s] for user [%s]: %s\n", timestamp, username, err.Error())
+		log.Debugf(" >>> failed to delete fav tracks snapshot [%s] for user [%s]: %s\n", timestamp, username, err.Error())
 		return nil, err
 	}
 
@@ -105,6 +106,16 @@ func (sDB SpotifyDB) DeleteFavTracksSnapshot(username string, timestamp string) 
 		return snapshot, fmt.Errorf("snapshot [%s] found, but not deleted", snapshot.Timestamp)
 	}
 
+	return snapshot, nil
+}
+
+func (sDB SpotifyDB) GetFavTrakcsSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error) {
+	log.Tracef(" > getting fav tracks snapshot [%s] ...\n", timestamp)
+	snapshotKey := fmt.Sprintf("favtracksshot::user::%s::timestamp::%s", username, timestamp)
+	snapshot := sDB.GetFavTrakcsSnapshot(snapshotKey)
+	if snapshot == nil {
+		return nil, fmt.Errorf("snapshot [%s] not found", timestamp)
+	}
 	return snapshot, nil
 }
 
@@ -121,7 +132,7 @@ func (sDB SpotifyDB) GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot {
 	timestampStr := keyParts[4]
 	timestampInt, err := strconv.ParseInt(timestampStr, 10, 64)
 	if err != nil {
-		log.Println(" >>> error while parsing fav. tracks snapshot timestamp")
+		log.Debugf(" >>> error while parsing fav. tracks snapshot timestamp")
 		return nil
 	}
 	timestamp := time.Unix(timestampInt, 0)
@@ -130,7 +141,7 @@ func (sDB SpotifyDB) GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot {
 	tracks := &[]m.SpAddedTrack{}
 	err = json.Unmarshal([]byte(tracksJSON), tracks)
 	if err != nil {
-		log.Printf(" >>> failed to unmarshal fav. tracks for snapshot [%s]: %s\n", key, err.Error())
+		log.Errorf(" >>> failed to unmarshal fav. tracks for snapshot [%s]: %s\n", key, err.Error())
 		return nil
 	}
 
@@ -140,7 +151,7 @@ func (sDB SpotifyDB) GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot {
 func (sDB SpotifyDB) GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot {
 	cmd := rc.Get(key)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
-		log.Printf(" >>> failed to get playlist snapshot [%s]: %s\n", key, err.Error())
+		log.Debugf(" >>> failed to get playlist snapshot [%s]: %s\n", key, err.Error())
 		return nil
 	}
 
@@ -150,7 +161,7 @@ func (sDB SpotifyDB) GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot {
 	timestampStr := keyParts[4]
 	timestampInt, err := strconv.ParseInt(timestampStr, 10, 64)
 	if err != nil {
-		log.Println(" >>> error while parsing playlist snapshot timestamp")
+		log.Debugf(" >>> error while parsing playlist snapshot timestamp")
 		return nil
 	}
 	timestamp := time.Unix(timestampInt, 0)
@@ -159,7 +170,7 @@ func (sDB SpotifyDB) GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot {
 	playlists := &[]m.PlaylistSnapshot{}
 	err = json.Unmarshal([]byte(playlistsJSON), playlists)
 	if err != nil {
-		log.Printf(" >>> failed to unmarshal playlists for snapshot [%s]: %s\n", key, err.Error())
+		log.Errorf(" >>> failed to unmarshal playlists for snapshot [%s]: %s\n", key, err.Error())
 		return nil
 	}
 
