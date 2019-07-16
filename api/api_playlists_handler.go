@@ -32,14 +32,43 @@ func (handler *PlaylistsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		switch r.URL.Path {
 		case "/api/ssplaylists":
 			handler.getPlaylistsSnapshotsHandler(user.Username, false, w)
-		default:
+		case "/api/ssplaylists/full":
 			handler.getPlaylistsSnapshotsHandler(user.Username, true, w)
+		default:
+			handler.getPlaylistsSnapshot(user.Username, w, r)
 		}
 	case "DELETE":
 		handler.deletePlaylistsSnapshot(user.Username, w, r)
 	default:
 		util.SendAPIErrorResp(w, "unknown/unsupported request method", http.StatusBadRequest)
 	}
+}
+
+func (handler *PlaylistsHandler) getPlaylistsSnapshot(username string, w io.Writer, r *http.Request) {
+	vars := mux.Vars(r)
+	timestamp := vars["timestamp"]
+	log.Debugf(" > get playlists snapshot [%s]: username [%s]", timestamp, username)
+
+	snapshotRaw, err := services.UserPlaylist.GetPlaylistsSnapsotByTimestamp(username, timestamp)
+	if err != nil {
+		log.Errorf(" >>> error while trying to get playlists snapshot: %s", err.Error())
+		util.SendAPIErrorResp(w, "Error occured: "+err.Error(), http.StatusNotFound)
+		return
+	}
+	if snapshotRaw == nil {
+		log.Errorf(" >>> error while trying to get playlists snapshot: snapshot is nil")
+		util.SendAPIErrorResp(w, "Playlists snapshot not found", http.StatusNotFound)
+		return
+	}
+
+	snapshots := handler.preparePlaylistsSnapshots([]models.PlaylistsSnapshot{*snapshotRaw}, true)
+	if len(snapshots) == 0 {
+		log.Errorf(" >>> error while trying to get playlists snapshot: DTO transformation error")
+		util.SendAPIErrorResp(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	util.SendAPIOKRespWithData(w, "success", snapshots[0])
 }
 
 func (handler *PlaylistsHandler) deletePlaylistsSnapshot(username string, w io.Writer, r *http.Request) {
@@ -64,12 +93,12 @@ func (handler *PlaylistsHandler) deletePlaylistsSnapshot(username string, w io.W
 
 func (handler *PlaylistsHandler) getPlaylistsSnapshotsHandler(username string, loadAllData bool, w io.Writer) {
 	log.Debugf(" > get playlists snapshots: username [%s]", username)
-	ssplaylists := handler.preparePlaylistsSnapshots(username, loadAllData)
+	ssplaylistsRaw := services.UserPlaylist.GetAllPlaylistsSnapshots(username)
+	ssplaylists := handler.preparePlaylistsSnapshots(ssplaylistsRaw, loadAllData)
 	util.SendAPIOKRespWithData(w, "success", ssplaylists)
 }
 
-func (handler *PlaylistsHandler) preparePlaylistsSnapshots(username string, loadTracks bool) []models.DTOPlaylistSnapshot {
-	ssplaylistsRaw := services.UserPlaylist.GetAllPlaylistsSnapshots(username)
+func (handler *PlaylistsHandler) preparePlaylistsSnapshots(ssplaylistsRaw []models.PlaylistsSnapshot, loadTracks bool) []models.DTOPlaylistSnapshot {
 	ssplaylists := []models.DTOPlaylistSnapshot{}
 	for _, plssRaw := range ssplaylistsRaw {
 		plss := models.DTOPlaylistSnapshot{

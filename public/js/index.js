@@ -52,9 +52,60 @@ function downloadPlaylistSnapshots() {
     });
 }
 
+
+function playlistSnapshotIsEmpty(snapshot) {
+    if (!snapshot || snapshot.length == 0) {
+        return true;
+    }
+    isEmpty = true;
+    snapshot.forEach(function(p) { 
+        if (p.tracks.length > 0) {
+            isEmpty = false;
+            return;
+        }
+    });
+    return isEmpty;
+}
+
+
+function getPlaylistsSnapshot(timestamp, callback) {
+    var playlistsSnapshot = ssTimestamp2playlistsMap.get(timestamp);
+    if (!playlistSnapshotIsEmpty(playlistsSnapshot)) {
+        callback(playlistsSnapshot);
+        return;
+    }
+
+    var cookieID = getCookie("spotilizer-user-id");
+    if (!cookieID) {
+        toastr.error('Not logged in.', 'Get fav tracks snapshot error');
+        return;
+    }
+    console.log(' > get fav tracks snapshot. cookie ID: ' + cookieID);
+    $.ajax({
+        url: '/api/ssplaylists/' + timestamp,
+        type: 'GET',
+        success: function(response) {
+            var responseObj = JSON.parse(response);
+            if (responseObj.error) {
+                console.error(' >>> get playlist snapshot error: ' + responseObj.error.message);
+                toastr.error(responseObj.error.message, 'Get playlist snapshot error');
+            } else {
+                playlistsSnapshot = responseObj.data.playlists;
+                ssTimestamp2playlistsMap.set(timestamp, playlistsSnapshot);
+                toastr.success(responseObj.message, 'Get playlists snapshot');
+            }
+            callback(playlistsSnapshot);
+        },
+        error: function(xhr,status,error) {
+            console.error(' >>> get playlist snapshot error, status: ' + status + ', error: ' + error);
+            callback(playlistsSnapshot);
+        }
+    });
+}
+
 function getFavTracksSnapshot(timestamp, callback) {
     var tracksSnapshot = ssTimestamp2tracksMap.get(timestamp);
-    if (tracksSnapshot.length > 0) {
+    if (tracksSnapshot && tracksSnapshot.length > 0) {
         callback(tracksSnapshot);
         return;
     }
@@ -71,8 +122,8 @@ function getFavTracksSnapshot(timestamp, callback) {
         success: function(response) {
             var responseObj = JSON.parse(response);
             if (responseObj.error) {
-                console.error(' >>> get playlist snapshot error: ' + responseObj.error.message);
-                toastr.error(responseObj.error.message, 'Get playlist snapshot error');
+                console.error(' >>> get fav. tracks snapshot error: ' + responseObj.error.message);
+                toastr.error(responseObj.error.message, 'Get fav. tracks snapshot error');
             } else {
                 tracksSnapshot = responseObj.data.tracks;
                 ssTimestamp2tracksMap.set(timestamp, tracksSnapshot);
@@ -81,7 +132,7 @@ function getFavTracksSnapshot(timestamp, callback) {
             callback(tracksSnapshot);
         },
         error: function(xhr,status,error) {
-            console.error(' >>> get playlist snapshot error, status: ' + status + ', error: ' + error);
+            console.error(' >>> get fav. tracks snapshot error, status: ' + status + ', error: ' + error);
             callback(tracksSnapshot);
         }
     });
@@ -102,15 +153,15 @@ function deleteFavTracksSnapshot(timestamp) {
             console.log(response);
             var responseObj = JSON.parse(response);
             if (responseObj.error) {
-                console.error(' >>> delete playlist snapshot error: ' + responseObj.error.message);
-                toastr.error(responseObj.error.message, 'Delete playlist snapshot error');
+                console.error(' >>> delete fav. tracks snapshot error: ' + responseObj.error.message);
+                toastr.error(responseObj.error.message, 'Delete fav. tracks snapshot error');
             } else {
                 downloadFavTracksSnapshots();
                 toastr.success(responseObj.message, 'Delete favorite tracks snapshot');
             }
         },
         error: function(xhr,status,error) {
-            console.error(' >>> delete playlist snapshot error, status: ' + status + ', error: ' + error);
+            console.error(' >>> delete fav. tracks snapshot error, status: ' + status + ', error: ' + error);
         }
     });
 }
@@ -215,18 +266,17 @@ function populatePlaylistSnapshots() {
 }
 
 function showPlaylistSnapshot(timestamp) {
-    console.log(timestamp);
-    var playlistsSnapshot = ssTimestamp2playlistsMap.get(timestamp);
-    console.warn(playlistsSnapshot);
-    var ssDetailsList = $('#snapshot-details-ul');
-    ssDetailsList.empty();
-    playlistsSnapshot.forEach(function(p) {
-        ssDetailsList.append(`
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                ${p.name}
-                <span style="margin-left: 20px;" class="badge badge-primary badge-pill">${p.tracks.length}</span>
-            </li>
-        `);
+    getPlaylistsSnapshot(timestamp, function(playlistsSnapshot) {
+        var ssDetailsList = $('#snapshot-details-ul');
+        ssDetailsList.empty();
+        playlistsSnapshot.forEach(function(p) {
+            ssDetailsList.append(`
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    ${p.name}
+                    <span style="margin-left: 20px;" class="badge badge-primary badge-pill">${p.tracks.length}</span>
+                </li>
+            `);
+        });
     });
 }
 

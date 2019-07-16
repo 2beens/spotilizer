@@ -162,8 +162,12 @@ func (ups *SpotifyUserPlaylistService) SavePlaylistsSnapshot(ps *m.PlaylistsSnap
 	return ups.spotifyDB.SavePlaylistsSnapshot(ps)
 }
 
-func (ups *SpotifyUserPlaylistService) GetFavTrakcsSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error) {
-	return ups.spotifyDB.GetFavTrakcsSnapshotByTimestamp(username, timestamp)
+func (ups *SpotifyUserPlaylistService) GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error) {
+	return ups.spotifyDB.GetFavTracksSnapshotByTimestamp(username, timestamp)
+}
+
+func (ups *SpotifyUserPlaylistService) GetPlaylistsSnapsotByTimestamp(username string, timestamp string) (*m.PlaylistsSnapshot, error) {
+	return ups.spotifyDB.GetPlaylistsSnapsotByTimestamp(username, timestamp)
 }
 
 func (ups *SpotifyUserPlaylistService) GetAllFavTracksSnapshots(username string) []m.FavTracksSnapshot {

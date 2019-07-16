@@ -18,9 +18,10 @@ type SpotifyDBClient interface {
 	SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool)
 	DeletePlaylistsSnapshot(username string, timestamp string) (*m.PlaylistsSnapshot, error)
 	DeleteFavTracksSnapshot(username string, timestamp string) (*m.FavTracksSnapshot, error)
-	GetFavTrakcsSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error)
-	GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot
-	GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot
+	GetPlaylistsSnapsotByTimestamp(username string, timestamp string) (*m.PlaylistsSnapshot, error)
+	GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error)
+	GetPlaylistsSnapshot(key string) *m.PlaylistsSnapshot
+	GetFavTracksSnapshot(key string) *m.FavTracksSnapshot
 	GetAllFavTracksSnapshots(username string) []m.FavTracksSnapshot
 	GetAllPlaylistsSnapshots(username string) []m.PlaylistsSnapshot
 }
@@ -68,7 +69,7 @@ func (sDB SpotifyDB) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool)
 func (sDB SpotifyDB) DeletePlaylistsSnapshot(username string, timestamp string) (*m.PlaylistsSnapshot, error) {
 	log.Tracef(" > deleting playlist snapshot [%s] ...\n", timestamp)
 	snapshotKey := fmt.Sprintf("playlistsshot::user::%s::timestamp::%s", username, timestamp)
-	snapshot := sDB.GetPlaylistSnapshot(snapshotKey)
+	snapshot := sDB.GetPlaylistsSnapshot(snapshotKey)
 	if snapshot == nil {
 		return nil, fmt.Errorf("snapshot [%s] not found", timestamp)
 	}
@@ -90,7 +91,7 @@ func (sDB SpotifyDB) DeletePlaylistsSnapshot(username string, timestamp string) 
 func (sDB SpotifyDB) DeleteFavTracksSnapshot(username string, timestamp string) (*m.FavTracksSnapshot, error) {
 	log.Tracef(" > deleting fav tracks snapshot [%s] ...\n", timestamp)
 	snapshotKey := fmt.Sprintf("favtracksshot::user::%s::timestamp::%s", username, timestamp)
-	snapshot := sDB.GetFavTrakcsSnapshot(snapshotKey)
+	snapshot := sDB.GetFavTracksSnapshot(snapshotKey)
 	if snapshot == nil {
 		return nil, fmt.Errorf("snapshot [%s] not found", timestamp)
 	}
@@ -109,17 +110,27 @@ func (sDB SpotifyDB) DeleteFavTracksSnapshot(username string, timestamp string) 
 	return snapshot, nil
 }
 
-func (sDB SpotifyDB) GetFavTrakcsSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error) {
-	log.Tracef(" > getting fav tracks snapshot [%s] ...\n", timestamp)
-	snapshotKey := fmt.Sprintf("favtracksshot::user::%s::timestamp::%s", username, timestamp)
-	snapshot := sDB.GetFavTrakcsSnapshot(snapshotKey)
+func (sDB SpotifyDB) GetPlaylistsSnapsotByTimestamp(username string, timestamp string) (*m.PlaylistsSnapshot, error) {
+	log.Tracef(" > getting playlists snapshot [%s] ...\n", timestamp)
+	snapshotKey := fmt.Sprintf("playlistsshot::user::%s::timestamp::%s", username, timestamp)
+	snapshot := sDB.GetPlaylistsSnapshot(snapshotKey)
 	if snapshot == nil {
 		return nil, fmt.Errorf("snapshot [%s] not found", timestamp)
 	}
 	return snapshot, nil
 }
 
-func (sDB SpotifyDB) GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot {
+func (sDB SpotifyDB) GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error) {
+	log.Tracef(" > getting fav tracks snapshot [%s] ...\n", timestamp)
+	snapshotKey := fmt.Sprintf("favtracksshot::user::%s::timestamp::%s", username, timestamp)
+	snapshot := sDB.GetFavTracksSnapshot(snapshotKey)
+	if snapshot == nil {
+		return nil, fmt.Errorf("snapshot [%s] not found", timestamp)
+	}
+	return snapshot, nil
+}
+
+func (sDB SpotifyDB) GetFavTracksSnapshot(key string) *m.FavTracksSnapshot {
 	cmd := rc.Get(key)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Printf(" >>> failed to get fav tracks snapshot [%s]: %s\n", key, err.Error())
@@ -148,7 +159,7 @@ func (sDB SpotifyDB) GetFavTrakcsSnapshot(key string) *m.FavTracksSnapshot {
 	return &m.FavTracksSnapshot{Username: username, Timestamp: timestamp, Tracks: *tracks}
 }
 
-func (sDB SpotifyDB) GetPlaylistSnapshot(key string) *m.PlaylistsSnapshot {
+func (sDB SpotifyDB) GetPlaylistsSnapshot(key string) *m.PlaylistsSnapshot {
 	cmd := rc.Get(key)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Debugf(" >>> failed to get playlist snapshot [%s]: %s\n", key, err.Error())
@@ -186,7 +197,7 @@ func (sDB SpotifyDB) GetAllFavTracksSnapshots(username string) []m.FavTracksSnap
 	}
 	favtsnapshots := []m.FavTracksSnapshot{}
 	for _, skey := range cmd.Val() {
-		ft := sDB.GetFavTrakcsSnapshot(skey)
+		ft := sDB.GetFavTracksSnapshot(skey)
 		if ft != nil {
 			favtsnapshots = append(favtsnapshots, *ft)
 		}
@@ -203,7 +214,7 @@ func (sDB SpotifyDB) GetAllPlaylistsSnapshots(username string) []m.PlaylistsSnap
 	}
 	plsnapshots := []m.PlaylistsSnapshot{}
 	for _, skey := range cmd.Val() {
-		ps := sDB.GetPlaylistSnapshot(skey)
+		ps := sDB.GetPlaylistsSnapshot(skey)
 		if ps != nil {
 			plsnapshots = append(plsnapshots, *ps)
 		}

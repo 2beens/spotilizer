@@ -10,8 +10,8 @@ type PlaylistsSnapshot struct {
 }
 
 type PlaylistSnapshot struct {
-	Playlist SpPlaylist
-	Tracks   []SpPlaylistTrack
+	Playlist SpPlaylist        `json:"playlist"`
+	Tracks   []SpPlaylistTrack `json:"tracks"`
 }
 
 // FavTracksSnapshot is an object representing the list of favorite saved tracks of a user

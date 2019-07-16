@@ -48,7 +48,7 @@ func (handler *FavTracksHandler) getFavTracksSnapshot(username string, w io.Writ
 	timestamp := vars["timestamp"]
 	log.Debugf(" > get fav tracks snapshot [%s]: username [%s]", timestamp, username)
 
-	snapshot, err := services.UserPlaylist.GetFavTrakcsSnapshotByTimestamp(username, timestamp)
+	snapshot, err := services.UserPlaylist.GetFavTracksSnapshotByTimestamp(username, timestamp)
 	if err != nil {
 		log.Errorf(" >>> error while trying to get fav. tracks snapshot: %s", err.Error())
 		util.SendAPIErrorResp(w, "Error occured: "+err.Error(), http.StatusNotFound)
