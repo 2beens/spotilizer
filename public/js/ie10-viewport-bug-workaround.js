@@ -18,7 +18,6 @@
           '@-ms-viewport{width:auto!important}'
         )
       )
-      document.head.appendChild(msViewportStyle)
+      document.head.appendChild(msViewportStyle);
     }
-  
-  }())
+  }());

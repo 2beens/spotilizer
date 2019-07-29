@@ -62,7 +62,7 @@ func SpArtist2dtoArtist(spArtist SpArtist) DTOArtist {
 }
 
 func SpArtists2dtoArtists(spArtists []SpArtist) []DTOArtist {
-	dtoArtists := []DTOArtist{}
+	var dtoArtists []DTOArtist
 	for _, spA := range spArtists {
 		dtoArtists = append(dtoArtists, SpArtist2dtoArtist(spA))
 	}

@@ -30,9 +30,9 @@ func (handler *FavTracksHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	case "GET":
 		switch r.URL.Path {
 		case "/api/ssfavtracks":
-			handler.getFavTracksSnapshotsHandler(user.Username, false, w)
+			handler.getFavTracksSnapshots(user.Username, false, w)
 		case "/api/ssfavtracks/full":
-			handler.getFavTracksSnapshotsHandler(user.Username, true, w)
+			handler.getFavTracksSnapshots(user.Username, true, w)
 		default:
 			handler.getFavTracksSnapshot(user.Username, w, r)
 		}
@@ -63,13 +63,13 @@ func (handler *FavTracksHandler) getFavTracksSnapshot(username string, w io.Writ
 	util.SendAPIOKRespWithData(w, "success", snapshot)
 }
 
-func (handler *FavTracksHandler) getFavTracksSnapshotsHandler(username string, loadAllData bool, w io.Writer) {
+func (handler *FavTracksHandler) getFavTracksSnapshots(username string, loadAllData bool, w io.Writer) {
 	log.WithFields(log.Fields{
 		"loadAllData": loadAllData,
 	}).Debugf(" > get fav tracks snapshots: username [%s]", username)
 
 	sstracksRaw := services.UserPlaylist.GetAllFavTracksSnapshots(username)
-	sstracks := []models.DTOFavTracksSnapshot{}
+	var sstracks []models.DTOFavTracksSnapshot
 	for _, tracksssRaw := range sstracksRaw {
 		tracksss := models.DTOFavTracksSnapshot{
 			Timestamp:   tracksssRaw.Timestamp.Unix(),

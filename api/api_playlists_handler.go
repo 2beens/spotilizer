@@ -31,9 +31,9 @@ func (handler *PlaylistsHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	case "GET":
 		switch r.URL.Path {
 		case "/api/ssplaylists":
-			handler.getPlaylistsSnapshotsHandler(user.Username, false, w)
+			handler.getPlaylistsSnapshots(user.Username, false, w)
 		case "/api/ssplaylists/full":
-			handler.getPlaylistsSnapshotsHandler(user.Username, true, w)
+			handler.getPlaylistsSnapshots(user.Username, true, w)
 		default:
 			handler.getPlaylistsSnapshot(user.Username, w, r)
 		}
@@ -49,7 +49,7 @@ func (handler *PlaylistsHandler) getPlaylistsSnapshot(username string, w io.Writ
 	timestamp := vars["timestamp"]
 	log.Debugf(" > get playlists snapshot [%s]: username [%s]", timestamp, username)
 
-	snapshotRaw, err := services.UserPlaylist.GetPlaylistsSnapsotByTimestamp(username, timestamp)
+	snapshotRaw, err := services.UserPlaylist.GetPlaylistsSnapshotByTimestamp(username, timestamp)
 	if err != nil {
 		log.Errorf(" >>> error while trying to get playlists snapshot: %s", err.Error())
 		util.SendAPIErrorResp(w, "Error occured: "+err.Error(), http.StatusNotFound)
@@ -91,7 +91,7 @@ func (handler *PlaylistsHandler) deletePlaylistsSnapshot(username string, w io.W
 	util.SendAPIOKResp(w, fmt.Sprintf("Playlists snapshot [%s] successfully deleted.", snapshot.Timestamp))
 }
 
-func (handler *PlaylistsHandler) getPlaylistsSnapshotsHandler(username string, loadAllData bool, w io.Writer) {
+func (handler *PlaylistsHandler) getPlaylistsSnapshots(username string, loadAllData bool, w io.Writer) {
 	log.Debugf(" > get playlists snapshots: username [%s]", username)
 	ssplaylistsRaw := services.UserPlaylist.GetAllPlaylistsSnapshots(username)
 	ssplaylists := handler.preparePlaylistsSnapshots(ssplaylistsRaw, loadAllData)
@@ -99,13 +99,13 @@ func (handler *PlaylistsHandler) getPlaylistsSnapshotsHandler(username string, l
 }
 
 func (handler *PlaylistsHandler) preparePlaylistsSnapshots(ssplaylistsRaw []models.PlaylistsSnapshot, loadTracks bool) []models.DTOPlaylistSnapshot {
-	ssplaylists := []models.DTOPlaylistSnapshot{}
+	var ssplaylists []models.DTOPlaylistSnapshot
 	for _, plssRaw := range ssplaylistsRaw {
 		plss := models.DTOPlaylistSnapshot{
 			Timestamp: plssRaw.Timestamp.Unix(),
 			Playlists: []models.DTOPlaylist{},
 		}
-		rawTracks := []models.SpPlaylistTrack{}
+		var rawTracks []models.SpPlaylistTrack
 		for _, plRaw := range plssRaw.Playlists {
 			if loadTracks {
 				rawTracks = plRaw.Tracks

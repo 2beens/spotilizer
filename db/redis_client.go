@@ -5,7 +5,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	c "github.com/2beens/spotilizer/constants"
+	"github.com/2beens/spotilizer/constants"
 
 	"gopkg.in/redis.v3"
 )
@@ -23,7 +23,7 @@ func InitRedisClient(flashDB bool) {
 	log.Println(" > initializing redis ...")
 	options := &redis.Options{
 		Network: "tcp",
-		Addr:    fmt.Sprintf("%s:%s", c.IPAddress, c.RedisPort), // localhost:6379
+		Addr:    fmt.Sprintf("%s:%s", constants.IPAddress, constants.RedisPort), // localhost:6379
 		DB:      int64(6),
 	}
 

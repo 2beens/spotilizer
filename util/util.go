@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	c "github.com/2beens/spotilizer/constants"
-	m "github.com/2beens/spotilizer/models"
-	s "github.com/2beens/spotilizer/services"
+	"github.com/2beens/spotilizer/constants"
+	"github.com/2beens/spotilizer/models"
+	"github.com/2beens/spotilizer/services"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -46,7 +46,7 @@ func AddCookie(w *http.ResponseWriter, name string, value string) {
 	http.SetCookie(*w, cookie)
 }
 
-func CleearCookie(w *http.ResponseWriter, name string) {
+func ClearCookie(w *http.ResponseWriter, name string) {
 	cookie := &http.Cookie{
 		Name:    name,
 		Value:   "",
@@ -56,12 +56,12 @@ func CleearCookie(w *http.ResponseWriter, name string) {
 }
 
 func GetUsernameByRequestCookieID(r *http.Request) (username string, found bool) {
-	cookieID, err := r.Cookie(c.CookieUserIDKey)
+	cookieID, err := r.Cookie(constants.CookieUserIDKey)
 	if err != nil {
 		// error ignored. can panic when invoked from incognito window
 		return "", false
 	}
-	username, found = s.Users.GetUsernameByCookieID(cookieID.Value)
+	username, found = services.Users.GetUsernameByCookieID(cookieID.Value)
 	return
 }
 
@@ -121,12 +121,12 @@ func RenderView(w http.ResponseWriter, page string, viewData interface{}) {
 	}
 }
 
-func RenderSpAPIErrorView(w http.ResponseWriter, username string, title string, apiErr *m.SpAPIError) {
-	RenderView(w, "error", m.ErrorViewData{Title: title, Error: fmt.Sprintf("Status: [%d]: %s", apiErr.Error.Status, apiErr.Error.Message), Username: username})
+func RenderSpAPIErrorView(w http.ResponseWriter, username string, title string, apiErr *models.SpAPIError) {
+	RenderView(w, "error", models.ErrorViewData{Title: title, Error: fmt.Sprintf("Status: [%d]: %s", apiErr.Error.Status, apiErr.Error.Message), Username: username})
 }
 
 func RenderErrorView(w http.ResponseWriter, username string, title string, status int, message string) {
-	RenderView(w, "error", m.ErrorViewData{Title: title, Error: fmt.Sprintf("Status: [%d]: %s", status, message), Username: username})
+	RenderView(w, "error", models.ErrorViewData{Title: title, Error: fmt.Sprintf("Status: [%d]: %s", status, message), Username: username})
 }
 
 func SendAPIResp(w io.Writer, data interface{}) {
@@ -142,16 +142,16 @@ func SendAPIResp(w io.Writer, data interface{}) {
 }
 
 func SendAPIOKResp(w io.Writer, message string) {
-	apiResp := m.APIResponse{Status: 200, Message: message}
+	apiResp := models.APIResponse{Status: 200, Message: message}
 	SendAPIResp(w, apiResp)
 }
 
 func SendAPIOKRespWithData(w io.Writer, message string, data interface{}) {
-	apiResp := m.APIResponse{Status: 200, Message: message, Data: data}
+	apiResp := models.APIResponse{Status: 200, Message: message, Data: data}
 	SendAPIResp(w, apiResp)
 }
 
 func SendAPIErrorResp(w io.Writer, message string, status int) {
-	apiErr := m.SpAPIError{Error: m.SpError{Message: message, Status: status}}
+	apiErr := models.SpAPIError{Error: models.SpError{Message: message, Status: status}}
 	SendAPIResp(w, apiErr)
 }

@@ -22,7 +22,7 @@ func (uDB usersDBClientMock) GetUser(username string) *m.User {
 }
 
 func (uDB usersDBClientMock) GetAllUsers() *[]m.User {
-	users := []m.User{}
+	var users []m.User
 	users = append(users, *uDB.GetUser("user1"))
 	users = append(users, *uDB.GetUser("user2"))
 	return &users

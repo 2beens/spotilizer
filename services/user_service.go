@@ -8,16 +8,16 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	c "github.com/2beens/spotilizer/config"
+	"github.com/2beens/spotilizer/config"
 	"github.com/2beens/spotilizer/constants"
 	"github.com/2beens/spotilizer/db"
-	m "github.com/2beens/spotilizer/models"
+	"github.com/2beens/spotilizer/models"
 )
 
 type UserService struct {
 	cookiesDB        db.CookiesDBClient
 	usersDB          db.UsersDBClient
-	username2userMap map[string]*m.User
+	username2userMap map[string]*models.User
 	// TODO: add cookie expiration mechanism
 	cookieID2usernameMap map[string]string
 }
@@ -59,7 +59,7 @@ func (us *UserService) GetUsernameByCookieID(cookieID string) (username string, 
 	return
 }
 
-func (us *UserService) GetUserByCookieID(cookieID string) (user *m.User, err error) {
+func (us *UserService) GetUserByCookieID(cookieID string) (user *models.User, err error) {
 	username, found := us.cookieID2usernameMap[cookieID]
 	if !found || !us.Exists(username) {
 		log.Printf(" >>> error, cannot find user by cookie ID: %s\n", cookieID)
@@ -70,7 +70,7 @@ func (us *UserService) GetUserByCookieID(cookieID string) (user *m.User, err err
 }
 
 func (us *UserService) SyncWithDB() {
-	us.username2userMap = make(map[string]*m.User)
+	us.username2userMap = make(map[string]*models.User)
 	// get all users from Redis
 	for _, u := range *us.usersDB.GetAllUsers() {
 		user := u
@@ -88,7 +88,7 @@ func (us *UserService) Exists(username string) (found bool) {
 	return
 }
 
-func (us *UserService) Get(username string) (user *m.User, err error) {
+func (us *UserService) Get(username string) (user *models.User, err error) {
 	if !us.Exists(username) {
 		return nil, errors.New("cannot find user with provided ID")
 	}
@@ -97,17 +97,17 @@ func (us *UserService) Get(username string) (user *m.User, err error) {
 	return
 }
 
-func (us *UserService) Add(user *m.User) {
+func (us *UserService) Add(user *models.User) {
 	us.username2userMap[user.Username] = user
 	us.usersDB.SaveUser(user)
 }
 
-func (us *UserService) Save(user *m.User) (stored bool) {
+func (us *UserService) Save(user *models.User) (stored bool) {
 	return us.usersDB.SaveUser(user)
 }
 
-func (us *UserService) GetUserFromSpotify(accessToken string) (user *m.SpUser, err error) {
-	body, err := getFromSpotify(c.Conf.SpotifyAPIURL, c.Conf.URLCurrentUser, accessToken)
+func (us *UserService) GetUserFromSpotify(accessToken string) (user *models.SpUser, err error) {
+	body, err := getFromSpotify(config.Conf.SpotifyAPIURL, config.Conf.URLCurrentUser, accessToken)
 	if err != nil {
 		log.Printf(" >>> error getting current user playlists. details: %s\n", err.Error())
 		return nil, err
@@ -120,7 +120,7 @@ func (us *UserService) GetUserFromSpotify(accessToken string) (user *m.SpUser, e
 	return user, nil
 }
 
-func (us *UserService) GetUserByRequestCookieID(r *http.Request) (user *m.User, err error) {
+func (us *UserService) GetUserByRequestCookieID(r *http.Request) (user *models.User, err error) {
 	cookieID, err := r.Cookie(constants.CookieUserIDKey)
 	if err != nil {
 		log.Printf(" >>> error, cannot find user by cookieID: %s\n", err.Error())

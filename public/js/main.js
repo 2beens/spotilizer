@@ -1,52 +1,52 @@
 toastr.options = {
-    "positionClass": "toast-top-left",
-}
+    'positionClass': 'toast-top-left',
+};
 
 function getCookie(cname) {
-    var name = cname + "=";
-    var decodedCookie = decodeURIComponent(document.cookie);
-    var ca = decodedCookie.split(';');
-    for (var i = 0; i < ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0) == ' ') {
+    const name = `${cname}=`;
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const ca = decodedCookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') {
             c = c.substring(1);
         }
-        if (c.indexOf(name) == 0) {
+        if (c.indexOf(name) === 0) {
             return c.substring(name.length, c.length);
         }
     }
-    return "";
+    return '';
 }
 
 function setCookie(cname, cvalue, daysValid) {
     console.log(` > setting cookie [${cname}] to new value`);
-    var now = new Date();
+    const now = new Date();
     now.setTime(now.getTime() + (daysValid * 24 * 60 * 60 * 1000));
-    var expires = "expires=" + now.toUTCString();
-    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    const expires = `expires=${now.toUTCString()}`;
+    document.cookie = `${cname}=${cvalue};${expires};path=/`;
 }
 
 function eraseCookie(name) {   
-    document.cookie = name+'=; Max-Age=-99999999;';  
+    document.cookie = `${name}=; Max-Age=-99999999;`;
 }
 
 function onLogout() {
     console.log(' > onLogout initiated ...');
-    eraseCookie("spotilizer-user-id");
+    eraseCookie('spotilizer-user-id');
 }
 
 function makeRequest(queryUrl, successf, errorf) {
-    console.log(' ---> making a request call to: ' + queryUrl);
+    console.log(` ---> making a request call to: ${queryUrl}`);
     if (errorf === undefined || errorf === null) {
         errorf = function(xhr,status,error) {
-            console.log(' ---> error occured, status: ' + status + ', error: ' + error);
+            console.log(` ---> error occurred, status: ${status}, error: ${error}`);
         };
     }
     $.ajax({
         url: queryUrl,
         success: successf,
         complete: function() {
-            console.log(' ---> call completed: ' + queryUrl);
+            console.log(` ---> call completed: ${queryUrl}`);
         },
         error: errorf
     });
@@ -68,26 +68,26 @@ function checkIfRefreshTokenNeeded(response) {
     return true;
 }
 
-var lastCalledFunc = null;
+let lastCalledFunc = null;
 
 function refreshTokenFunc() {
     console.log(' > making a refresh token call...');
-    makeRequest("/refresh_token", function(response) {
-        console.log(' > refresh token, received from server: ' + response);
-        var respObj = JSON.parse(response);
+    makeRequest('/refresh_token', function(response) {
+        console.log(` > refresh token, received from server: ${response}`);
+        const respObj = JSON.parse(response);
         if (respObj.error) {
             toastr.error(respObj.error.message, 'Refresh token error');
             return;
         }
         // call last failed function if needed
-        // TODO: watch for inifinite looping here - not calling last called function over and over again
+        // TODO: watch for infinite looping here - not calling last called function over and over again
         //       when, e.g. internet connection is gone
         if (lastCalledFunc !== null) {
             lastCalledFunc();
             lastCalledFunc = null;
         }
     }, function(xhr, status, error) {
-        toastr.error("Status: " + status + ", error: " + JSON.stringify(error), 'Refresh token error');
+        toastr.error(`Status: ${status}, error: ${JSON.stringify(error)}`, 'Refresh token error');
     });
 }
 
@@ -96,7 +96,7 @@ function stringOK(val) {
 }
 
 function isLoggedIn() {
-    var cookieID = getCookie("spotilizer-user-id");
+    const cookieID = getCookie('spotilizer-user-id');
     return stringOK(cookieID) && stringOK(window.username);
 }
 
@@ -107,7 +107,7 @@ function isLoggedIn() {
     }
     
     // set navbar active button
-    document.addEventListener("DOMContentLoaded", function(event) {
+    document.addEventListener('DOMContentLoaded', function(event) {
         $('.nav-bar-a').each(function(index) {
             $(this).removeClass('active');
         });
@@ -117,7 +117,7 @@ function isLoggedIn() {
             $('#nav-bar-contact').addClass('active');
         } else {
             $('#nav-bar-home').addClass('active');
-            toastr.info('Page lodaded ...', 'Spotilizer', {timeOut: 1000})
+            toastr.info('Page lodaded ...', 'Spotilizer', {timeOut: 1000});
         }
 
         if (isLoggedIn()) {
@@ -129,4 +129,4 @@ function isLoggedIn() {
             $('#nav-item-logout').addClass('invisible-elem');
         }
     });
-})()
+})();

@@ -15,7 +15,7 @@ type DTOPlaylist struct {
 	URI        string     `json:"uri"`
 	ID         string     `json:"id"`
 	Name       string     `json:"name"`
-	TracksHref string     `json:"trakcsHref"`
+	TracksHref string     `json:"tracksHref"`
 	Tracks     []DTOTrack `json:"tracks"`
 }
 

@@ -11,21 +11,21 @@ import (
 	"time"
 
 	"github.com/2beens/spotilizer/api"
-	c "github.com/2beens/spotilizer/constants"
-	db "github.com/2beens/spotilizer/db"
-	h "github.com/2beens/spotilizer/handlers"
-	s "github.com/2beens/spotilizer/services"
+	"github.com/2beens/spotilizer/constants"
+	"github.com/2beens/spotilizer/db"
+	"github.com/2beens/spotilizer/handlers"
+	"github.com/2beens/spotilizer/services"
 	"github.com/2beens/spotilizer/util"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
 
-var serverURL = fmt.Sprintf("%s://%s:%s", c.Protocol, c.IPAddress, c.Port)
+var serverURL = fmt.Sprintf("%s://%s:%s", constants.Protocol, constants.IPAddress, constants.Port)
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var cookieIDval string
-		cookieID, err := r.Cookie(c.CookieUserIDKey)
+		cookieID, err := r.Cookie(constants.CookieUserIDKey)
 		if err != nil {
 			cookieIDval = "<nil>"
 		} else {
@@ -45,17 +45,17 @@ func routerSetup() (r *mux.Router) {
 	r.PathPrefix("/public/").Handler(http.StripPrefix("/public/", fs))
 
 	// web content
-	r.HandleFunc("/", h.IndexHandler)
-	r.HandleFunc("/about", h.AboutHandler)
-	r.HandleFunc("/contact", h.ContactHandler)
+	r.HandleFunc("/", handlers.IndexHandler)
+	r.HandleFunc("/about", handlers.AboutHandler)
+	r.HandleFunc("/contact", handlers.ContactHandler)
 
 	// spotify API
-	r.HandleFunc("/login", h.GetSpotifyLoginHandler(serverURL))
-	r.HandleFunc("/logout", h.LogoutHandler)
-	r.HandleFunc("/callback", h.GetSpotifyCallbackHandler(serverURL))
-	r.HandleFunc("/refresh_token", h.RefreshTokenHandler)
-	r.HandleFunc("/save_current_playlists", h.SaveCurrentPlaylistsHandler)
-	r.HandleFunc("/save_current_tracks", h.SaveCurrentTracksHandler)
+	r.HandleFunc("/login", handlers.GetSpotifyLoginHandler(serverURL))
+	r.HandleFunc("/logout", handlers.LogoutHandler)
+	r.HandleFunc("/callback", handlers.GetSpotifyCallbackHandler(serverURL))
+	r.HandleFunc("/refresh_token", handlers.RefreshTokenHandler)
+	r.HandleFunc("/save_current_playlists", handlers.SaveCurrentPlaylistsHandler)
+	r.HandleFunc("/save_current_tracks", handlers.SaveCurrentTracksHandler)
 
 	apiFavTracksHandler := api.NewFavTracksHandler()
 	apiPlaylistsHandler := api.NewPlaylistsHandler()
@@ -68,7 +68,7 @@ func routerSetup() (r *mux.Router) {
 	r.Handle("/api/ssfavtracks/{timestamp}", apiFavTracksHandler)
 
 	// debuging
-	r.HandleFunc("/debug", h.DebugHandler)
+	r.HandleFunc("/debug", handlers.DebugHandler)
 
 	// middleware
 	r.Use(loggingMiddleware)
@@ -109,16 +109,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	h.SetCliendIDAndSecret(clientID, clientSecret)
+	handlers.SetClientIDAndSecret(clientID, clientSecret)
 
 	// redis setup
 	db.InitRedisClient(*flashDB)
 	// services setup
-	s.InitServices()
+	services.InitServices()
 
 	router := routerSetup()
 
-	ipAndPort := fmt.Sprintf("%s:%s", c.IPAddress, c.Port)
+	ipAndPort := fmt.Sprintf("%s:%s", constants.IPAddress, constants.Port)
 	httpServer := &http.Server{
 		Handler:      router,
 		Addr:         ipAndPort,
@@ -158,7 +158,7 @@ func gracefulShutdown(httpServer *http.Server) {
 	<-c
 
 	// store users cookies data
-	s.Users.StoreCookiesToDB()
+	services.Users.StoreCookiesToDB()
 
 	// the duration for which the server gracefully wait for existing connections to finish
 	maxWaitDuration := time.Second * 15

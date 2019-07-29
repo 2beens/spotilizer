@@ -39,7 +39,7 @@ func getFromSpotify(apiURL string, path string, accessToken string) (body []byte
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", "Bearer "+accessToken)
 
-	// complicating this function on purpose to demonstrante the usage of channels and goroutines
+	// complicating this function on purpose to demonstrate the usage of channels and goroutines
 	// through implementing a request timeout mechanism
 	timeoutChan := time.After(time.Duration(reqClient.requestTimeoutSeconds) * time.Second)
 	respChannel := make(chan []byte)
@@ -61,7 +61,7 @@ func getFromSpotify(apiURL string, path string, accessToken string) (body []byte
 
 	select {
 	case <-timeoutChan:
-		return nil, errors.New("timeout occured")
+		return nil, errors.New("timeout occurred")
 	case body = <-respChannel:
 		return body, nil
 	case err = <-errChannel:

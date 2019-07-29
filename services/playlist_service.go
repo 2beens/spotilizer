@@ -6,19 +6,19 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	c "github.com/2beens/spotilizer/config"
+	"github.com/2beens/spotilizer/config"
 	"github.com/2beens/spotilizer/db"
-	m "github.com/2beens/spotilizer/models"
+	"github.com/2beens/spotilizer/models"
 )
 
 type UserPlaylistService interface {
-	DownloadCurrentUserPlaylists(authOptions *m.SpotifyAuthOptions) (response m.SpGetCurrentPlaylistsResp, err error)
-	DownloadSavedFavTracks(authOptions *m.SpotifyAuthOptions) (tracks []m.SpAddedTrack, err error)
-	GetFavTrakcsSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error)
-	GetAllFavTracksSnapshots(username string) *[]m.FavTracksSnapshot
-	GetAllPlaylistsSnapshots(username string) *[]m.PlaylistsSnapshot
-	SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool)
-	SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool)
+	DownloadCurrentUserPlaylists(authOptions *models.SpotifyAuthOptions) (response models.SpGetCurrentPlaylistsResp, err error)
+	DownloadSavedFavTracks(authOptions *models.SpotifyAuthOptions) (tracks []models.SpAddedTrack, err error)
+	GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*models.FavTracksSnapshot, error)
+	GetAllFavTracksSnapshots(username string) *[]models.FavTracksSnapshot
+	GetAllPlaylistsSnapshots(username string) *[]models.PlaylistsSnapshot
+	SaveFavTracksSnapshot(ft *models.FavTracksSnapshot) (saved bool)
+	SavePlaylistsSnapshot(ps *models.PlaylistsSnapshot) (saved bool)
 }
 
 // TODO: removed this, it is unnecessary, especially that all these values can be found in config obj
@@ -32,14 +32,14 @@ type SpotifyUserPlaylistService struct {
 func NewSpotifyUserPlaylistService(spotifyDB db.SpotifyDBClient) *SpotifyUserPlaylistService {
 	var ps SpotifyUserPlaylistService
 	ps.spotifyDB = spotifyDB
-	ps.spotifyAPIURL = c.Conf.SpotifyAPIURL
-	ps.urlCurrentUserPlaylists = c.Conf.URLCurrentUserPlaylists
-	ps.urlCurrentUserSavedTracks = c.Conf.URLCurrentUserSavedTracks
+	ps.spotifyAPIURL = config.Conf.SpotifyAPIURL
+	ps.urlCurrentUserPlaylists = config.Conf.URLCurrentUserPlaylists
+	ps.urlCurrentUserSavedTracks = config.Conf.URLCurrentUserSavedTracks
 	return &ps
 }
 
 // DownloadCurrentUserPlaylists more info: https://developer.spotify.com/console/get-current-user-playlists/
-func (ups *SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(accessToken string) (playlists []m.SpPlaylist, err *m.SpAPIError) {
+func (ups *SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(accessToken string) (playlists []models.SpPlaylist, err *models.SpAPIError) {
 	offset := 0
 	prevCount := 0
 	for {
@@ -47,18 +47,18 @@ func (ups *SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(accessToken 
 		body, err := getFromSpotify(ups.spotifyAPIURL, path, accessToken)
 		if err != nil {
 			errMsg := fmt.Sprintf(" >>> error getting current user playlists. details: %s", err.Error())
-			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
+			return nil, &models.SpAPIError{Error: models.SpError{Status: 500, Message: errMsg}}
 		}
 		if apiErr, isError := getAPIError(body); isError {
 			log.Printf(" >>> API error: status [%d] -> [%s]\n", apiErr.Error.Status, apiErr.Error.Message)
 			return nil, &apiErr
 		}
 
-		var response m.SpGetCurrentPlaylistsResp
+		var response models.SpGetCurrentPlaylistsResp
 		err = json.Unmarshal(body, &response)
 		if err != nil {
 			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get playlists response: %s", err.Error())
-			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
+			return nil, &models.SpAPIError{Error: models.SpError{Status: 500, Message: errMsg}}
 		}
 
 		playlists = append(playlists, response.Items...)
@@ -78,26 +78,26 @@ func (ups *SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(accessToken 
 	}
 }
 
-func (ups *SpotifyUserPlaylistService) DownloadPlaylistTracks(accessToken string, href string, total int) (tracks []m.SpPlaylistTrack, err *m.SpAPIError) {
-	tracks = []m.SpPlaylistTrack{}
+func (ups *SpotifyUserPlaylistService) DownloadPlaylistTracks(accessToken string, href string, total int) (tracks []models.SpPlaylistTrack, err *models.SpAPIError) {
+	tracks = []models.SpPlaylistTrack{}
 	prevCount := 0
 	nextHref := href
 	for {
 		body, err := getFromSpotify(nextHref, "", accessToken)
 		if err != nil {
 			errMsg := fmt.Sprintf(" >>> error getting playlist tracks. details: %s", err.Error())
-			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
+			return nil, &models.SpAPIError{Error: models.SpError{Status: 500, Message: errMsg}}
 		}
 		if apiErr, isError := getAPIError(body); isError {
 			log.Printf(" >>> API getting playlist tracks error: status [%d] -> [%s]\n", apiErr.Error.Status, apiErr.Error.Message)
 			return nil, &apiErr
 		}
 
-		var response m.SpGetPlaylistTracksResp
+		var response models.SpGetPlaylistTracksResp
 		err = json.Unmarshal(body, &response)
 		if err != nil {
 			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get playlist tracks response: %s", err.Error())
-			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
+			return nil, &models.SpAPIError{Error: models.SpError{Status: 500, Message: errMsg}}
 		}
 
 		tracks = append(tracks, response.Items...)
@@ -115,7 +115,7 @@ func (ups *SpotifyUserPlaylistService) DownloadPlaylistTracks(accessToken string
 	}
 }
 
-func (ups *SpotifyUserPlaylistService) DownloadSavedFavTracks(accessToken string) (tracks []m.SpAddedTrack, err *m.SpAPIError) {
+func (ups *SpotifyUserPlaylistService) DownloadSavedFavTracks(accessToken string) (tracks []models.SpAddedTrack, err *models.SpAPIError) {
 	offset := 0
 	prevCount := 0
 	for {
@@ -123,18 +123,18 @@ func (ups *SpotifyUserPlaylistService) DownloadSavedFavTracks(accessToken string
 		body, err := getFromSpotify(ups.spotifyAPIURL, path, accessToken)
 		if err != nil {
 			errMsg := fmt.Sprintf(" >>> error getting current user tracks. details: %s", err.Error())
-			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
+			return nil, &models.SpAPIError{Error: models.SpError{Status: 500, Message: errMsg}}
 		}
 		if apiErr, isError := getAPIError(body); isError {
 			log.Printf(" >>> API error: status [%d] -> [%s]\n", apiErr.Error.Status, apiErr.Error.Message)
 			return nil, &apiErr
 		}
 
-		var response m.SpGetSavedTracksResp
+		var response models.SpGetSavedTracksResp
 		err = json.Unmarshal(body, &response)
 		if err != nil {
 			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get tracks response: %s", err.Error())
-			return nil, &m.SpAPIError{Error: m.SpError{Status: 500, Message: errMsg}}
+			return nil, &models.SpAPIError{Error: models.SpError{Status: 500, Message: errMsg}}
 		}
 
 		tracks = append(tracks, response.Items...)
@@ -154,34 +154,34 @@ func (ups *SpotifyUserPlaylistService) DownloadSavedFavTracks(accessToken string
 	}
 }
 
-func (ups *SpotifyUserPlaylistService) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool) {
+func (ups *SpotifyUserPlaylistService) SaveFavTracksSnapshot(ft *models.FavTracksSnapshot) (saved bool) {
 	return ups.spotifyDB.SaveFavTracksSnapshot(ft)
 }
 
-func (ups *SpotifyUserPlaylistService) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool) {
+func (ups *SpotifyUserPlaylistService) SavePlaylistsSnapshot(ps *models.PlaylistsSnapshot) (saved bool) {
 	return ups.spotifyDB.SavePlaylistsSnapshot(ps)
 }
 
-func (ups *SpotifyUserPlaylistService) GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error) {
+func (ups *SpotifyUserPlaylistService) GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*models.FavTracksSnapshot, error) {
 	return ups.spotifyDB.GetFavTracksSnapshotByTimestamp(username, timestamp)
 }
 
-func (ups *SpotifyUserPlaylistService) GetPlaylistsSnapsotByTimestamp(username string, timestamp string) (*m.PlaylistsSnapshot, error) {
-	return ups.spotifyDB.GetPlaylistsSnapsotByTimestamp(username, timestamp)
+func (ups *SpotifyUserPlaylistService) GetPlaylistsSnapshotByTimestamp(username string, timestamp string) (*models.PlaylistsSnapshot, error) {
+	return ups.spotifyDB.GetPlaylistsSnapshotByTimestamp(username, timestamp)
 }
 
-func (ups *SpotifyUserPlaylistService) GetAllFavTracksSnapshots(username string) []m.FavTracksSnapshot {
+func (ups *SpotifyUserPlaylistService) GetAllFavTracksSnapshots(username string) []models.FavTracksSnapshot {
 	return ups.spotifyDB.GetAllFavTracksSnapshots(username)
 }
 
-func (ups *SpotifyUserPlaylistService) GetAllPlaylistsSnapshots(username string) []m.PlaylistsSnapshot {
+func (ups *SpotifyUserPlaylistService) GetAllPlaylistsSnapshots(username string) []models.PlaylistsSnapshot {
 	return ups.spotifyDB.GetAllPlaylistsSnapshots(username)
 }
 
-func (ups *SpotifyUserPlaylistService) DeletePlaylistsSnapshot(username string, timestamp string) (*m.PlaylistsSnapshot, error) {
+func (ups *SpotifyUserPlaylistService) DeletePlaylistsSnapshot(username string, timestamp string) (*models.PlaylistsSnapshot, error) {
 	return ups.spotifyDB.DeletePlaylistsSnapshot(username, timestamp)
 }
 
-func (ups *SpotifyUserPlaylistService) DeleteFavTracksSnapshot(username string, timestamp string) (*m.FavTracksSnapshot, error) {
+func (ups *SpotifyUserPlaylistService) DeleteFavTracksSnapshot(username string, timestamp string) (*models.FavTracksSnapshot, error) {
 	return ups.spotifyDB.DeleteFavTracksSnapshot(username, timestamp)
 }

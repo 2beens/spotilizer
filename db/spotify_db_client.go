@@ -9,26 +9,26 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	m "github.com/2beens/spotilizer/models"
+	"github.com/2beens/spotilizer/models"
 	"gopkg.in/redis.v3"
 )
 
 type SpotifyDBClient interface {
-	SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool)
-	SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool)
-	DeletePlaylistsSnapshot(username string, timestamp string) (*m.PlaylistsSnapshot, error)
-	DeleteFavTracksSnapshot(username string, timestamp string) (*m.FavTracksSnapshot, error)
-	GetPlaylistsSnapsotByTimestamp(username string, timestamp string) (*m.PlaylistsSnapshot, error)
-	GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error)
-	GetPlaylistsSnapshot(key string) *m.PlaylistsSnapshot
-	GetFavTracksSnapshot(key string) *m.FavTracksSnapshot
-	GetAllFavTracksSnapshots(username string) []m.FavTracksSnapshot
-	GetAllPlaylistsSnapshots(username string) []m.PlaylistsSnapshot
+	SaveFavTracksSnapshot(ft *models.FavTracksSnapshot) (saved bool)
+	SavePlaylistsSnapshot(ps *models.PlaylistsSnapshot) (saved bool)
+	DeletePlaylistsSnapshot(username string, timestamp string) (*models.PlaylistsSnapshot, error)
+	DeleteFavTracksSnapshot(username string, timestamp string) (*models.FavTracksSnapshot, error)
+	GetPlaylistsSnapshotByTimestamp(username string, timestamp string) (*models.PlaylistsSnapshot, error)
+	GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*models.FavTracksSnapshot, error)
+	GetPlaylistsSnapshot(key string) *models.PlaylistsSnapshot
+	GetFavTracksSnapshot(key string) *models.FavTracksSnapshot
+	GetAllFavTracksSnapshots(username string) []models.FavTracksSnapshot
+	GetAllPlaylistsSnapshots(username string) []models.PlaylistsSnapshot
 }
 
 type SpotifyDB struct{}
 
-func (sDB SpotifyDB) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool) {
+func (sDB SpotifyDB) SaveFavTracksSnapshot(ft *models.FavTracksSnapshot) (saved bool) {
 	log.Tracef(" > saving fav tracks [%d] for user [%s] ...\n", len(ft.Tracks), ft.Username)
 	tracksJSON, err := json.Marshal(ft.Tracks)
 	if err != nil {
@@ -47,7 +47,7 @@ func (sDB SpotifyDB) SaveFavTracksSnapshot(ft *m.FavTracksSnapshot) (saved bool)
 	return true
 }
 
-func (sDB SpotifyDB) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool) {
+func (sDB SpotifyDB) SavePlaylistsSnapshot(ps *models.PlaylistsSnapshot) (saved bool) {
 	log.Tracef(" > saving playlists [%d] for user [%s] ...\n", len(ps.Playlists), ps.Username)
 	playlistsJSON, err := json.Marshal(ps.Playlists)
 	if err != nil {
@@ -66,7 +66,7 @@ func (sDB SpotifyDB) SavePlaylistsSnapshot(ps *m.PlaylistsSnapshot) (saved bool)
 	return true
 }
 
-func (sDB SpotifyDB) DeletePlaylistsSnapshot(username string, timestamp string) (*m.PlaylistsSnapshot, error) {
+func (sDB SpotifyDB) DeletePlaylistsSnapshot(username string, timestamp string) (*models.PlaylistsSnapshot, error) {
 	log.Tracef(" > deleting playlist snapshot [%s] ...\n", timestamp)
 	snapshotKey := fmt.Sprintf("playlistsshot::user::%s::timestamp::%s", username, timestamp)
 	snapshot := sDB.GetPlaylistsSnapshot(snapshotKey)
@@ -88,7 +88,7 @@ func (sDB SpotifyDB) DeletePlaylistsSnapshot(username string, timestamp string) 
 	return snapshot, nil
 }
 
-func (sDB SpotifyDB) DeleteFavTracksSnapshot(username string, timestamp string) (*m.FavTracksSnapshot, error) {
+func (sDB SpotifyDB) DeleteFavTracksSnapshot(username string, timestamp string) (*models.FavTracksSnapshot, error) {
 	log.Tracef(" > deleting fav tracks snapshot [%s] ...\n", timestamp)
 	snapshotKey := fmt.Sprintf("favtracksshot::user::%s::timestamp::%s", username, timestamp)
 	snapshot := sDB.GetFavTracksSnapshot(snapshotKey)
@@ -110,7 +110,7 @@ func (sDB SpotifyDB) DeleteFavTracksSnapshot(username string, timestamp string) 
 	return snapshot, nil
 }
 
-func (sDB SpotifyDB) GetPlaylistsSnapsotByTimestamp(username string, timestamp string) (*m.PlaylistsSnapshot, error) {
+func (sDB SpotifyDB) GetPlaylistsSnapshotByTimestamp(username string, timestamp string) (*models.PlaylistsSnapshot, error) {
 	log.Tracef(" > getting playlists snapshot [%s] ...\n", timestamp)
 	snapshotKey := fmt.Sprintf("playlistsshot::user::%s::timestamp::%s", username, timestamp)
 	snapshot := sDB.GetPlaylistsSnapshot(snapshotKey)
@@ -120,7 +120,7 @@ func (sDB SpotifyDB) GetPlaylistsSnapsotByTimestamp(username string, timestamp s
 	return snapshot, nil
 }
 
-func (sDB SpotifyDB) GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*m.FavTracksSnapshot, error) {
+func (sDB SpotifyDB) GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*models.FavTracksSnapshot, error) {
 	log.Tracef(" > getting fav tracks snapshot [%s] ...\n", timestamp)
 	snapshotKey := fmt.Sprintf("favtracksshot::user::%s::timestamp::%s", username, timestamp)
 	snapshot := sDB.GetFavTracksSnapshot(snapshotKey)
@@ -130,7 +130,7 @@ func (sDB SpotifyDB) GetFavTracksSnapshotByTimestamp(username string, timestamp 
 	return snapshot, nil
 }
 
-func (sDB SpotifyDB) GetFavTracksSnapshot(key string) *m.FavTracksSnapshot {
+func (sDB SpotifyDB) GetFavTracksSnapshot(key string) *models.FavTracksSnapshot {
 	cmd := rc.Get(key)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Printf(" >>> failed to get fav tracks snapshot [%s]: %s\n", key, err.Error())
@@ -149,17 +149,17 @@ func (sDB SpotifyDB) GetFavTracksSnapshot(key string) *m.FavTracksSnapshot {
 	timestamp := time.Unix(timestampInt, 0)
 
 	tracksJSON := cmd.Val()
-	tracks := &[]m.SpAddedTrack{}
+	tracks := &[]models.SpAddedTrack{}
 	err = json.Unmarshal([]byte(tracksJSON), tracks)
 	if err != nil {
 		log.Errorf(" >>> failed to unmarshal fav. tracks for snapshot [%s]: %s\n", key, err.Error())
 		return nil
 	}
 
-	return &m.FavTracksSnapshot{Username: username, Timestamp: timestamp, Tracks: *tracks}
+	return &models.FavTracksSnapshot{Username: username, Timestamp: timestamp, Tracks: *tracks}
 }
 
-func (sDB SpotifyDB) GetPlaylistsSnapshot(key string) *m.PlaylistsSnapshot {
+func (sDB SpotifyDB) GetPlaylistsSnapshot(key string) *models.PlaylistsSnapshot {
 	cmd := rc.Get(key)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Debugf(" >>> failed to get playlist snapshot [%s]: %s\n", key, err.Error())
@@ -178,24 +178,24 @@ func (sDB SpotifyDB) GetPlaylistsSnapshot(key string) *m.PlaylistsSnapshot {
 	timestamp := time.Unix(timestampInt, 0)
 
 	playlistsJSON := cmd.Val()
-	playlists := &[]m.PlaylistSnapshot{}
+	playlists := &[]models.PlaylistSnapshot{}
 	err = json.Unmarshal([]byte(playlistsJSON), playlists)
 	if err != nil {
 		log.Errorf(" >>> failed to unmarshal playlists for snapshot [%s]: %s\n", key, err.Error())
 		return nil
 	}
 
-	return &m.PlaylistsSnapshot{Username: username, Timestamp: timestamp, Playlists: *playlists}
+	return &models.PlaylistsSnapshot{Username: username, Timestamp: timestamp, Playlists: *playlists}
 }
 
-func (sDB SpotifyDB) GetAllFavTracksSnapshots(username string) []m.FavTracksSnapshot {
+func (sDB SpotifyDB) GetAllFavTracksSnapshots(username string) []models.FavTracksSnapshot {
 	snapshotsKey := fmt.Sprintf("favtracksshot::user::%s::timestamp::*", username)
 	cmd := rc.Keys(snapshotsKey)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Printf(" >>> failed to get all playlists snapshots for user [%s]: %s\n", username, err.Error())
 		return nil
 	}
-	favtsnapshots := []m.FavTracksSnapshot{}
+	var favtsnapshots []models.FavTracksSnapshot
 	for _, skey := range cmd.Val() {
 		ft := sDB.GetFavTracksSnapshot(skey)
 		if ft != nil {
@@ -205,14 +205,14 @@ func (sDB SpotifyDB) GetAllFavTracksSnapshots(username string) []m.FavTracksSnap
 	return favtsnapshots
 }
 
-func (sDB SpotifyDB) GetAllPlaylistsSnapshots(username string) []m.PlaylistsSnapshot {
+func (sDB SpotifyDB) GetAllPlaylistsSnapshots(username string) []models.PlaylistsSnapshot {
 	snapshotsKey := fmt.Sprintf("playlistsshot::user::%s::timestamp::*", username)
 	cmd := rc.Keys(snapshotsKey)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Printf(" >>> failed to get all playlists snapshots for user [%s]: %s\n", username, err.Error())
 		return nil
 	}
-	plsnapshots := []m.PlaylistsSnapshot{}
+	var plsnapshots []models.PlaylistsSnapshot
 	for _, skey := range cmd.Val() {
 		ps := sDB.GetPlaylistsSnapshot(skey)
 		if ps != nil {
