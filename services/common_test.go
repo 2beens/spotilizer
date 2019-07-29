@@ -59,7 +59,7 @@ func TestGetFromSpotify(t *testing.T) {
 	}
 
 	body, err = getFromSpotify(testURL, testPathTimeout, accessToken)
-	assert.EqualError(t, err, "timeout occured")
+	assert.EqualError(t, err, "timeout occurred")
 	if assert.Equal(t, []byte(nil), body, "response body not correct") {
 		log.Println(" > timeout, error response OK")
 	}

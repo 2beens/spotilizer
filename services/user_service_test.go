@@ -157,13 +157,13 @@ func TestUserServiceUsers(t *testing.T) {
 
 	found := userService.Exists("user3")
 	if !found {
-		failNow(t, " >>> error, user3 shoud be found")
+		failNow(t, " >>> error, user3 should be found")
 	}
 	log.Println(" > user3 found, OK")
 
 	found = userService.Exists("user4")
 	if found {
-		failNow(t, " >>> error, user4 shoud not be found")
+		failNow(t, " >>> error, user4 should not be found")
 	}
 	log.Println(" > user4 not found, OK")
 }
