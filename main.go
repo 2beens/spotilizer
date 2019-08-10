@@ -18,6 +18,8 @@ import (
 	"github.com/2beens/spotilizer/util"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+
+	_ "net/http/pprof"
 )
 
 var serverURL = fmt.Sprintf("%s://%s:%s", constants.Protocol, constants.IPAddress, constants.Port)
@@ -100,6 +102,14 @@ func main() {
 	// logrus has seven logging levels:
 	//		Trace, Debug, Info, Warning, Error, Fatal, Panic
 	log.SetLevel(log.TraceLevel)
+
+	// we need a webserver to get the pprof webserver
+	pprofhost := "localhost"
+	pprofport := "6060"
+	go func() {
+		log.Debug("starting pprof server...")
+		log.Debugln(http.ListenAndServe(pprofhost+":"+pprofport, nil))
+	}()
 
 	// logging example with fields
 	// log.WithFields(log.Fields{
