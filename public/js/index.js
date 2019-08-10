@@ -139,7 +139,7 @@ function getFavTracksSnapshot(timestamp, callback) {
 }
 
 function deleteFavTracksSnapshot(timestamp) {
-    const cookieID = getCookie("spotilizer-user-id");
+    const cookieID = getCookie('spotilizer-user-id');
     if (!cookieID) {
         toastr.error('Not logged in.', 'Delete fav tracks snapshot error');
         return;
@@ -166,8 +166,35 @@ function deleteFavTracksSnapshot(timestamp) {
     });
 }
 
+function getFavTracksSnapshotDiff(timestamp) {
+    const cookieID = getCookie('spotilizer-user-id');
+    if (!cookieID) {
+        toastr.error('Not logged in.', 'Get fav tracks snapshot diff error');
+        return;
+    }
+    console.log(' > get fav tracks snapshot diff. cookie ID: ' + cookieID);
+    $.ajax({
+        url: '/api/ssfavtracks/diff/' + timestamp,
+        success: function(response) {
+            console.log(' > received from server:');
+            console.log(response);
+            const responseObj = JSON.parse(response);
+            if (responseObj.error) {
+                console.error(' >>> get fav. tracks snapshot diff error: ' + responseObj.error.message);
+                toastr.error(responseObj.error.message, 'Get fav. tracks snapshot diff error');
+            } else {
+                // TODO: show diff
+                toastr.success(responseObj.message, 'Delete favorite tracks snapshot');
+            }
+        },
+        error: function(xhr,status,error) {
+            console.error(' >>> get fav. tracks snapshot diff error, status: ' + status + ', error: ' + error);
+        }
+    });
+}
+
 function deletePlaylistSnapshot(timestamp) {
-    const cookieID = getCookie("spotilizer-user-id");
+    const cookieID = getCookie('spotilizer-user-id');
     if (!cookieID) {
         toastr.error('Not logged in.', 'Delete playlist snapshot error');
         return;
@@ -231,11 +258,14 @@ function populateFavTracksSnapshots() {
         tracksSnapshotsUL.append(`
             <li style="list-style-type:none;">
             <div class="row">
-                <div class="snapshot-item col-sm-9" onclick="showFavTracksSnapshot(${ts.timestamp})">
+                <div class="snapshot-item col-sm-10" onclick="showFavTracksSnapshot(${ts.timestamp})">
                     ${timestampStr} <span class="badge badge-info" style="margin-left: 15px;">${ts.tracks_count}</span> tracks
                 </div>
-                <div class="col-sm-3">
+                <div class="col-sm-1">
                     <button style="height: 20px; padding-top: 0px;" type="button" class="btn btn-danger btn-sm" onclick="deleteFavTracksSnapshot(${ts.timestamp})">Del</button>
+               </div>
+               <div class="col-sm-1">
+                    <button style="height: 20px; padding-top: 0px;" type="button" class="btn btn-info btn-sm" onclick="getFavTracksSnapshotDiff(${ts.timestamp})">Diff</button>
                 </div>
             </div>
             </li>`);

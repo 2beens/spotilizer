@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/2beens/spotilizer/models"
 	"github.com/2beens/spotilizer/services"
@@ -28,19 +29,84 @@ func (handler *FavTracksHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	switch r.Method {
 	case "GET":
-		switch r.URL.Path {
-		case "/api/ssfavtracks":
+		if r.URL.Path == "/api/ssfavtracks" {
 			handler.getFavTracksSnapshots(user.Username, false, w)
-		case "/api/ssfavtracks/full":
+		} else if r.URL.Path == "/api/ssfavtracks/full" {
 			handler.getFavTracksSnapshots(user.Username, true, w)
-		default:
+		} else if strings.HasPrefix(r.URL.Path, "/api/ssfavtracks/diff/") {
+			handler.getFavTracksDiff(user, w, r)
+		} else if r.URL.Path == "/api/ssfavtracks/{timestamp}" {
 			handler.getFavTracksSnapshot(user.Username, w, r)
+		} else {
+			util.SendAPIErrorResp(w, "unknown path", http.StatusBadRequest)
 		}
 	case "DELETE":
 		handler.deleteFavTracksSnapshots(user.Username, w, r)
 	default:
 		util.SendAPIErrorResp(w, "unknown/unsupported request method", http.StatusBadRequest)
 	}
+}
+
+func (handler *FavTracksHandler) getFavTracksDiff(user *models.User, w io.Writer, r *http.Request) {
+	vars := mux.Vars(r)
+	timestamp := vars["timestamp"]
+	log.Debugf(" > get fav tracks diff for snapshot [%s]: username [%s]", timestamp, user.Username)
+
+	snapshot, err := services.UserPlaylist.GetFavTracksSnapshotByTimestamp(user.Username, timestamp)
+	if err != nil {
+		log.Errorf(" >>> error while trying to get fav. tracks snapshot: %s", err.Error())
+		util.SendAPIErrorResp(w, "Error occurred: "+err.Error(), http.StatusNotFound)
+		return
+	}
+	if snapshot == nil {
+		log.Errorf(" >>> error while trying to get fav. tracks snapshot: snapshot is nil")
+		util.SendAPIErrorResp(w, "Favorite tracks snapshot not found ", http.StatusNotFound)
+		return
+	}
+
+	// now get the current fav tracks, and make a diff relative to "snapshot" object
+	currentTracks, apiErr := services.UserPlaylist.DownloadSavedFavTracks(user.Auth.AccessToken)
+	if apiErr != nil {
+		log.Infof(" >>> error while getting current tracks diff: %v", apiErr)
+		util.SendAPIErrorResp(w, apiErr.Error.Message, apiErr.Error.Status)
+		return
+	}
+
+	var newTracks []models.SpAddedTrack
+	var removedTracks []models.SpAddedTrack
+	for _, t := range currentTracks {
+		if !containsTrack(t, snapshot.Tracks) {
+			newTracks = append(newTracks, t)
+		}
+	}
+	for _, t := range snapshot.Tracks {
+		if !containsTrack(t, currentTracks) {
+			removedTracks = append(removedTracks, t)
+		}
+	}
+
+	log.Debugf(" > fav tracks [%s] diff. found [%d] new tracks and [%d] removed tracks", timestamp, len(newTracks), len(removedTracks))
+
+	util.SendAPIOKRespWithData(w, "success", struct {
+		NewTracks     []models.SpAddedTrack `json:"newTracks"`
+		RemovedTracks []models.SpAddedTrack `json:"removedTracks"`
+	}{
+		newTracks,
+		removedTracks,
+	})
+}
+
+func containsTrack(track models.SpAddedTrack, tracks []models.SpAddedTrack) bool {
+	for _, t := range tracks {
+		if track.Track.Album.ID != t.Track.Album.ID {
+			continue
+		}
+		if track.Track.ID != t.Track.ID {
+			continue
+		}
+		return true
+	}
+	return false
 }
 
 func (handler *FavTracksHandler) getFavTracksSnapshot(username string, w io.Writer, r *http.Request) {
@@ -51,7 +117,7 @@ func (handler *FavTracksHandler) getFavTracksSnapshot(username string, w io.Writ
 	snapshot, err := services.UserPlaylist.GetFavTracksSnapshotByTimestamp(username, timestamp)
 	if err != nil {
 		log.Errorf(" >>> error while trying to get fav. tracks snapshot: %s", err.Error())
-		util.SendAPIErrorResp(w, "Error occured: "+err.Error(), http.StatusNotFound)
+		util.SendAPIErrorResp(w, "Error occurred: "+err.Error(), http.StatusNotFound)
 		return
 	}
 	if snapshot == nil {

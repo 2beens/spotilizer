@@ -66,8 +66,11 @@ func routerSetup() (r *mux.Router) {
 	r.Handle("/api/ssfavtracks", apiFavTracksHandler)
 	r.Handle("/api/ssfavtracks/full", apiFavTracksHandler)
 	r.Handle("/api/ssfavtracks/{timestamp}", apiFavTracksHandler)
+	// diffs
+	r.Handle("/api/ssplaylists/diff/{timestamp}", apiPlaylistsHandler)
+	r.Handle("/api/ssfavtracks/diff/{timestamp}", apiFavTracksHandler)
 
-	// debuging
+	// debugging
 	r.HandleFunc("/debug", handlers.DebugHandler)
 
 	// middleware
