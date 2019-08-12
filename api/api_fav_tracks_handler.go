@@ -35,7 +35,7 @@ func (handler *FavTracksHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 			handler.getFavTracksSnapshots(user.Username, true, w)
 		} else if strings.HasPrefix(r.URL.Path, "/api/ssfavtracks/diff/") {
 			handler.getFavTracksDiff(user, w, r)
-		} else if r.URL.Path == "/api/ssfavtracks/{timestamp}" {
+		} else if strings.HasPrefix(r.URL.Path, "/api/ssfavtracks/") {
 			handler.getFavTracksSnapshot(user.Username, w, r)
 		} else {
 			util.SendAPIErrorResp(w, "unknown path", http.StatusBadRequest)

@@ -183,8 +183,8 @@ function getFavTracksSnapshotDiff(timestamp) {
                 console.error(' >>> get fav. tracks snapshot diff error: ' + responseObj.error.message);
                 toastr.error(responseObj.error.message, 'Get fav. tracks snapshot diff error');
             } else {
-                // TODO: show diff
-                toastr.success(responseObj.message, 'Delete favorite tracks snapshot');
+                showFavTracksDiff(timestamp, responseObj.data.newTracks, responseObj.data.removedTracks)
+                toastr.success(responseObj.message, 'Get favorite tracks snapshot diff');
             }
         },
         error: function(xhr,status,error) {
@@ -265,12 +265,14 @@ function populateFavTracksSnapshots() {
                     <button style="height: 20px; padding-top: 0px;" type="button" class="btn btn-danger btn-sm" onclick="deleteFavTracksSnapshot(${ts.timestamp})">Del</button>
                </div>
                <div class="col-sm-1">
-                    <button style="height: 20px; padding-top: 0px;" type="button" class="btn btn-info btn-sm" onclick="getFavTracksSnapshotDiff(${ts.timestamp})">Diff</button>
+                    <button style="height: 20px; padding-top: 0px; margin-left: 5px;" type="button" class="btn btn-info btn-sm" onclick="getFavTracksSnapshotDiff(${ts.timestamp})">Diff</button>
                 </div>
             </div>
             </li>`);
     });
 }
+
+
 
 function populatePlaylistSnapshots() {
     const playlistSnapshotsUL = $('#playlist-snapshots');
@@ -297,6 +299,8 @@ function populatePlaylistSnapshots() {
 
 function showPlaylistSnapshot(timestamp) {
     getPlaylistsSnapshot(timestamp, function(playlistsSnapshot) {
+        const ssDetailsCol = $('#snapshot-details-clmn');
+        ssDetailsCol.empty();
         const ssDetailsList = $('#snapshot-details-ul');
         ssDetailsList.empty();
         playlistsSnapshot.forEach(function(p) {
@@ -312,22 +316,75 @@ function showPlaylistSnapshot(timestamp) {
 
 function showFavTracksSnapshot(timestamp) {
     getFavTracksSnapshot(timestamp, function(tracksSnapshot) {
+        const ssDetailsCol = $('#snapshot-details-clmn');
+        ssDetailsCol.empty();
         const ssDetailsList = $('#snapshot-details-ul');
         ssDetailsList.empty();
         tracksSnapshot.forEach(function(t) {
-            const artistName = t.track.artists
-                .map(function (a) {
-                    return a.name;
-                })
-                .join(', ');
             ssDetailsList.append(`
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    ${artistName} - ${t.track.name}
+                    ${getArtistsName(t)} - ${t.track.name}
                     <span style="margin-left: 20px;" class="badge badge-primary badge-pill">${new Date(t.added_at).toLocaleString()}</span>
                 </li>
             `);
         });
     });
+}
+
+function showFavTracksDiff(timestamp, newTracks, removedTracks) {
+    const ssDetailsCol = $('#snapshot-details-col');
+    ssDetailsCol.empty();
+    const ssDetailsList = $('#snapshot-details-ul');
+    ssDetailsList.empty();
+
+    if (!newTracks) {
+        newTracks = [];
+    }
+    if (!removedTracks) {
+        removedTracks = [];
+    }
+
+    const timestampDate = new Date(timestamp * 1000);
+    const timestampStr = timestampDate.toISOString().slice(0, 19).replace('T', ' ');
+    ssDetailsCol.append(`<h4>Changes since ${timestampStr}</h4>`);
+
+    ssDetailsCol.append(`<h5 style="margin-top: 20px;">New Tracks</h5>`);
+    if (newTracks.length === 0) {
+        ssDetailsCol.append(`<p>No new tracks</p>`);
+    }
+    ssDetailsCol.append(`<ul class="list-group">`);
+    newTracks.forEach(function(t) {
+        ssDetailsCol.append(`
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                ${getArtistsName(t)} - ${t.track.name}
+                <span style="margin-left: 20px;" class="badge badge-primary badge-pill">${new Date(t.added_at).toLocaleString()}</span>
+            </li>
+         `);
+    });
+    ssDetailsCol.append(`</ul>`);
+
+    ssDetailsCol.append(`<h5 style="margin-top: 20px;">Removed Tracks</h5>`);
+    if (removedTracks.length === 0) {
+        ssDetailsCol.append(`<p>No removed tracks</p>`);
+    }
+    ssDetailsCol.append(`<ul class="list-group">`);
+    removedTracks.forEach(function(t) {
+        ssDetailsCol.append(`
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                ${getArtistsName(t)} - ${t.track.name}
+                <span style="margin-left: 20px;" class="badge badge-primary badge-pill">${new Date(t.added_at).toLocaleString()}</span>
+            </li>
+        `);
+    });
+    ssDetailsCol.append(`</ul>`);
+}
+
+function getArtistsName(addedTrack) {
+    return addedTrack.track.artists
+        .map(function (a) {
+            return a.name;
+        })
+        .join(', ');
 }
 
 function callDebug() {
@@ -349,6 +406,7 @@ function saveCurrentTracks() {
         }
         if (respObj.error) {
             toastr.error(respObj.error.message, 'Save fav tracks error');
+            refreshData();
         } else {
             toastr.success(respObj.message, 'Save fav tracks');
         }
@@ -369,6 +427,7 @@ function saveCurrentPlaylists() {
             toastr.error(respObj.error.message, 'Save current playlists error');
         } else {
             toastr.success(respObj.message, 'Save current playlists');
+            refreshData();
         }
     }, function(xhr, status, error) {
         toastr.error('Status: ' + status + ', error: ' + JSON.stringify(error), 'Save current playlists error');
