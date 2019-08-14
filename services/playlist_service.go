@@ -57,7 +57,7 @@ func (ups *SpotifyUserPlaylistService) DownloadCurrentUserPlaylists(accessToken 
 		var response models.SpGetCurrentPlaylistsResp
 		err = json.Unmarshal(body, &response)
 		if err != nil {
-			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get playlists response: %s", err.Error())
+			errMsg := fmt.Sprintf(" >>> error occurred while unmarshaling get playlists response: %s", err.Error())
 			return nil, &models.SpAPIError{Error: models.SpError{Status: 500, Message: errMsg}}
 		}
 
@@ -96,7 +96,7 @@ func (ups *SpotifyUserPlaylistService) DownloadPlaylistTracks(accessToken string
 		var response models.SpGetPlaylistTracksResp
 		err = json.Unmarshal(body, &response)
 		if err != nil {
-			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get playlist tracks response: %s", err.Error())
+			errMsg := fmt.Sprintf(" >>> error occurred while unmarshaling get playlist tracks response: %s", err.Error())
 			return nil, &models.SpAPIError{Error: models.SpError{Status: 500, Message: errMsg}}
 		}
 
@@ -133,7 +133,7 @@ func (ups *SpotifyUserPlaylistService) DownloadSavedFavTracks(accessToken string
 		var response models.SpGetSavedTracksResp
 		err = json.Unmarshal(body, &response)
 		if err != nil {
-			errMsg := fmt.Sprintf(" >>> error occured while unmarshaling get tracks response: %s", err.Error())
+			errMsg := fmt.Sprintf(" >>> error occurred while unmarshaling get tracks response: %s", err.Error())
 			return nil, &models.SpAPIError{Error: models.SpError{Status: 500, Message: errMsg}}
 		}
 

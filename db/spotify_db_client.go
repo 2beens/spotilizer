@@ -32,7 +32,7 @@ func (sDB SpotifyDB) SaveFavTracksSnapshot(ft *models.FavTracksSnapshot) (saved 
 	log.Tracef(" > saving fav tracks [%d] for user [%s] ...\n", len(ft.Tracks), ft.Username)
 	tracksJSON, err := json.Marshal(ft.Tracks)
 	if err != nil {
-		log.Println(" >>> json marshalling error saving tracks to DB for user: " + ft.Username)
+		log.Println(" >>> json marshaling error saving tracks to DB for user: " + ft.Username)
 		return false
 	}
 	timestamp := strconv.FormatInt(ft.Timestamp.Unix(), 10)
@@ -51,7 +51,7 @@ func (sDB SpotifyDB) SavePlaylistsSnapshot(ps *models.PlaylistsSnapshot) (saved 
 	log.Tracef(" > saving playlists [%d] for user [%s] ...\n", len(ps.Playlists), ps.Username)
 	playlistsJSON, err := json.Marshal(ps.Playlists)
 	if err != nil {
-		log.Println(" >>> json marshalling error saving playlists to DB for user: " + ps.Username)
+		log.Println(" >>> json marshaling error saving playlists to DB for user: " + ps.Username)
 		return false
 	}
 	timestamp := strconv.FormatInt(ps.Timestamp.Unix(), 10)

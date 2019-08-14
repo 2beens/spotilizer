@@ -29,15 +29,16 @@ func (handler *FavTracksHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	switch r.Method {
 	case "GET":
-		if r.URL.Path == "/api/ssfavtracks" {
+		switch {
+		case r.URL.Path == "/api/ssfavtracks":
 			handler.getFavTracksSnapshots(user.Username, false, w)
-		} else if r.URL.Path == "/api/ssfavtracks/full" {
+		case r.URL.Path == "/api/ssfavtracks/full":
 			handler.getFavTracksSnapshots(user.Username, true, w)
-		} else if strings.HasPrefix(r.URL.Path, "/api/ssfavtracks/diff/") {
+		case strings.HasPrefix(r.URL.Path, "/api/ssfavtracks/diff/"):
 			handler.getFavTracksDiff(user, w, r)
-		} else if strings.HasPrefix(r.URL.Path, "/api/ssfavtracks/") {
+		case strings.HasPrefix(r.URL.Path, "/api/ssfavtracks/"):
 			handler.getFavTracksSnapshot(user.Username, w, r)
-		} else {
+		default:
 			util.SendAPIErrorResp(w, "unknown path", http.StatusBadRequest)
 		}
 	case "DELETE":
@@ -161,7 +162,7 @@ func (handler *FavTracksHandler) deleteFavTracksSnapshots(username string, w io.
 	snapshot, err := services.UserPlaylist.DeleteFavTracksSnapshot(username, timestamp)
 	if err != nil {
 		log.Errorf(" >>> error while trying to delete fav. tracks snapshot: %s", err.Error())
-		util.SendAPIErrorResp(w, "Error occured: "+err.Error(), http.StatusNotFound)
+		util.SendAPIErrorResp(w, "Error occurred: "+err.Error(), http.StatusNotFound)
 		return
 	}
 	if snapshot == nil {

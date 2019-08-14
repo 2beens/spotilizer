@@ -52,7 +52,7 @@ func (handler *PlaylistsHandler) getPlaylistsSnapshot(username string, w io.Writ
 	snapshotRaw, err := services.UserPlaylist.GetPlaylistsSnapshotByTimestamp(username, timestamp)
 	if err != nil {
 		log.Errorf(" >>> error while trying to get playlists snapshot: %s", err.Error())
-		util.SendAPIErrorResp(w, "Error occured: "+err.Error(), http.StatusNotFound)
+		util.SendAPIErrorResp(w, "Error occurred: "+err.Error(), http.StatusNotFound)
 		return
 	}
 	if snapshotRaw == nil {
@@ -79,7 +79,7 @@ func (handler *PlaylistsHandler) deletePlaylistsSnapshot(username string, w io.W
 	snapshot, err := services.UserPlaylist.DeletePlaylistsSnapshot(username, timestamp)
 	if err != nil {
 		log.Errorf(" >>> error while trying to delete playlists snapshot: %s", err.Error())
-		util.SendAPIErrorResp(w, "Error occured: "+err.Error(), http.StatusNotFound)
+		util.SendAPIErrorResp(w, "Error occurred: "+err.Error(), http.StatusNotFound)
 		return
 	}
 	if snapshot == nil {

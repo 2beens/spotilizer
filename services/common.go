@@ -51,6 +51,8 @@ func getFromSpotify(apiURL string, path string, accessToken string) (body []byte
 			errChannel <- reqErr
 			return
 		}
+		defer resp.Body.Close()
+
 		body, reqErr = ioutil.ReadAll(resp.Body)
 		if reqErr != nil {
 			errChannel <- reqErr
