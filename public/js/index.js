@@ -299,7 +299,7 @@ function populatePlaylistSnapshots() {
 
 function showPlaylistSnapshot(timestamp) {
     getPlaylistsSnapshot(timestamp, function(playlistsSnapshot) {
-        const ssDetailsCol = $('#snapshot-details-clmn');
+        const ssDetailsCol = $('#snapshot-diff-col');
         ssDetailsCol.empty();
         const ssDetailsList = $('#snapshot-details-ul');
         ssDetailsList.empty();
@@ -316,7 +316,7 @@ function showPlaylistSnapshot(timestamp) {
 
 function showFavTracksSnapshot(timestamp) {
     getFavTracksSnapshot(timestamp, function(tracksSnapshot) {
-        const ssDetailsCol = $('#snapshot-details-clmn');
+        const ssDetailsCol = $('#snapshot-diff-col');
         ssDetailsCol.empty();
         const ssDetailsList = $('#snapshot-details-ul');
         ssDetailsList.empty();
@@ -332,8 +332,8 @@ function showFavTracksSnapshot(timestamp) {
 }
 
 function showFavTracksDiff(timestamp, newTracks, removedTracks) {
-    const ssDetailsCol = $('#snapshot-details-col');
-    ssDetailsCol.empty();
+    const ssDiffCol = $('#snapshot-diff-col');
+    ssDiffCol.empty();
     const ssDetailsList = $('#snapshot-details-ul');
     ssDetailsList.empty();
 
@@ -346,37 +346,37 @@ function showFavTracksDiff(timestamp, newTracks, removedTracks) {
 
     const timestampDate = new Date(timestamp * 1000);
     const timestampStr = timestampDate.toISOString().slice(0, 19).replace('T', ' ');
-    ssDetailsCol.append(`<h4>Changes since ${timestampStr}</h4>`);
+    ssDiffCol.append(`<h4>Changes since ${timestampStr}</h4>`);
 
-    ssDetailsCol.append(`<h5 style="margin-top: 20px;">New Tracks</h5>`);
+    ssDiffCol.append(`<h5 style="margin-top: 20px;">New Tracks</h5>`);
     if (newTracks.length === 0) {
-        ssDetailsCol.append(`<p>No new tracks</p>`);
+        ssDiffCol.append(`<p>No new tracks</p>`);
     }
-    ssDetailsCol.append(`<ul class="list-group">`);
+    ssDiffCol.append(`<ul class="list-group">`);
     newTracks.forEach(function(t) {
-        ssDetailsCol.append(`
+        ssDiffCol.append(`
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 ${getArtistsName(t)} - ${t.track.name}
                 <span style="margin-left: 20px;" class="badge badge-primary badge-pill">${new Date(t.added_at).toLocaleString()}</span>
             </li>
          `);
     });
-    ssDetailsCol.append(`</ul>`);
+    ssDiffCol.append(`</ul>`);
 
-    ssDetailsCol.append(`<h5 style="margin-top: 20px;">Removed Tracks</h5>`);
+    ssDiffCol.append(`<h5 style="margin-top: 20px;">Removed Tracks</h5>`);
     if (removedTracks.length === 0) {
-        ssDetailsCol.append(`<p>No removed tracks</p>`);
+        ssDiffCol.append(`<p>No removed tracks</p>`);
     }
-    ssDetailsCol.append(`<ul class="list-group">`);
+    ssDiffCol.append(`<ul class="list-group">`);
     removedTracks.forEach(function(t) {
-        ssDetailsCol.append(`
+        ssDiffCol.append(`
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 ${getArtistsName(t)} - ${t.track.name}
                 <span style="margin-left: 20px;" class="badge badge-primary badge-pill">${new Date(t.added_at).toLocaleString()}</span>
             </li>
         `);
     });
-    ssDetailsCol.append(`</ul>`);
+    ssDiffCol.append(`</ul>`);
 }
 
 function getArtistsName(addedTrack) {
