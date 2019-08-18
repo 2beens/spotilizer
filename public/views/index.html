@@ -1,66 +1,72 @@
 {{define "content"}}
-  <script src="public/js/index.js"></script>
+    <script src="public/js/index.js"></script>
 
-  <div class="jumbotron">
-    <h1 class="display-3">Spotify Playlists Analyzer</h1>
-    <p class="lead">Save snapshots of your favorite songs and playlists, then use them to analyse and modify the current ones.</p>
-  </div>
-
-  <div class="row spotify-controls" id="spotify-controls-div">
-    <div class="col-sm-6">
-      <a style="cursor: pointer" class="btn btn-lg btn-info" role="button" onclick="saveCurrentPlaylists()">Save Current Playlists</a>
-    </div>
-    <div class="col-sm-6">
-      <a style="cursor: pointer" class="btn btn-lg btn-info" role="button" onclick="saveCurrentTracks()">Save Current Tracks</a>
-    </div>
-  </div>
-
-  <div class="row playlists" id="snapshots-data">
-      <div class="col-lg-8">
-        <h5>Stored Playlists Snapshots</h5>
-        <ul id="playlist-snapshots"></ul>
-      </div>
-      <div class="col-lg-8">
-        <h5>Stored Fav Tracks Snapshots</h5>
-        <ul id="tracks-snapshots"></ul>
-      </div>
-  </div>
-  <div class="row spotify-controls" id="refresh-button-div">
-    <div class="col-sm-8">
-    </div>
-    <div class="col-sm-4">
-      <a style="cursor: pointer" class="btn btn-info" role="button" onclick="refreshData()" style="position: absolute; top: 20px;">Refresh</a>
-    </div>
-  </div>
-
-  <div class="row snapshot-details">
-    <div id="snapshot-details-col" class="col-lg-8">
-      <ul id="snapshot-details-ul" class="list-group"></ul>
-      <div id="snapshot-diff-col"></div>
-    </div>
-  </div>
-
-  <div class="row marketing" onclick="callDebug()">
-    <div class="col-lg-6">
-      <h4>Subheading</h4>
-      <p>Donec id elit non mi porta gravida at eget metus. Maecenas faucibus mollis interdum.</p>
-
-      <h4>Subheading</h4>
-      <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras mattis consectetur purus sit amet fermentum.</p>
-
-      <h4>Subheading</h4>
-      <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
+    <div class="jumbotron">
+        <h1 class="display-3">Spotify Playlists Analyzer</h1>
+        <p class="lead">Save snapshots of your favorite songs and playlists, then use them to analyse and modify the
+            current ones.</p>
     </div>
 
-    <div class="col-lg-6">
-      <h4>Subheading</h4>
-      <p>Donec id elit non mi porta gravida at eget metus. Maecenas faucibus mollis interdum.</p>
-
-      <h4>Subheading</h4>
-      <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras mattis consectetur purus sit amet fermentum.</p>
-
-      <h4>Subheading</h4>
-      <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
+    <div class="row spotify-controls" id="spotify-controls-div">
+        <div class="col-sm-6">
+            <a style="cursor: pointer" class="btn btn-lg btn-info" role="button" onclick="saveCurrentPlaylists()">Save
+                Current Playlists</a>
+        </div>
+        <div class="col-sm-6">
+            <a style="cursor: pointer" class="btn btn-lg btn-info" role="button" onclick="saveCurrentTracks()">Save
+                Current Tracks</a>
+        </div>
     </div>
-  </div>
+
+    <div class="row playlists" id="snapshots-data">
+        <div class="col-lg-8">
+            <h5>Stored Playlists Snapshots</h5>
+            <ul id="playlist-snapshots"></ul>
+        </div>
+        <div class="col-lg-8">
+            <h5>Stored Fav Tracks Snapshots</h5>
+            <ul id="tracks-snapshots"></ul>
+        </div>
+    </div>
+    <div class="row spotify-controls" id="refresh-button-div">
+        <div class="col-sm-8">
+        </div>
+        <div class="col-sm-4">
+            <a style="cursor: pointer" class="btn btn-info" role="button" onclick="refreshData()"
+               style="position: absolute; top: 20px;">Refresh</a>
+        </div>
+    </div>
+
+    <div class="row snapshot-details">
+        <div id="snapshot-details-col" class="col-lg-8">
+            <ul id="snapshot-details-ul" class="list-group"></ul>
+            <div id="snapshot-diff-col"></div>
+        </div>
+    </div>
+
+    <div class="row marketing" onclick="callDebug()">
+        <div class="col-lg-6">
+            <h4>Subheading</h4>
+            <p>Donec id elit non mi porta gravida at eget metus. Maecenas faucibus mollis interdum.</p>
+
+            <h4>Subheading</h4>
+            <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras mattis consectetur purus sit amet
+                fermentum.</p>
+
+            <h4>Subheading</h4>
+            <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
+        </div>
+
+        <div class="col-lg-6">
+            <h4>Subheading</h4>
+            <p>Donec id elit non mi porta gravida at eget metus. Maecenas faucibus mollis interdum.</p>
+
+            <h4>Subheading</h4>
+            <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras mattis consectetur purus sit amet
+                fermentum.</p>
+
+            <h4>Subheading</h4>
+            <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
+        </div>
+    </div>
 {{end}}

@@ -7,7 +7,7 @@ function downloadFavTracksSnapshots() {
     console.log(' > populating fav tracks snapshots. cookie ID: ' + cookieID);
     $.ajax({
         url: '/api/ssfavtracks',
-        success: function(response) {
+        success: function (response) {
             const responseObj = JSON.parse(response);
             if (responseObj.error) {
                 console.error(' >>> populate fav tracks snapshots error: ' + responseObj.error.message);
@@ -19,7 +19,7 @@ function downloadFavTracksSnapshots() {
             fillFavTracksSnapshotsMap();
             populateFavTracksSnapshots();
         },
-        error: function(xhr,status,error) {
+        error: function (xhr, status, error) {
             console.error(' >>> populate playlists snapshots, status: ' + status + ', error: ' + error);
         }
     });
@@ -34,7 +34,7 @@ function downloadPlaylistSnapshots() {
     console.log(' > populating playlistts snapshots. cookie ID: ' + cookieID);
     $.ajax({
         url: '/api/ssplaylists',
-        success: function(response) {
+        success: function (response) {
             const responseObj = JSON.parse(response);
             if (responseObj.error) {
                 console.error(' >>> populate playlists snapshots error: ' + responseObj.error.message);
@@ -46,7 +46,7 @@ function downloadPlaylistSnapshots() {
             fillPlaylistsSnapshotsMap();
             populatePlaylistSnapshots();
         },
-        error: function(xhr,status,error) {
+        error: function (xhr, status, error) {
             console.error(' >>> populate playlists snapshots, status: ' + status + ', error: ' + error);
         }
     });
@@ -58,7 +58,7 @@ function playlistSnapshotIsEmpty(snapshot) {
         return true;
     }
     let isEmpty = true;
-    snapshot.forEach(function(p) { 
+    snapshot.forEach(function (p) {
         if (p.tracks.length > 0) {
             isEmpty = false;
             return;
@@ -84,7 +84,7 @@ function getPlaylistsSnapshot(timestamp, callback) {
     $.ajax({
         url: '/api/ssplaylists/' + timestamp,
         type: 'GET',
-        success: function(response) {
+        success: function (response) {
             const responseObj = JSON.parse(response);
             if (responseObj.error) {
                 console.error(' >>> get playlist snapshot error: ' + responseObj.error.message);
@@ -96,7 +96,7 @@ function getPlaylistsSnapshot(timestamp, callback) {
             }
             callback(playlistsSnapshot);
         },
-        error: function(xhr,status,error) {
+        error: function (xhr, status, error) {
             console.error(' >>> get playlist snapshot error, status: ' + status + ', error: ' + error);
             callback(playlistsSnapshot);
         }
@@ -119,7 +119,7 @@ function getFavTracksSnapshot(timestamp, callback) {
     $.ajax({
         url: '/api/ssfavtracks/' + timestamp,
         type: 'GET',
-        success: function(response) {
+        success: function (response) {
             const responseObj = JSON.parse(response);
             if (responseObj.error) {
                 console.error(' >>> get fav. tracks snapshot error: ' + responseObj.error.message);
@@ -131,7 +131,7 @@ function getFavTracksSnapshot(timestamp, callback) {
             }
             callback(tracksSnapshot);
         },
-        error: function(xhr,status,error) {
+        error: function (xhr, status, error) {
             console.error(' >>> get fav. tracks snapshot error, status: ' + status + ', error: ' + error);
             callback(tracksSnapshot);
         }
@@ -148,7 +148,7 @@ function deleteFavTracksSnapshot(timestamp) {
     $.ajax({
         url: '/api/ssfavtracks/' + timestamp,
         type: 'DELETE',
-        success: function(response) {
+        success: function (response) {
             console.log(' > received from server:');
             console.log(response);
             const responseObj = JSON.parse(response);
@@ -160,7 +160,7 @@ function deleteFavTracksSnapshot(timestamp) {
                 toastr.success(responseObj.message, 'Delete favorite tracks snapshot');
             }
         },
-        error: function(xhr,status,error) {
+        error: function (xhr, status, error) {
             console.error(' >>> delete fav. tracks snapshot error, status: ' + status + ', error: ' + error);
         }
     });
@@ -175,7 +175,7 @@ function getFavTracksSnapshotDiff(timestamp) {
     console.log(' > get fav tracks snapshot diff. cookie ID: ' + cookieID);
     $.ajax({
         url: '/api/ssfavtracks/diff/' + timestamp,
-        success: function(response) {
+        success: function (response) {
             console.log(' > received from server:');
             console.log(response);
             const responseObj = JSON.parse(response);
@@ -187,7 +187,7 @@ function getFavTracksSnapshotDiff(timestamp) {
                 toastr.success(responseObj.message, 'Get favorite tracks snapshot diff');
             }
         },
-        error: function(xhr,status,error) {
+        error: function (xhr, status, error) {
             console.error(' >>> get fav. tracks snapshot diff error, status: ' + status + ', error: ' + error);
         }
     });
@@ -203,7 +203,7 @@ function deletePlaylistSnapshot(timestamp) {
     $.ajax({
         url: '/api/ssplaylists/' + timestamp,
         type: 'DELETE',
-        success: function(response) {
+        success: function (response) {
             console.log(' > received from server:');
             console.log(response);
             const responseObj = JSON.parse(response);
@@ -215,7 +215,7 @@ function deletePlaylistSnapshot(timestamp) {
                 toastr.success(responseObj.message, 'Delete playists snapshot');
             }
         },
-        error: function(xhr,status,error) {
+        error: function (xhr, status, error) {
             console.error(' >>> delete playlist snapshot error, status: ' + status + ', error: ' + error);
         }
     });
@@ -226,7 +226,7 @@ function fillFavTracksSnapshotsMap() {
     if (!ssTracks) {
         return;
     }
-    ssTracks.forEach(function(tracksSnapshot) {
+    ssTracks.forEach(function (tracksSnapshot) {
         ssTimestamp2tracksMap.set(tracksSnapshot.timestamp, tracksSnapshot.tracks);
     });
 }
@@ -236,7 +236,7 @@ function fillPlaylistsSnapshotsMap() {
     if (!ssPlaylists) {
         return;
     }
-    ssPlaylists.forEach(function(playlistsSnapshot) {
+    ssPlaylists.forEach(function (playlistsSnapshot) {
         ssTimestamp2playlistsMap.set(playlistsSnapshot.timestamp, playlistsSnapshot.playlists);
     });
 }
@@ -251,15 +251,19 @@ function populateFavTracksSnapshots() {
     if (!tracksSnapshotsUL || !ssTracks) {
         return;
     }
+    ssTracks.sort(function (a, b) {
+        if (a.timestamp < b.timestamp) {
+            return -1;
+        }
+        return 1;
+    });
     tracksSnapshotsUL.empty();
-    ssTracks.forEach(function(ts) {
-        const timestamp = new Date(ts.timestamp * 1000);
-        const timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
+    ssTracks.forEach(function (ts) {
         tracksSnapshotsUL.append(`
             <li style="list-style-type:none;">
             <div class="row">
                 <div class="snapshot-item col-sm-10" onclick="showFavTracksSnapshot(${ts.timestamp})">
-                    ${timestampStr} <span class="badge badge-info" style="margin-left: 15px;">${ts.tracks_count}</span> tracks
+                    ${timeConverter(ts.timestamp)} <span class="badge badge-info" style="margin-left: 15px;">${ts.tracks_count}</span> tracks
                 </div>
                 <div class="col-sm-1">
                     <button style="height: 20px; padding-top: 0px;" type="button" class="btn btn-danger btn-sm" onclick="deleteFavTracksSnapshot(${ts.timestamp})">Del</button>
@@ -272,22 +276,24 @@ function populateFavTracksSnapshots() {
     });
 }
 
-
-
 function populatePlaylistSnapshots() {
     const playlistSnapshotsUL = $('#playlist-snapshots');
     if (!playlistSnapshotsUL || !ssPlaylists) {
         return;
     }
+    ssPlaylists.sort(function (a, b) {
+        if (a.timestamp < b.timestamp) {
+            return -1;
+        }
+        return 1;
+    });
     playlistSnapshotsUL.empty();
-    ssPlaylists.forEach(function(ps) {
-        const timestamp = new Date(ps.timestamp * 1000);
-        const timestampStr = timestamp.toISOString().slice(0, 19).replace('T', ' ');
+    ssPlaylists.forEach(function (ps) {
         playlistSnapshotsUL.append(`
             <li style="list-style-type:none;">
             <div class="row">
                 <div class="snapshot-item col-sm-9" onclick="showPlaylistSnapshot(${ps.timestamp})">
-                    ${timestampStr} <span class="badge badge-info" style="margin-left: 15px;">${ps.playlists.length}</span> playlists
+                    ${timeConverter(ps.timestamp)} <span class="badge badge-info" style="margin-left: 15px;">${ps.playlists.length}</span> playlists
                 </div>
                 <div class="col-sm-3">
                     <button style="height: 20px; padding-top: 0px;" type="button" class="btn btn-danger btn-sm" onclick="deletePlaylistSnapshot(${ps.timestamp})">Del</button>
@@ -298,12 +304,12 @@ function populatePlaylistSnapshots() {
 }
 
 function showPlaylistSnapshot(timestamp) {
-    getPlaylistsSnapshot(timestamp, function(playlistsSnapshot) {
+    getPlaylistsSnapshot(timestamp, function (playlistsSnapshot) {
         const ssDetailsCol = $('#snapshot-diff-col');
         ssDetailsCol.empty();
         const ssDetailsList = $('#snapshot-details-ul');
         ssDetailsList.empty();
-        playlistsSnapshot.forEach(function(p) {
+        playlistsSnapshot.forEach(function (p) {
             ssDetailsList.append(`
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     ${p.name}
@@ -315,12 +321,12 @@ function showPlaylistSnapshot(timestamp) {
 }
 
 function showFavTracksSnapshot(timestamp) {
-    getFavTracksSnapshot(timestamp, function(tracksSnapshot) {
+    getFavTracksSnapshot(timestamp, function (tracksSnapshot) {
         const ssDetailsCol = $('#snapshot-diff-col');
         ssDetailsCol.empty();
         const ssDetailsList = $('#snapshot-details-ul');
         ssDetailsList.empty();
-        tracksSnapshot.forEach(function(t) {
+        tracksSnapshot.forEach(function (t) {
             ssDetailsList.append(`
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     ${getArtistsName(t)} - ${t.track.name}
@@ -353,7 +359,7 @@ function showFavTracksDiff(timestamp, newTracks, removedTracks) {
         ssDiffCol.append(`<p>No new tracks</p>`);
     }
     ssDiffCol.append(`<ul class="list-group">`);
-    newTracks.forEach(function(t) {
+    newTracks.forEach(function (t) {
         ssDiffCol.append(`
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 ${getArtistsName(t)} - ${t.track.name}
@@ -368,7 +374,7 @@ function showFavTracksDiff(timestamp, newTracks, removedTracks) {
         ssDiffCol.append(`<p>No removed tracks</p>`);
     }
     ssDiffCol.append(`<ul class="list-group">`);
-    removedTracks.forEach(function(t) {
+    removedTracks.forEach(function (t) {
         ssDiffCol.append(`
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 ${getArtistsName(t)} - ${t.track.name}
@@ -389,17 +395,17 @@ function getArtistsName(addedTrack) {
 
 function callDebug() {
     console.log(' > calling debug function on server ...');
-    makeRequest('/debug', function(response) {
+    makeRequest('/debug', function (response) {
         console.log(' > received from server: ' + response);
     });
 }
 
 function saveCurrentTracks() {
     lastCalledFunc = saveCurrentTracks;
-    makeRequest('/save_current_tracks', function(response) {
+    makeRequest('/save_current_tracks', function (response) {
         console.log(' > received from server: ' + response);
         const respObj = JSON.parse(response);
-        if(checkIfRefreshTokenNeeded(respObj)) {
+        if (checkIfRefreshTokenNeeded(respObj)) {
             console.log(' > refresh token needed ...');
             refreshTokenFunc();
             return;
@@ -415,10 +421,10 @@ function saveCurrentTracks() {
 
 function saveCurrentPlaylists() {
     lastCalledFunc = saveCurrentPlaylists;
-    makeRequest('/save_current_playlists', function(response) {
+    makeRequest('/save_current_playlists', function (response) {
         console.log(' > received from server: ' + response);
         const respObj = JSON.parse(response);
-        if(checkIfRefreshTokenNeeded(respObj)) {
+        if (checkIfRefreshTokenNeeded(respObj)) {
             console.log(' > refresh token needed ...');
             refreshTokenFunc();
             return;
@@ -429,7 +435,7 @@ function saveCurrentPlaylists() {
             toastr.success(respObj.message, 'Save current playlists');
             refreshData();
         }
-    }, function(xhr, status, error) {
+    }, function (xhr, status, error) {
         toastr.error('Status: ' + status + ', error: ' + JSON.stringify(error), 'Save current playlists error');
     });
 }
@@ -438,6 +444,7 @@ var ssPlaylists = null;
 var ssTracks = null;
 var ssTimestamp2playlistsMap = new Map();
 var ssTimestamp2tracksMap = new Map();
+
 function getDataFromLocalStorage() {
     ssPlaylistsJson = localStorage.getItem('ssPlaylists');
     ssTracksJson = localStorage.getItem('ssTracks');
@@ -457,19 +464,19 @@ function getDataFromLocalStorage() {
 
 function refreshData() {
     // start both population functions in parallel
-    setTimeout(function() {
+    setTimeout(function () {
         if (isLoggedIn()) {
             downloadFavTracksSnapshots();
         }
     }, 400);
-    setTimeout(function() {
+    setTimeout(function () {
         if (isLoggedIn()) {
             downloadPlaylistSnapshots();
         }
     }, 650);
 }
 
-document.addEventListener('DOMContentLoaded', function(event) {
+document.addEventListener('DOMContentLoaded', function (event) {
     if (isLoggedIn()) {
         $('#spotify-controls-div').removeClass('invisible-elem');
         $('#refresh-button-div').removeClass('invisible-elem');
