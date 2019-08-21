@@ -103,6 +103,9 @@ func main() {
 	//		Trace, Debug, Info, Warning, Error, Fatal, Panic
 	log.SetLevel(log.TraceLevel)
 
+	// read and set view templates from disk
+	util.SetupTemplates()
+
 	// we need a webserver to get the pprof webserver
 	pprofhost := "localhost"
 	pprofport := "6060"

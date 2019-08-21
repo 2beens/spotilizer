@@ -3,8 +3,6 @@ package util
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"html/template"
 	"io"
 	"math"
 	"math/rand"
@@ -95,38 +93,6 @@ func LoggingSetup(logFileName string) {
 	}
 
 	log.SetOutput(logFile)
-}
-
-// templates cheatsheet
-// https://curtisvermeeren.github.io/2017/09/14/Golang-Templates-Cheatsheet
-func RenderView(w http.ResponseWriter, page string, viewData interface{}) {
-	// TODO: parse the template once and reuse it
-	files := []string{
-		"public/views/layouts/layout.html",
-		"public/views/layouts/footer.html",
-		"public/views/layouts/navbar.html",
-		"public/views/" + page + ".html",
-	}
-	t, err := template.New("layout").ParseFiles(files...)
-	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = t.ExecuteTemplate(w, "layout", viewData)
-	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func RenderSpAPIErrorView(w http.ResponseWriter, username string, title string, apiErr *models.SpAPIError) {
-	RenderView(w, "error", models.ErrorViewData{Title: title, Error: fmt.Sprintf("Status: [%d]: %s", apiErr.Error.Status, apiErr.Error.Message), Username: username})
-}
-
-func RenderErrorView(w http.ResponseWriter, username string, title string, status int, message string) {
-	RenderView(w, "error", models.ErrorViewData{Title: title, Error: fmt.Sprintf("Status: [%d]: %s", status, message), Username: username})
 }
 
 func SendAPIResp(w io.Writer, data interface{}) {
