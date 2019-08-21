@@ -2,12 +2,13 @@ package util
 
 import (
 	"fmt"
-	"github.com/2beens/spotilizer/models"
-	"github.com/prometheus/common/log"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/2beens/spotilizer/models"
+	"github.com/prometheus/common/log"
 )
 
 var templatesMap map[string]*template.Template
