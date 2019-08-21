@@ -66,8 +66,8 @@ func GetUsernameByRequestCookieID(r *http.Request) (username string, found bool)
 func ReadSpotifyAuthData() (clientID string, clientSecret string, err error) {
 	clientID = os.Getenv("SPOTIFY_CLIENT_ID")
 	clientSecret = os.Getenv("SPOTIFY_CLIENT_SECRET")
-	log.Println(" > client ID: " + clientID)
-	log.Println(" > client secret: " + clientSecret)
+	log.Debug(" > client ID: " + clientID)
+	log.Debug(" > client secret: " + clientSecret)
 	if clientID == "" {
 		return "", "", errors.New(" >>> error, client ID missing. set it using env [SPOTIFY_CLIENT_ID]")
 	}

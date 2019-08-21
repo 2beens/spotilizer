@@ -110,7 +110,7 @@ func main() {
 	pprofhost := "localhost"
 	pprofport := "6060"
 	go func() {
-		log.Debug("starting pprof server...")
+		log.Debugf("starting pprof server on [%s:%s] ...", pprofhost, pprofport)
 		log.Debugln(http.ListenAndServe(pprofhost+":"+pprofport, nil))
 	}()
 
@@ -161,17 +161,22 @@ func main() {
 		log.Warn(" > controlling terminal lost, logging switched to file [serverlog.log]")
 	}()
 
+	waitForInterruptSignal()
 	gracefulShutdown(httpServer)
 }
 
-func gracefulShutdown(httpServer *http.Server) {
+func waitForInterruptSignal() {
 	c := make(chan os.Signal, 1)
 	// we'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught
 	signal.Notify(c, os.Interrupt)
-
 	// block until (eg. Ctrl+C) signal is received
 	<-c
+	log.Warn(" > interrupt signal received")
+}
+
+func gracefulShutdown(httpServer *http.Server) {
+	log.Debug(" > graceful shutdown initiated ...")
 
 	// store users cookies data
 	services.Users.StoreCookiesToDB()
@@ -187,6 +192,6 @@ func gracefulShutdown(httpServer *http.Server) {
 		log.Error(" >>> failed to gracefully shutdown")
 	}
 
-	log.Info(" > server shut down")
+	log.Warn(" > server shut down")
 	os.Exit(0)
 }
