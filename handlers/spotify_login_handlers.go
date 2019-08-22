@@ -78,11 +78,11 @@ func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
-		err, ok := q["error"]
+		loginErr, ok := q["error"]
 		if ok {
-			log.Infof(" > login failed, error: [%v]", err)
+			log.Infof(" > login failed, error: [%v]", loginErr)
 			util.RenderView(w, "error", models.ErrorViewData{Title: "Spotify Login",
-				Error: "Login to Spotify failed: " + strings.Join(err, ", ")})
+				Error: "Login to Spotify failed: " + strings.Join(loginErr, ", ")})
 			return
 		}
 
@@ -97,7 +97,11 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		}
 
 		if storedStateCookie == nil || storedStateCookie.Value != state[0] || sStateCookieErr != nil {
-			log.Debugf(" > login failed, error: state cookie not found or state mismatch. more details [%v]", err)
+			errDetails := "<empty>"
+			if sStateCookieErr != nil {
+				errDetails = sStateCookieErr.Error()
+			}
+			log.Debugf(" > login failed, error: state cookie not found or state mismatch. more details: [%s]", errDetails)
 			util.RenderView(w, "error", models.ErrorViewData{Title: "Spotify Login",
 				Error: "Login to Spotify failed: state cookie not found or state mismatch"})
 			return
@@ -108,17 +112,18 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		data.Set("code", code[0])
 		data.Set("redirect_uri", fmt.Sprintf("%s/callback", serverURL))
 		data.Set("grant_type", "authorization_code")
-		authOptions, authErr := getAccessToken(data)
-		if authErr != nil {
+		authOptions, err := getAccessToken(data)
+		if err != nil {
+			log.Warn(" >>> login failed, getAccessToken error: " + err.Error())
 			util.RenderErrorView(w, "", "Login Failed", http.StatusInternalServerError, "Internal server error during login. Try again later.")
 			return
 		}
 
 		// get user info
 		log.Debugln(" > getting user info from SP ...")
-		spUser, userErr := services.Users.GetUserFromSpotify(authOptions.AccessToken)
-		if userErr != nil {
-			log.Debugf(" >>> error, cannot get user info from Spotify API.")
+		spUser, err := services.Users.GetUserFromSpotify(authOptions.AccessToken)
+		if err != nil {
+			log.Debugf(" >>> error, cannot get user info from Spotify API. Details: " + err.Error())
 			util.RenderView(w, "error", models.ErrorViewData{Title: "Spotify Login",
 				Error: "Login to Spotify failed: error, cannot get user info from Spotify API"})
 			return
@@ -154,17 +159,21 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 }
 
 func getAccessToken(data url.Values) (auth *models.SpotifyAuthOptions, err error) {
-	body := postReq(data, "https://accounts.spotify.com", "/api/token/")
+	body, err := postReq(data, "https://accounts.spotify.com", "/api/token/")
+	if err != nil {
+		return nil, err
+	}
+
 	auth = &models.SpotifyAuthOptions{}
 	err = json.Unmarshal(body, &auth)
 	if err != nil {
 		log.Warn(" >>> error while unmarshaling auth options: " + err.Error())
-		auth = nil
+		return nil, err
 	}
 	return
 }
 
-func postReq(data url.Values, uri string, path string) []byte {
+func postReq(data url.Values, uri string, path string) ([]byte, error) {
 	u, _ := url.ParseRequestURI(uri)
 	u.Path = path
 
@@ -177,13 +186,9 @@ func postReq(data url.Values, uri string, path string) []byte {
 
 	resp, err := client.Do(r)
 	if err != nil {
-		log.Infof(" >>> error making an auth post req: %s", err.Error())
-		// TODO: return error and check for it later
-		return nil
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	// redirect or return error if status != 200
-	body, _ := ioutil.ReadAll(resp.Body)
-	return body
+	return ioutil.ReadAll(resp.Body)
 }

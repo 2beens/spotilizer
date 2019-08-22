@@ -18,9 +18,6 @@ type SpGetCurrentPlaylistsResp struct {
 	Items []SpPlaylist `json:"items"`
 }
 
-// TODO: these "SpGet**" struct responses are basically the same, the only diff being the items
-// see if those can be merged into one type (maybe somehow by using []interface{} for items)
-
 type SpGetPlaylistTracksResp struct {
 	SpResponse
 	Items []SpPlaylistTrack `json:"items"`
