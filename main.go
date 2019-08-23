@@ -59,7 +59,7 @@ func routerSetup() (r *mux.Router) {
 	r.HandleFunc("/save_current_playlists", handlers.SaveCurrentPlaylistsHandler)
 	r.HandleFunc("/save_current_tracks", handlers.SaveCurrentTracksHandler)
 
-	apiFavTracksHandler := api.NewFavTracksHandler()
+	apiFavTracksHandler := api.NewFavTracksHandler(services.Users, services.UserPlaylist)
 	apiPlaylistsHandler := api.NewPlaylistsHandler()
 
 	r.Handle("/api/ssplaylists", apiPlaylistsHandler)

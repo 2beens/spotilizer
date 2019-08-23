@@ -12,13 +12,17 @@ import (
 )
 
 type UserPlaylistService interface {
-	DownloadCurrentUserPlaylists(authOptions *models.SpotifyAuthOptions) (response models.SpGetCurrentPlaylistsResp, err error)
-	DownloadSavedFavTracks(authOptions *models.SpotifyAuthOptions) (tracks []models.SpAddedTrack, err error)
+	DownloadCurrentUserPlaylists(accessToken string) (playlists []models.SpPlaylist, err *models.SpAPIError)
+	DownloadPlaylistTracks(accessToken string, href string, total int) (tracks []models.SpPlaylistTrack, err *models.SpAPIError)
+	DownloadSavedFavTracks(accessToken string) (tracks []models.SpAddedTrack, err *models.SpAPIError)
 	GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*models.FavTracksSnapshot, error)
-	GetAllFavTracksSnapshots(username string) *[]models.FavTracksSnapshot
-	GetAllPlaylistsSnapshots(username string) *[]models.PlaylistsSnapshot
+	GetPlaylistsSnapshotByTimestamp(username string, timestamp string) (*models.PlaylistsSnapshot, error)
+	GetAllFavTracksSnapshots(username string) []models.FavTracksSnapshot
+	GetAllPlaylistsSnapshots(username string) []models.PlaylistsSnapshot
 	SaveFavTracksSnapshot(ft *models.FavTracksSnapshot) (saved bool)
 	SavePlaylistsSnapshot(ps *models.PlaylistsSnapshot) (saved bool)
+	DeletePlaylistsSnapshot(username string, timestamp string) (*models.PlaylistsSnapshot, error)
+	DeleteFavTracksSnapshot(username string, timestamp string) (*models.FavTracksSnapshot, error)
 }
 
 // TODO: removed this, it is unnecessary, especially that all these values can be found in config obj

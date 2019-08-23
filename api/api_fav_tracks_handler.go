@@ -13,14 +13,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type FavTracksHandler struct{}
+type FavTracksHandler struct {
+	srvUsers     *services.UserService
+	srvPlaylists services.UserPlaylistService
+}
 
-func NewFavTracksHandler() *FavTracksHandler {
-	return &FavTracksHandler{}
+func NewFavTracksHandler(srvUsers *services.UserService, srvPlaylists services.UserPlaylistService) *FavTracksHandler {
+	return &FavTracksHandler{
+		srvUsers:     srvUsers,
+		srvPlaylists: srvPlaylists,
+	}
 }
 
 func (handler *FavTracksHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	user, err := services.Users.GetUserByRequestCookieID(r)
+	user, err := handler.srvUsers.GetUserByRequestCookieID(r)
 	if err != nil {
 		log.Errorf(" >>> API fav. tracks handler: user/cookie error: %s", err.Error())
 		util.SendAPIErrorResp(w, "Not available when logged off", http.StatusForbidden)
@@ -53,7 +59,7 @@ func (handler *FavTracksHandler) getFavTracksDiff(user *models.User, w io.Writer
 	timestamp := vars["timestamp"]
 	log.Debugf(" > get fav tracks diff for snapshot [%s]: username [%s]", timestamp, user.Username)
 
-	snapshot, err := services.UserPlaylist.GetFavTracksSnapshotByTimestamp(user.Username, timestamp)
+	snapshot, err := handler.srvPlaylists.GetFavTracksSnapshotByTimestamp(user.Username, timestamp)
 	if err != nil {
 		log.Errorf(" >>> error while trying to get fav. tracks snapshot: %s", err.Error())
 		util.SendAPIErrorResp(w, "Error occurred: "+err.Error(), http.StatusNotFound)
@@ -66,7 +72,7 @@ func (handler *FavTracksHandler) getFavTracksDiff(user *models.User, w io.Writer
 	}
 
 	// now get the current fav tracks, and make a diff relative to "snapshot" object
-	currentTracks, apiErr := services.UserPlaylist.DownloadSavedFavTracks(user.Auth.AccessToken)
+	currentTracks, apiErr := handler.srvPlaylists.DownloadSavedFavTracks(user.Auth.AccessToken)
 	if apiErr != nil {
 		log.Infof(" >>> error while getting current tracks diff: %v", apiErr)
 		util.SendAPIErrorResp(w, apiErr.Error.Message, apiErr.Error.Status)
@@ -115,7 +121,7 @@ func (handler *FavTracksHandler) getFavTracksSnapshot(username string, w io.Writ
 	timestamp := vars["timestamp"]
 	log.Debugf(" > get fav tracks snapshot [%s]: username [%s]", timestamp, username)
 
-	snapshot, err := services.UserPlaylist.GetFavTracksSnapshotByTimestamp(username, timestamp)
+	snapshot, err := handler.srvPlaylists.GetFavTracksSnapshotByTimestamp(username, timestamp)
 	if err != nil {
 		log.Errorf(" >>> error while trying to get fav. tracks snapshot: %s", err.Error())
 		util.SendAPIErrorResp(w, "Error occurred: "+err.Error(), http.StatusNotFound)
@@ -135,7 +141,7 @@ func (handler *FavTracksHandler) getFavTracksSnapshots(username string, loadAllD
 		"loadAllData": loadAllData,
 	}).Debugf(" > get fav tracks snapshots: username [%s]", username)
 
-	sstracksRaw := services.UserPlaylist.GetAllFavTracksSnapshots(username)
+	sstracksRaw := handler.srvPlaylists.GetAllFavTracksSnapshots(username)
 	var sstracks []models.DTOFavTracksSnapshot
 	for _, tracksssRaw := range sstracksRaw {
 		tracksss := models.DTOFavTracksSnapshot{
@@ -159,7 +165,7 @@ func (handler *FavTracksHandler) deleteFavTracksSnapshots(username string, w io.
 	timestamp := vars["timestamp"]
 	log.Debugf(" > delete fav tracks snapshot [%s]: username [%s]", timestamp, username)
 
-	snapshot, err := services.UserPlaylist.DeleteFavTracksSnapshot(username, timestamp)
+	snapshot, err := handler.srvPlaylists.DeleteFavTracksSnapshot(username, timestamp)
 	if err != nil {
 		log.Errorf(" >>> error while trying to delete fav. tracks snapshot: %s", err.Error())
 		util.SendAPIErrorResp(w, "Error occurred: "+err.Error(), http.StatusNotFound)

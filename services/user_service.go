@@ -15,22 +15,29 @@ import (
 )
 
 type UserService struct {
-	cookiesDB        db.CookiesDBClient
-	usersDB          db.UsersDBClient
-	username2userMap map[string]*models.User
-	// TODO: add cookie expiration mechanism
+	cookiesDB            db.CookiesDBClient
+	usersDB              db.UsersDBClient
+	username2userMap     map[string]*models.User
 	cookieID2usernameMap map[string]string
 }
 
 func NewUserService(cookiesDBClient db.CookiesDBClient, usersDB db.UsersDBClient) *UserService {
-	var us UserService
+	us := new(UserService)
 	us.cookiesDB = cookiesDBClient
 	us.usersDB = usersDB
 
 	us.SyncWithDB()
 	us.cookieID2usernameMap = make(map[string]string)
 	us.cookieID2usernameMap = us.cookiesDB.GetCookiesInfo()
-	return &us
+	return us
+}
+
+func NewUserServiceTest() *UserService {
+	us := new(UserService)
+	us.usersDB = db.NewUsersDBTest([]models.User{})
+	us.cookieID2usernameMap = make(map[string]string)
+	us.username2userMap = make(map[string]*models.User)
+	return us
 }
 
 func (us *UserService) AddUserCookie(cookieID string, username string) {
@@ -72,7 +79,7 @@ func (us *UserService) GetUserByCookieID(cookieID string) (user *models.User, er
 func (us *UserService) SyncWithDB() {
 	us.username2userMap = make(map[string]*models.User)
 	// get all users from Redis
-	for _, u := range *us.usersDB.GetAllUsers() {
+	for _, u := range us.usersDB.GetAllUsers() {
 		user := u
 		us.username2userMap[u.Username] = &user
 		log.Printf(" > found and added user: %s\n", u.Username)
