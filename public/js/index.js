@@ -412,9 +412,9 @@ function saveCurrentTracks() {
         }
         if (respObj.error) {
             toastr.error(respObj.error.message, 'Save fav tracks error');
-            refreshData();
         } else {
             toastr.success(respObj.message, 'Save fav tracks');
+            refreshData();
         }
     });
 }
