@@ -21,11 +21,11 @@ func (uDB usersDBClientMock) GetUser(username string) *m.User {
 	return &m.User{Username: username, Auth: auth}
 }
 
-func (uDB usersDBClientMock) GetAllUsers() *[]m.User {
+func (uDB usersDBClientMock) GetAllUsers() []m.User {
 	var users []m.User
 	users = append(users, *uDB.GetUser("user1"))
 	users = append(users, *uDB.GetUser("user2"))
-	return &users
+	return users
 }
 
 func (cDB cookiesDBClientMock) SaveCookiesInfo(cookieID2usernameMap map[string]string) {
