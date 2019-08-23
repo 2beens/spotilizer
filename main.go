@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -161,18 +163,42 @@ func main() {
 		log.Warn(" > controlling terminal lost, logging switched to file [serverlog.log]")
 	}()
 
-	waitForInterruptSignal()
+	// channel for OS interrupt signal
+	interruptCh := make(chan struct{}, 1)
+
+	// starting CLI
+	go cli(interruptCh)
+
+	waitForInterruptSignal(interruptCh)
 	gracefulShutdown(httpServer)
 }
 
-func waitForInterruptSignal() {
+func cli(osInterruptCh chan struct{}) {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Print(">> ")
+		inputTxt, _ := reader.ReadString('\n')
+		inputTxt = strings.Replace(inputTxt, "\n", "", -1)
+
+		if inputTxt == "exit" {
+			osInterruptCh <- struct{}{}
+			fmt.Println("\n => will terminate the server ...")
+		}
+	}
+}
+
+func waitForInterruptSignal(interruptCh chan struct{}) {
 	c := make(chan os.Signal, 1)
 	// we'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught
 	signal.Notify(c, os.Interrupt)
-	// block until (eg. Ctrl+C) signal is received
-	<-c
-	log.Warn(" > interrupt signal received")
+	// block until (eg. Ctrl+C) signal is received or EXIT command received
+	select {
+	case <-c:
+		log.Warn(" > OS Interrupt signal received")
+	case <-interruptCh:
+		log.Warn(" > EXIT signal received")
+	}
 }
 
 func gracefulShutdown(httpServer *http.Server) {
