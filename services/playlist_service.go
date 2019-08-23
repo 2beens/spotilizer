@@ -15,12 +15,12 @@ type UserPlaylistService interface {
 	DownloadCurrentUserPlaylists(accessToken string) (playlists []models.SpPlaylist, err *models.SpAPIError)
 	DownloadPlaylistTracks(accessToken string, href string, total int) (tracks []models.SpPlaylistTrack, err *models.SpAPIError)
 	DownloadSavedFavTracks(accessToken string) (tracks []models.SpAddedTrack, err *models.SpAPIError)
+	SaveFavTracksSnapshot(ft *models.FavTracksSnapshot) (saved bool)
+	SavePlaylistsSnapshot(ps *models.PlaylistsSnapshot) (saved bool)
 	GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*models.FavTracksSnapshot, error)
 	GetPlaylistsSnapshotByTimestamp(username string, timestamp string) (*models.PlaylistsSnapshot, error)
 	GetAllFavTracksSnapshots(username string) []models.FavTracksSnapshot
 	GetAllPlaylistsSnapshots(username string) []models.PlaylistsSnapshot
-	SaveFavTracksSnapshot(ft *models.FavTracksSnapshot) (saved bool)
-	SavePlaylistsSnapshot(ps *models.PlaylistsSnapshot) (saved bool)
 	DeletePlaylistsSnapshot(username string, timestamp string) (*models.PlaylistsSnapshot, error)
 	DeleteFavTracksSnapshot(username string, timestamp string) (*models.FavTracksSnapshot, error)
 }
@@ -33,13 +33,13 @@ type SpotifyUserPlaylistService struct {
 	urlCurrentUserSavedTracks string
 }
 
-func NewSpotifyUserPlaylistService(spotifyDB db.SpotifyDBClient) *SpotifyUserPlaylistService {
-	var ps SpotifyUserPlaylistService
+func NewSpotifyUserPlaylistService(spotifyDB db.SpotifyDBClient) UserPlaylistService {
+	ps := new(SpotifyUserPlaylistService)
 	ps.spotifyDB = spotifyDB
 	ps.spotifyAPIURL = config.Conf.SpotifyAPIURL
 	ps.urlCurrentUserPlaylists = config.Conf.URLCurrentUserPlaylists
 	ps.urlCurrentUserSavedTracks = config.Conf.URLCurrentUserSavedTracks
-	return &ps
+	return ps
 }
 
 // DownloadCurrentUserPlaylists more info: https://developer.spotify.com/console/get-current-user-playlists/

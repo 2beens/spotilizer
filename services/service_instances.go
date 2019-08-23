@@ -6,7 +6,7 @@ package services
 import "github.com/2beens/spotilizer/db"
 
 var Users *UserService
-var UserPlaylist *SpotifyUserPlaylistService
+var UserPlaylist UserPlaylistService
 
 func InitServices() {
 	Users = NewUserService(db.GetCookiesDBClient(), db.GetUsersDBClient())
