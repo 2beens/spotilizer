@@ -4,10 +4,14 @@ import (
 	"github.com/2beens/spotilizer/models"
 )
 
-type UserPlaylistTestService struct{}
+type UserPlaylistTestService struct {
+	tracksSnapshots []models.FavTracksSnapshot
+}
 
-func NewUserPlaylistTestService() UserPlaylistService {
-	return new(UserPlaylistTestService)
+func NewUserPlaylistTestService(tracksSnapshots []models.FavTracksSnapshot) UserPlaylistService {
+	return &UserPlaylistTestService{
+		tracksSnapshots: tracksSnapshots,
+	}
 }
 
 func (ups *UserPlaylistTestService) DownloadCurrentUserPlaylists(accessToken string) (playlists []models.SpPlaylist, err *models.SpAPIError) {
@@ -39,7 +43,7 @@ func (ups *UserPlaylistTestService) GetPlaylistsSnapshotByTimestamp(username str
 }
 
 func (ups *UserPlaylistTestService) GetAllFavTracksSnapshots(username string) []models.FavTracksSnapshot {
-	return nil
+	return ups.tracksSnapshots
 }
 
 func (ups *UserPlaylistTestService) GetAllPlaylistsSnapshots(username string) []models.PlaylistsSnapshot {
