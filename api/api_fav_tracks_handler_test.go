@@ -67,7 +67,6 @@ func checkFavTracksAPIResponse(t *testing.T, rawResp []byte) *FavTracksAPIRespon
 	apiResp := &FavTracksAPIResponse{}
 	err := json.Unmarshal(rawResp, apiResp)
 	if err != nil {
-		fmt.Printf(err.Error())
 		t.Fatal(err)
 	}
 	assert.Equal(t, 200, apiResp.Status)
