@@ -16,16 +16,16 @@ func NewUsersDBTest(testUsers []models.User) *UsersDBTestClient {
 	return dbTestClient
 }
 
-func (c UsersDBTestClient) SaveUser(user *models.User) (stored bool) {
+func (c *UsersDBTestClient) SaveUser(user *models.User) (stored bool) {
 	c.testUsers[user.Username] = user
 	return true
 }
 
-func (c UsersDBTestClient) GetUser(username string) *models.User {
+func (c *UsersDBTestClient) GetUser(username string) *models.User {
 	return c.testUsers[username]
 }
 
-func (c UsersDBTestClient) GetAllUsers() []models.User {
+func (c *UsersDBTestClient) GetAllUsers() []models.User {
 	var users []models.User
 	for _, user := range c.testUsers {
 		users = append(users, *user)
