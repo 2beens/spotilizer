@@ -2,9 +2,9 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,11 +15,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetFavTracks(t *testing.T) {
+func TestGetFavTracksCounts(t *testing.T) {
 	favTracksHandler := getTestFavTracksHandler()
 
-	t.Run("test getting fav tracks without all data", func(t *testing.T) {
-		req, err := http.NewRequest("GET", "/api/ssfavtracks", nil)
+	testCasePaths := []string{"/api/ssfavtracks", "/api/ssfavtracks/full", "/api/ssfavtracks"}
+	for _, path := range testCasePaths {
+		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -31,36 +32,51 @@ func TestGetFavTracks(t *testing.T) {
 		favTracksHandler.ServeHTTP(resp, req)
 
 		assert.NotNil(t, resp.Body)
-		fmt.Printf(" >> resp body: %v\n", resp.Body)
+		// fmt.Printf(" >> resp body: %v\n", resp.Body)
 		apiResp := checkFavTracksAPIResponse(t, resp.Body.Bytes())
-		assert.Equal(t, 1, len(apiResp.Data))
-		favTracksSnapshot := apiResp.Data[0]
-		assert.Equal(t, 2, favTracksSnapshot.TracksCount)
-		// do not load data -> tracks details have to be empty
-		assert.Equal(t, 0, len(favTracksSnapshot.Tracks))
-	})
 
-	t.Run("test getting fav tracks with all data", func(t *testing.T) {
-		req, err := http.NewRequest("GET", "/api/ssfavtracks/full", nil)
-		if err != nil {
-			t.Fatal(err)
+		assert.Equal(t, 2, len(apiResp.Data))
+		assert.Equal(t, 2, apiResp.Data[0].TracksCount)
+		assert.Equal(t, 1, apiResp.Data[1].TracksCount)
+		if strings.HasSuffix(path, "/full") {
+			assert.Equal(t, 2, len(apiResp.Data[0].Tracks))
+			assert.Equal(t, 1, len(apiResp.Data[1].Tracks))
+		} else {
+			assert.Equal(t, 0, len(apiResp.Data[0].Tracks))
+			assert.Equal(t, 0, len(apiResp.Data[1].Tracks))
 		}
-		req.AddCookie(&http.Cookie{
-			Name:  constants.CookieUserIDKey,
-			Value: "cookietu1",
-		})
-		resp := httptest.NewRecorder()
-		favTracksHandler.ServeHTTP(resp, req)
+	}
+}
 
-		assert.NotNil(t, resp.Body)
-		fmt.Printf(" >> resp body: %v\n", resp.Body)
-		apiResp := checkFavTracksAPIResponse(t, resp.Body.Bytes())
-		assert.Equal(t, 1, len(apiResp.Data))
-		favTracksSnapshot := apiResp.Data[0]
-		assert.Equal(t, 2, favTracksSnapshot.TracksCount)
-		// load all data -> tracks details have to be here
-		assert.Equal(t, 2, len(favTracksSnapshot.Tracks))
+func TestGetFavTracksDetails(t *testing.T) {
+	favTracksHandler := getTestFavTracksHandler()
+	req, err := http.NewRequest("GET", "/api/ssfavtracks/full", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.AddCookie(&http.Cookie{
+		Name:  constants.CookieUserIDKey,
+		Value: "cookietu1",
 	})
+	resp := httptest.NewRecorder()
+	favTracksHandler.ServeHTTP(resp, req)
+
+	assert.NotNil(t, resp.Body)
+	// fmt.Printf(" >> resp body: %v\n", resp.Body)
+	apiResp := checkFavTracksAPIResponse(t, resp.Body.Bytes())
+	assert.Equal(t, 2, len(apiResp.Data))
+
+	favTracksSnapshot1 := apiResp.Data[0]
+	snapshot1timestamp := time.Unix(int64(favTracksSnapshot1.Timestamp), 0)
+	assert.True(t, snapshot1timestamp.Equal(time.Date(2019, time.August, 1, 12, 0, 0, 0, time.UTC)))
+	assert.Equal(t, 2, favTracksSnapshot1.TracksCount, "wrong tracks count in fav tracks snapshot 1")
+
+	favTracksSnapshot2 := apiResp.Data[1]
+	snapshot2timestamp := time.Unix(int64(favTracksSnapshot2.Timestamp), 0)
+	assert.True(t, snapshot2timestamp.Equal(time.Date(2019, time.August, 2, 12, 0, 0, 0, time.UTC)))
+	assert.Equal(t, 1, favTracksSnapshot2.TracksCount, "wrong tracks count in fav tracks snapshot 2")
+
+	// TODO: assert other snapshot details
 }
 
 func checkFavTracksAPIResponse(t *testing.T, rawResp []byte) *FavTracksAPIResponse {
@@ -96,6 +112,7 @@ func getFavTracksSnapshotsTestData() (*models.User, []models.FavTracksSnapshot) 
 	}
 
 	var ft1tracks []models.SpAddedTrack
+	var ft2tracks []models.SpAddedTrack
 	tr1 := models.SpAddedTrack{
 		AddedAt: time.Date(2019, time.August, 1, 11, 0, 0, 0, time.UTC),
 		Track: models.SpTrack{
@@ -138,8 +155,30 @@ func getFavTracksSnapshotsTestData() (*models.User, []models.FavTracksSnapshot) 
 			TrackNumber: 5,
 		},
 	}
+	tr3 := models.SpAddedTrack{
+		AddedAt: time.Date(2019, time.July, 28, 10, 0, 0, 0, time.UTC),
+		Track: models.SpTrack{
+			ID: "ft2tr1",
+			Artists: []models.SpArtist{
+				{
+					ID:   "ft2art1",
+					Name: "favTrack3 Artist",
+					Type: "ft1art1type",
+					Href: "dummy href 3",
+				},
+			},
+			Explicit: false,
+			Type:     "ft2tr1type",
+			Album: models.SpAlbum{
+				ID: "ft2tr1al1",
+			},
+			Name:        "favTrack3",
+			TrackNumber: 5,
+		},
+	}
 	ft1tracks = append(ft1tracks, tr1)
 	ft1tracks = append(ft1tracks, tr2)
+	ft2tracks = append(ft2tracks, tr3)
 
 	var favTracksSnapshots []models.FavTracksSnapshot
 	ft1 := models.FavTracksSnapshot{
@@ -147,7 +186,13 @@ func getFavTracksSnapshotsTestData() (*models.User, []models.FavTracksSnapshot) 
 		Timestamp: time.Date(2019, time.August, 1, 12, 0, 0, 0, time.UTC),
 		Tracks:    ft1tracks,
 	}
+	ft2 := models.FavTracksSnapshot{
+		Username:  testUser.Username,
+		Timestamp: time.Date(2019, time.August, 2, 12, 0, 0, 0, time.UTC),
+		Tracks:    ft2tracks,
+	}
 	favTracksSnapshots = append(favTracksSnapshots, ft1)
+	favTracksSnapshots = append(favTracksSnapshots, ft2)
 
 	return testUser, favTracksSnapshots
 }
