@@ -12,44 +12,69 @@ import (
 	"github.com/2beens/spotilizer/models"
 	"github.com/2beens/spotilizer/services"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestGetFavTracksCounts(t *testing.T) {
-	favTracksHandler := getTestFavTracksHandler()
+type FavTracksTestSuite struct {
+	suite.Suite
+	testUser  *models.User
+	handler   *FavTracksHandler
+	snapshots []models.FavTracksSnapshot
+}
 
+func (suite *FavTracksTestSuite) SetupTest() {
+	suite.testUser = &models.User{
+		Username: "testUser1",
+		Auth: &models.SpotifyAuthOptions{
+			AccessToken:  "test_accTok",
+			RefreshToken: "test_refTok",
+		},
+	}
+
+	if len(suite.snapshots) == 0 {
+		suite.fillSnapshotsTestData()
+	}
+
+	testUserSrv := services.NewUserServiceTest()
+	testUserSrv.Add(suite.testUser)
+	testUserSrv.AddUserCookie("cookietu1", suite.testUser.Username)
+	userPlaylistSrv := services.NewUserPlaylistTestService(suite.snapshots)
+
+	suite.handler = NewFavTracksHandler(testUserSrv, userPlaylistSrv)
+}
+
+func (suite *FavTracksTestSuite) TestGetFavTracksCounts() {
 	testCasePaths := []string{"/api/ssfavtracks", "/api/ssfavtracks/full", "/api/ssfavtracks"}
 	for _, path := range testCasePaths {
 		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {
-			t.Fatal(err)
+			suite.T().Fatal(err)
 		}
 		req.AddCookie(&http.Cookie{
 			Name:  constants.CookieUserIDKey,
 			Value: "cookietu1",
 		})
 		resp := httptest.NewRecorder()
-		favTracksHandler.ServeHTTP(resp, req)
+		suite.handler.ServeHTTP(resp, req)
 
-		assert.NotNil(t, resp.Body)
-		// fmt.Printf(" >> resp body: %v\n", resp.Body)
-		apiResp := checkFavTracksAPIResponse(t, resp.Body.Bytes())
+		suite.NotNil(resp.Body)
+		apiResp := suite.checkFavTracksAPIResponse(resp.Body.Bytes())
 
-		assert.Equal(t, 2, len(apiResp.Data))
-		assert.Equal(t, 2, apiResp.Data[0].TracksCount)
-		assert.Equal(t, 1, apiResp.Data[1].TracksCount)
+		suite.Equal(2, len(apiResp.Data))
+		suite.Equal(2, apiResp.Data[0].TracksCount)
+		suite.Equal(1, apiResp.Data[1].TracksCount)
 		if strings.HasSuffix(path, "/full") {
-			assert.Equal(t, 2, len(apiResp.Data[0].Tracks))
-			assert.Equal(t, 1, len(apiResp.Data[1].Tracks))
+			suite.Equal(2, len(apiResp.Data[0].Tracks))
+			suite.Equal(1, len(apiResp.Data[1].Tracks))
 		} else {
-			assert.Equal(t, 0, len(apiResp.Data[0].Tracks))
-			assert.Equal(t, 0, len(apiResp.Data[1].Tracks))
+			suite.Equal(0, len(apiResp.Data[0].Tracks))
+			suite.Equal(0, len(apiResp.Data[1].Tracks))
 		}
 	}
 }
 
-func TestGetFavTracksDetails(t *testing.T) {
-	favTracksHandler := getTestFavTracksHandler()
+func (suite *FavTracksTestSuite) TestGetFavTracksDetails() {
+	t := suite.T()
 	req, err := http.NewRequest("GET", "/api/ssfavtracks/full", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -59,58 +84,43 @@ func TestGetFavTracksDetails(t *testing.T) {
 		Value: "cookietu1",
 	})
 	resp := httptest.NewRecorder()
-	favTracksHandler.ServeHTTP(resp, req)
+	suite.handler.ServeHTTP(resp, req)
 
-	assert.NotNil(t, resp.Body)
-	// fmt.Printf(" >> resp body: %v\n", resp.Body)
-	apiResp := checkFavTracksAPIResponse(t, resp.Body.Bytes())
-	assert.Equal(t, 2, len(apiResp.Data))
+	suite.NotNil(resp.Body)
+	apiResp := suite.checkFavTracksAPIResponse(resp.Body.Bytes())
+	suite.Equal(2, len(apiResp.Data))
 
 	favTracksSnapshot1 := apiResp.Data[0]
 	snapshot1timestamp := time.Unix(int64(favTracksSnapshot1.Timestamp), 0)
-	assert.True(t, snapshot1timestamp.Equal(time.Date(2019, time.August, 1, 12, 0, 0, 0, time.UTC)))
-	assert.Equal(t, 2, favTracksSnapshot1.TracksCount, "wrong tracks count in fav tracks snapshot 1")
+	suite.True(snapshot1timestamp.Equal(time.Date(2019, time.August, 1, 12, 0, 0, 0, time.UTC)))
+	suite.Equal(2, favTracksSnapshot1.TracksCount, "wrong tracks count in fav tracks snapshot 1")
 
 	favTracksSnapshot2 := apiResp.Data[1]
 	snapshot2timestamp := time.Unix(int64(favTracksSnapshot2.Timestamp), 0)
-	assert.True(t, snapshot2timestamp.Equal(time.Date(2019, time.August, 2, 12, 0, 0, 0, time.UTC)))
-	assert.Equal(t, 1, favTracksSnapshot2.TracksCount, "wrong tracks count in fav tracks snapshot 2")
+	suite.True(snapshot2timestamp.Equal(time.Date(2019, time.August, 2, 12, 0, 0, 0, time.UTC)))
+	suite.Equal(1, favTracksSnapshot2.TracksCount, "wrong tracks count in fav tracks snapshot 2")
 
 	// TODO: assert other snapshot details
 }
 
-func checkFavTracksAPIResponse(t *testing.T, rawResp []byte) *FavTracksAPIResponse {
+func (suite *FavTracksTestSuite) checkFavTracksAPIResponse(rawResp []byte) *FavTracksAPIResponse {
 	apiResp := &FavTracksAPIResponse{}
 	err := json.Unmarshal(rawResp, apiResp)
 	if err != nil {
-		t.Fatal(err)
+		suite.FailNowf("fail to unmarshal FavTracksAPIResponse", "Detals: %s", err.Error())
 	}
-	assert.Equal(t, 200, apiResp.Status)
-	assert.Equal(t, "success", apiResp.Message)
-	assert.NotNil(t, apiResp.Data, "API response data must not be nil")
+	suite.Equal(200, apiResp.Status)
+	suite.Equal("success", apiResp.Message)
+	suite.NotNil(apiResp.Data, "API response data must not be nil")
 	return apiResp
 }
 
-func getTestFavTracksHandler() *FavTracksHandler {
-	testUser, favTracksSnapshots := getFavTracksSnapshotsTestData()
-
-	userPlaylistSrv := services.NewUserPlaylistTestService(favTracksSnapshots)
-	testUserSrv := services.NewUserServiceTest()
-	testUserSrv.Add(testUser)
-	testUserSrv.AddUserCookie("cookietu1", testUser.Username)
-
-	return NewFavTracksHandler(testUserSrv, userPlaylistSrv)
+// In order for 'go test' to run this suite, we need to create a normal test function and pass our suite to suite.Run
+func TestFavTracksTestSuite(t *testing.T) {
+	suite.Run(t, new(FavTracksTestSuite))
 }
 
-func getFavTracksSnapshotsTestData() (*models.User, []models.FavTracksSnapshot) {
-	testUser := &models.User{
-		Username: "testUser1",
-		Auth: &models.SpotifyAuthOptions{
-			AccessToken:  "testat",
-			RefreshToken: "testrt",
-		},
-	}
-
+func (suite *FavTracksTestSuite) fillSnapshotsTestData() {
 	var ft1tracks []models.SpAddedTrack
 	var ft2tracks []models.SpAddedTrack
 	tr1 := models.SpAddedTrack{
@@ -180,21 +190,18 @@ func getFavTracksSnapshotsTestData() (*models.User, []models.FavTracksSnapshot) 
 	ft1tracks = append(ft1tracks, tr2)
 	ft2tracks = append(ft2tracks, tr3)
 
-	var favTracksSnapshots []models.FavTracksSnapshot
 	ft1 := models.FavTracksSnapshot{
-		Username:  testUser.Username,
+		Username:  suite.testUser.Username,
 		Timestamp: time.Date(2019, time.August, 1, 12, 0, 0, 0, time.UTC),
 		Tracks:    ft1tracks,
 	}
 	ft2 := models.FavTracksSnapshot{
-		Username:  testUser.Username,
+		Username:  suite.testUser.Username,
 		Timestamp: time.Date(2019, time.August, 2, 12, 0, 0, 0, time.UTC),
 		Tracks:    ft2tracks,
 	}
-	favTracksSnapshots = append(favTracksSnapshots, ft1)
-	favTracksSnapshots = append(favTracksSnapshots, ft2)
-
-	return testUser, favTracksSnapshots
+	suite.snapshots = append(suite.snapshots, ft1)
+	suite.snapshots = append(suite.snapshots, ft2)
 }
 
 type FavTracksAPIResponse struct {
