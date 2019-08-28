@@ -114,9 +114,8 @@ func (suite *FavTracksTestSuite) TestGetFavTracksDetails() {
 
 func (suite *FavTracksTestSuite) TestGetFavTracksByTimestamp() {
 	timestamp := suite.snapshots[0].Timestamp.Unix()
-	req := suite.getRequest("/api/ssfavtracks/")
-	// TODO: needs a fix
-	req = mux.SetURLVars(req, map[string]string{"timespan": strconv.FormatInt(timestamp, 10)})
+	req := suite.getRequest("/api/ssfavtracks/{timestamp}")
+	req = mux.SetURLVars(req, map[string]string{"timestamp": strconv.FormatInt(timestamp, 10)})
 	req.AddCookie(suite.cookie)
 
 	resp := httptest.NewRecorder()
