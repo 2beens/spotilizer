@@ -329,7 +329,7 @@ function showFavTracksSnapshot(timestamp) {
         tracksSnapshot.forEach(function (t) {
             ssDetailsList.append(`
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    ${getArtistsName(t)} - ${t.track.name}
+                    ${getArtistsName(t)} - ${t.name}
                     <span style="margin-left: 20px;" class="badge badge-primary badge-pill">${new Date(t.added_at).toLocaleString()}</span>
                 </li>
             `);
@@ -386,7 +386,13 @@ function showFavTracksDiff(timestamp, newTracks, removedTracks) {
 }
 
 function getArtistsName(addedTrack) {
-    return addedTrack.track.artists
+    var artists = [];
+    if (addedTrack.artists) {
+        artists = addedTrack.artists;
+    } else {
+        artists = addedTrack.track.artists;
+    }
+    return artists
         .map(function (a) {
             return a.name;
         })
