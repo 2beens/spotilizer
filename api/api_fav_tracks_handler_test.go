@@ -49,7 +49,7 @@ func (suite *FavTracksTestSuite) SetupSuite() {
 	suite.handler = NewFavTracksHandler(testUserSrv, userPlaylistSrv)
 }
 
-func (suite *FavTracksTestSuite) TestGetFavTracksCounts() {
+func (suite *FavTracksTestSuite) TestGetAllFavTracksSnapshotsCounts() {
 	testCasePaths := []string{"/api/ssfavtracks", "/api/ssfavtracks/full", "/api/ssfavtracks"}
 	for _, path := range testCasePaths {
 		req, err := http.NewRequest("GET", path, nil)
@@ -62,22 +62,22 @@ func (suite *FavTracksTestSuite) TestGetFavTracksCounts() {
 		suite.handler.ServeHTTP(resp, req)
 
 		suite.NotNil(resp.Body)
-		apiResp := suite.checkFavTracksAPIResponse(resp.Body.Bytes())
+		apiResp := suite.checkAllFavTracksSnapshotsAPIResponse(resp.Body.Bytes())
 
-		suite.Equal(2, len(apiResp.Data))
-		suite.Equal(2, apiResp.Data[0].TracksCount)
-		suite.Equal(1, apiResp.Data[1].TracksCount)
+		suite.Equal(2, len(apiResp.Snapshots))
+		suite.Equal(2, apiResp.Snapshots[0].TracksCount)
+		suite.Equal(1, apiResp.Snapshots[1].TracksCount)
 		if strings.HasSuffix(path, "/full") {
-			suite.Equal(2, len(apiResp.Data[0].Tracks))
-			suite.Equal(1, len(apiResp.Data[1].Tracks))
+			suite.Equal(2, len(apiResp.Snapshots[0].Tracks))
+			suite.Equal(1, len(apiResp.Snapshots[1].Tracks))
 		} else {
-			suite.Equal(0, len(apiResp.Data[0].Tracks))
-			suite.Equal(0, len(apiResp.Data[1].Tracks))
+			suite.Equal(0, len(apiResp.Snapshots[0].Tracks))
+			suite.Equal(0, len(apiResp.Snapshots[1].Tracks))
 		}
 	}
 }
 
-func (suite *FavTracksTestSuite) TestGetFavTracksDetails() {
+func (suite *FavTracksTestSuite) TestGetAllFavTracksSnapshotsDetails() {
 	req, err := http.NewRequest("GET", "/api/ssfavtracks/full", nil)
 	if err != nil {
 		suite.FailNowf("TestGetFavTracksDetails error", "details: %s", err.Error())
@@ -88,11 +88,11 @@ func (suite *FavTracksTestSuite) TestGetFavTracksDetails() {
 	suite.handler.ServeHTTP(resp, req)
 
 	suite.NotNil(resp.Body)
-	apiResp := suite.checkFavTracksAPIResponse(resp.Body.Bytes())
-	suite.Equal(2, len(apiResp.Data))
+	apiResp := suite.checkAllFavTracksSnapshotsAPIResponse(resp.Body.Bytes())
+	suite.Equal(2, len(apiResp.Snapshots))
 
 	orgSnp1 := suite.snapshots[0]
-	favTracksSnapshot1 := apiResp.Data[0]
+	favTracksSnapshot1 := apiResp.Snapshots[0]
 	snapshot1timestamp := time.Unix(int64(favTracksSnapshot1.Timestamp), 0)
 	suite.True(snapshot1timestamp.Equal(orgSnp1.Timestamp))
 	suite.Equal(len(orgSnp1.Tracks), favTracksSnapshot1.TracksCount, "wrong tracks count in fav tracks snapshot 1")
@@ -102,7 +102,7 @@ func (suite *FavTracksTestSuite) TestGetFavTracksDetails() {
 	suite.Equal(orgTr1.Track.Name, favTracksSnapshot1.Tracks[0].Name)
 
 	orgSnp2 := suite.snapshots[1]
-	favTracksSnapshot2 := apiResp.Data[1]
+	favTracksSnapshot2 := apiResp.Snapshots[1]
 	snapshot2timestamp := time.Unix(int64(favTracksSnapshot2.Timestamp), 0)
 	suite.True(snapshot2timestamp.Equal(orgSnp2.Timestamp))
 	suite.Equal(len(orgSnp2.Tracks), favTracksSnapshot2.TracksCount, "wrong tracks count in fav tracks snapshot 2")
@@ -112,20 +112,29 @@ func (suite *FavTracksTestSuite) TestGetFavTracksDetails() {
 	suite.Equal(orgTr2.Track.Name, favTracksSnapshot2.Tracks[0].Name)
 }
 
-func (suite *FavTracksTestSuite) TestGetFavTracksByTimestamp() {
-	timestamp := suite.snapshots[0].Timestamp.Unix()
+func (suite *FavTracksTestSuite) TestGetFavTracksSnapshotByTimestamp() {
+	orgSnapshot := suite.snapshots[0]
 	req := suite.getRequest("/api/ssfavtracks/{timestamp}")
-	req = mux.SetURLVars(req, map[string]string{"timestamp": strconv.FormatInt(timestamp, 10)})
+	req = mux.SetURLVars(req, map[string]string{"timestamp": strconv.FormatInt(orgSnapshot.Timestamp.Unix(), 10)})
 	req.AddCookie(suite.cookie)
 
 	resp := httptest.NewRecorder()
 	suite.handler.ServeHTTP(resp, req)
 
 	suite.NotNil(resp.Body)
-	apiResp := suite.checkFavTracksAPIResponse(resp.Body.Bytes())
+	apiResp := suite.checkFavTracksSnapshotAPIResponse(resp.Body.Bytes())
 	suite.NotNil(apiResp)
 
-	// TODO: assert the rest of the data
+	recSnapshot := apiResp.Snapshot
+	suite.Equal(len(orgSnapshot.Tracks), recSnapshot.TracksCount)
+	suite.Equal(orgSnapshot.Tracks[0].AddedAt.Unix(), int64(recSnapshot.Tracks[0].AddedAt))
+	suite.Equal(orgSnapshot.Tracks[1].AddedAt.Unix(), int64(recSnapshot.Tracks[1].AddedAt))
+	suite.Equal(orgSnapshot.Tracks[0].Track.ID, recSnapshot.Tracks[0].ID)
+	suite.Equal(orgSnapshot.Tracks[1].Track.ID, recSnapshot.Tracks[1].ID)
+	suite.Equal(orgSnapshot.Tracks[0].Track.Name, recSnapshot.Tracks[0].Name)
+	suite.Equal(orgSnapshot.Tracks[1].Track.Name, recSnapshot.Tracks[1].Name)
+	suite.Equal(orgSnapshot.Tracks[0].Track.Artists[0].Name, recSnapshot.Tracks[0].Artists[0].Name)
+	suite.Equal(orgSnapshot.Tracks[1].Track.Artists[0].Name, recSnapshot.Tracks[1].Artists[0].Name)
 }
 
 // In order for 'go test' to run this suite, we need to create a normal test function and pass our suite to suite.Run
@@ -141,15 +150,27 @@ func (suite *FavTracksTestSuite) getRequest(path string) *http.Request {
 	return req
 }
 
-func (suite *FavTracksTestSuite) checkFavTracksAPIResponse(rawResp []byte) *FavTracksAPIResponse {
-	apiResp := &FavTracksAPIResponse{}
+func (suite *FavTracksTestSuite) checkAllFavTracksSnapshotsAPIResponse(rawResp []byte) *allFavTracksSnapshotsAPIResponse {
+	apiResp := &allFavTracksSnapshotsAPIResponse{}
 	err := json.Unmarshal(rawResp, apiResp)
 	if err != nil {
-		suite.FailNowf("fail to unmarshal FavTracksAPIResponse", "Detals: %s", err.Error())
+		suite.FailNowf("fail to unmarshal allFavTracksSnapshotsAPIResponse", "Detals: %s", err.Error())
 	}
 	suite.Equal(200, apiResp.Status)
 	suite.Equal("success", apiResp.Message)
-	suite.NotNil(apiResp.Data, "API response data must not be nil")
+	suite.NotNil(apiResp.Snapshots, "API response tracks must not be nil")
+	return apiResp
+}
+
+func (suite *FavTracksTestSuite) checkFavTracksSnapshotAPIResponse(rawResp []byte) *favTracksSnapshotAPIresponse {
+	apiResp := &favTracksSnapshotAPIresponse{}
+	err := json.Unmarshal(rawResp, apiResp)
+	if err != nil {
+		suite.FailNowf("fail to unmarshal favTracksSnapshotAPIresponse", "Detals: %s", err.Error())
+	}
+	suite.Equal(200, apiResp.Status)
+	suite.Equal("success", apiResp.Message)
+	suite.NotNil(apiResp.Snapshot, "API response tracks must not be nil")
 	return apiResp
 }
 
@@ -237,26 +258,34 @@ func (suite *FavTracksTestSuite) fillSnapshotsTestData() {
 	suite.snapshots = append(suite.snapshots, ft2)
 }
 
-type FavTracksAPIResponse struct {
-	Status  int    `json:"status"`
-	Message string `json:"message"`
-	Data    []struct {
-		Timestamp   int `json:"timestamp"`
-		TracksCount int `json:"tracks_count"`
-		Tracks      []struct {
-			AddedAt int    `json:"added_at"`
-			AddedBy string `json:"added_by"`
-			Artists []struct {
-				Name string `json:"name"`
-				Type string `json:"type"`
-				Href string `json:"href"`
-			} `json:"artists"`
-			Album       string `json:"album"`
-			URI         string `json:"uri"`
-			ID          string `json:"id"`
-			TrackNumber int    `json:"track_number"`
-			DurationMs  int    `json:"duration_ms"`
-			Name        string `json:"name"`
-		} `json:"tracks"`
-	} `json:"data"`
+type allFavTracksSnapshotsAPIResponse struct {
+	Status    int              `json:"status"`
+	Message   string           `json:"message"`
+	Snapshots []tracksSnapshot `json:"data"`
+}
+
+type favTracksSnapshotAPIresponse struct {
+	Status   int            `json:"status"`
+	Message  string         `json:"message"`
+	Snapshot tracksSnapshot `json:"data"`
+}
+
+type tracksSnapshot struct {
+	Timestamp   int `json:"timestamp"`
+	TracksCount int `json:"tracks_count"`
+	Tracks      []struct {
+		AddedAt int    `json:"added_at"`
+		AddedBy string `json:"added_by"`
+		Artists []struct {
+			Name string `json:"name"`
+			Type string `json:"type"`
+			Href string `json:"href"`
+		} `json:"artists"`
+		Album       string `json:"album"`
+		URI         string `json:"uri"`
+		ID          string `json:"id"`
+		TrackNumber int    `json:"track_number"`
+		DurationMs  int    `json:"duration_ms"`
+		Name        string `json:"name"`
+	} `json:"tracks"`
 }

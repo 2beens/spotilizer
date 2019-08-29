@@ -1,6 +1,8 @@
 package services
 
 import (
+	"strconv"
+
 	"github.com/2beens/spotilizer/models"
 )
 
@@ -35,6 +37,12 @@ func (ups *UserPlaylistTestService) SavePlaylistsSnapshot(ps *models.PlaylistsSn
 }
 
 func (ups *UserPlaylistTestService) GetFavTracksSnapshotByTimestamp(username string, timestamp string) (*models.FavTracksSnapshot, error) {
+	for _, s := range ups.tracksSnapshots {
+		s := s
+		if strconv.FormatInt(s.Timestamp.Unix(), 10) == timestamp {
+			return &s, nil
+		}
+	}
 	return nil, nil
 }
 
