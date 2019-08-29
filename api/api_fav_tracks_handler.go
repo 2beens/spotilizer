@@ -133,7 +133,17 @@ func (handler *FavTracksHandler) getFavTracksSnapshot(username string, w io.Writ
 		return
 	}
 
-	util.SendAPIOKRespWithData(w, "success", snapshot)
+	snapshotDto := models.DTOFavTracksSnapshot{
+		Timestamp:   snapshot.Timestamp.Unix(),
+		TracksCount: len(snapshot.Tracks),
+		Tracks:      []models.DTOTrack{},
+	}
+
+	for _, trRaw := range snapshot.Tracks {
+		snapshotDto.Tracks = append(snapshotDto.Tracks, models.SpAddedTrack2dtoTrack(trRaw))
+	}
+
+	util.SendAPIOKRespWithData(w, "success", snapshotDto)
 }
 
 func (handler *FavTracksHandler) getFavTracksSnapshots(username string, loadAllData bool, w io.Writer) {
