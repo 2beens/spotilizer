@@ -130,6 +130,12 @@ func GetSpotifyCallbackHandler(serverURL string) func(w http.ResponseWriter, r *
 		}
 		log.Debugf(" > gotten user [%s]\n", spUser.ID)
 
+		if spUser.ID == "" {
+			util.RenderView(w, "error", models.ErrorViewData{Title: "Spotify Login",
+				Error: "Login to Spotify failed: error, cannot get user info from Spotify API [spUser.ID nil]"})
+			return
+		}
+
 		var cookieID string
 		user, _ := services.Users.Get(spUser.ID)
 		if user == nil {
@@ -163,6 +169,9 @@ func getAccessToken(data url.Values) (auth *models.SpotifyAuthOptions, err error
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: handle API error
+	// {"error":"unsupported_grant_type","error_description":"grant_type must be client_credentials, authorization_code or refresh_token"}
 
 	auth = &models.SpotifyAuthOptions{}
 	err = json.Unmarshal(body, &auth)

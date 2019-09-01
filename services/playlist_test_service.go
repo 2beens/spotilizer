@@ -7,12 +7,14 @@ import (
 )
 
 type UserPlaylistTestService struct {
-	tracksSnapshots []models.FavTracksSnapshot
+	currentSnapshots []models.SpAddedTrack
+	tracksSnapshots  []models.FavTracksSnapshot
 }
 
-func NewUserPlaylistTestService(tracksSnapshots []models.FavTracksSnapshot) UserPlaylistService {
+func NewUserPlaylistTestService(currentSnapshots []models.SpAddedTrack, tracksSnapshots []models.FavTracksSnapshot) UserPlaylistService {
 	return &UserPlaylistTestService{
-		tracksSnapshots: tracksSnapshots,
+		currentSnapshots: currentSnapshots,
+		tracksSnapshots:  tracksSnapshots,
 	}
 }
 
@@ -25,7 +27,7 @@ func (ups *UserPlaylistTestService) DownloadPlaylistTracks(accessToken string, h
 }
 
 func (ups *UserPlaylistTestService) DownloadSavedFavTracks(accessToken string) (tracks []models.SpAddedTrack, err *models.SpAPIError) {
-	return nil, nil
+	return ups.currentSnapshots, nil
 }
 
 func (ups *UserPlaylistTestService) SaveFavTracksSnapshot(ft *models.FavTracksSnapshot) (saved bool) {

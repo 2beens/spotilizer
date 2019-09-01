@@ -17,11 +17,13 @@ type UsersDBClient interface {
 	SaveUser(user *models.User) (stored bool)
 	GetUser(username string) *models.User
 	GetAllUsers() []models.User
+	// TODO:
+	// DeleteUser(username string) *models.User
 }
 
 type UsersDBRedisClient struct{}
 
-func (uDB UsersDBRedisClient) SaveUser(user *models.User) (stored bool) {
+func (uDB *UsersDBRedisClient) SaveUser(user *models.User) (stored bool) {
 	auth, err := json.Marshal(user.Auth)
 	if err != nil {
 		fmt.Println(" >>> error while storing user info: " + err.Error())
@@ -41,7 +43,7 @@ func (uDB UsersDBRedisClient) SaveUser(user *models.User) (stored bool) {
 }
 
 // GetUser returns a user object from storage (redis) by username
-func (uDB UsersDBRedisClient) GetUser(username string) *models.User {
+func (uDB *UsersDBRedisClient) GetUser(username string) *models.User {
 	cmd := rc.Get("user::" + username)
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Printf(" >>> failed to get user %s: %v\n", username, err)
@@ -63,7 +65,7 @@ func (uDB UsersDBRedisClient) GetUser(username string) *models.User {
 	return &models.User{Username: username, Auth: auth}
 }
 
-func (uDB UsersDBRedisClient) GetAllUsers() []models.User {
+func (uDB *UsersDBRedisClient) GetAllUsers() []models.User {
 	cmd := rc.Keys("user::*")
 	if err := cmd.Err(); err != nil && err != redis.Nil {
 		log.Printf(" >>> failed to get all users: %s\n", err.Error())

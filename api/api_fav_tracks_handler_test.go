@@ -22,6 +22,7 @@ type FavTracksTestSuite struct {
 	testUser  *models.User
 	handler   *FavTracksHandler
 	cookie    *http.Cookie
+	allTracks []models.SpAddedTrack
 	snapshots []models.FavTracksSnapshot
 }
 
@@ -44,7 +45,7 @@ func (suite *FavTracksTestSuite) SetupSuite() {
 	testUserSrv := services.NewUserServiceTest()
 	testUserSrv.Add(suite.testUser)
 	testUserSrv.AddUserCookie("cookietu1", suite.testUser.Username)
-	userPlaylistSrv := services.NewUserPlaylistTestService(suite.snapshots)
+	userPlaylistSrv := services.NewUserPlaylistTestService(suite.allTracks, suite.snapshots)
 
 	suite.handler = NewFavTracksHandler(testUserSrv, userPlaylistSrv)
 }
@@ -137,6 +138,26 @@ func (suite *FavTracksTestSuite) TestGetFavTracksSnapshotByTimestamp() {
 	suite.Equal(orgSnapshot.Tracks[1].Track.Artists[0].Name, recSnapshot.Tracks[1].Artists[0].Name)
 }
 
+func (suite *FavTracksTestSuite) TestFavTracksSnapshotDiff() {
+	relSnapshot := suite.snapshots[0]
+	req := suite.getRequest("/api/ssfavtracks/diff/{timestamp}")
+	req = mux.SetURLVars(req, map[string]string{"timestamp": strconv.FormatInt(relSnapshot.Timestamp.Unix(), 10)})
+	req.AddCookie(suite.cookie)
+
+	resp := httptest.NewRecorder()
+	suite.handler.ServeHTTP(resp, req)
+
+	suite.NotNil(resp.Body)
+	apiResp := suite.checkFavTracksSnapshotDiffAPIResponse(resp.Body.Bytes())
+	suite.NotNil(apiResp)
+
+	suite.Nil(apiResp.Results.RemovedTracks)
+	suite.NotNil(apiResp.Results.NewTracks)
+	suite.Equal(2, len(apiResp.Results.NewTracks))
+	suite.Equal(suite.allTracks[2].Track.Name, apiResp.Results.NewTracks[0].Name)
+	suite.Equal(suite.allTracks[3].Track.Name, apiResp.Results.NewTracks[1].Name)
+}
+
 // In order for 'go test' to run this suite, we need to create a normal test function and pass our suite to suite.Run
 func TestFavTracksTestSuite(t *testing.T) {
 	suite.Run(t, new(FavTracksTestSuite))
@@ -174,9 +195,19 @@ func (suite *FavTracksTestSuite) checkFavTracksSnapshotAPIResponse(rawResp []byt
 	return apiResp
 }
 
+func (suite *FavTracksTestSuite) checkFavTracksSnapshotDiffAPIResponse(rawResp []byte) *favTracksSnapshotDiffAPIResponse {
+	apiResp := &favTracksSnapshotDiffAPIResponse{}
+	err := json.Unmarshal(rawResp, apiResp)
+	if err != nil {
+		suite.FailNowf("fail to unmarshal favTracksSnapshotAPIresponse", "Detals: %s", err.Error())
+	}
+	suite.Equal(200, apiResp.Status)
+	suite.Equal("success", apiResp.Message)
+	suite.NotNil(apiResp.Results, "API response tracks must not be nil")
+	return apiResp
+}
+
 func (suite *FavTracksTestSuite) fillSnapshotsTestData() {
-	var ft1tracks []models.SpAddedTrack
-	var ft2tracks []models.SpAddedTrack
 	tr1 := models.SpAddedTrack{
 		AddedAt: time.Date(2019, time.August, 1, 11, 0, 0, 0, time.UTC),
 		Track: models.SpTrack{
@@ -240,9 +271,30 @@ func (suite *FavTracksTestSuite) fillSnapshotsTestData() {
 			TrackNumber: 5,
 		},
 	}
-	ft1tracks = append(ft1tracks, tr1)
-	ft1tracks = append(ft1tracks, tr2)
-	ft2tracks = append(ft2tracks, tr3)
+	tr4 := models.SpAddedTrack{
+		AddedAt: time.Date(2019, time.August, 15, 10, 0, 0, 0, time.UTC),
+		Track: models.SpTrack{
+			ID: "track4",
+			Artists: []models.SpArtist{
+				{
+					ID:   "track4id",
+					Name: "favTrack4 Artist",
+					Type: "track4artistType",
+					Href: "dummy href 4",
+				},
+			},
+			Explicit: true,
+			Type:     "track 4 type",
+			Album: models.SpAlbum{
+				ID: "track 4 album ID",
+			},
+			Name:        "track 4",
+			TrackNumber: 9,
+		},
+	}
+	ft1tracks := []models.SpAddedTrack{tr1, tr2}
+	ft2tracks := []models.SpAddedTrack{tr3}
+	suite.allTracks = []models.SpAddedTrack{tr1, tr2, tr3, tr4}
 
 	ft1 := models.FavTracksSnapshot{
 		Username:  suite.testUser.Username,
@@ -270,22 +322,33 @@ type favTracksSnapshotAPIresponse struct {
 	Snapshot tracksSnapshot `json:"data"`
 }
 
+type favTracksSnapshotDiffAPIResponse struct {
+	Status  int    `json:"status"`
+	Message string `json:"message"`
+	Results struct {
+		NewTracks     []track `json:"newTracks"`
+		RemovedTracks []track `json:"removedTracks"`
+	} `json:"data"`
+}
+
 type tracksSnapshot struct {
-	Timestamp   int `json:"timestamp"`
-	TracksCount int `json:"tracks_count"`
-	Tracks      []struct {
-		AddedAt int    `json:"added_at"`
-		AddedBy string `json:"added_by"`
-		Artists []struct {
-			Name string `json:"name"`
-			Type string `json:"type"`
-			Href string `json:"href"`
-		} `json:"artists"`
-		Album       string `json:"album"`
-		URI         string `json:"uri"`
-		ID          string `json:"id"`
-		TrackNumber int    `json:"track_number"`
-		DurationMs  int    `json:"duration_ms"`
-		Name        string `json:"name"`
-	} `json:"tracks"`
+	Timestamp   int     `json:"timestamp"`
+	TracksCount int     `json:"tracks_count"`
+	Tracks      []track `json:"tracks"`
+}
+
+type track struct {
+	AddedAt int    `json:"added_at"`
+	AddedBy string `json:"added_by"`
+	Artists []struct {
+		Name string `json:"name"`
+		Type string `json:"type"`
+		Href string `json:"href"`
+	} `json:"artists"`
+	Album       string `json:"album"`
+	URI         string `json:"uri"`
+	ID          string `json:"id"`
+	TrackNumber int    `json:"track_number"`
+	DurationMs  int    `json:"duration_ms"`
+	Name        string `json:"name"`
 }

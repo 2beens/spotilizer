@@ -79,24 +79,24 @@ func (handler *FavTracksHandler) getFavTracksDiff(user *models.User, w io.Writer
 		return
 	}
 
-	var newTracks []models.SpAddedTrack
-	var removedTracks []models.SpAddedTrack
+	var newTracks []models.DTOTrack
+	var removedTracks []models.DTOTrack
 	for _, t := range currentTracks {
 		if !containsTrack(t, snapshot.Tracks) {
-			newTracks = append(newTracks, t)
+			newTracks = append(newTracks, models.SpAddedTrack2dtoTrack(t))
 		}
 	}
 	for _, t := range snapshot.Tracks {
 		if !containsTrack(t, currentTracks) {
-			removedTracks = append(removedTracks, t)
+			removedTracks = append(removedTracks, models.SpAddedTrack2dtoTrack(t))
 		}
 	}
 
 	log.Debugf(" > fav tracks [%s] diff. found [%d] new tracks and [%d] removed tracks", timestamp, len(newTracks), len(removedTracks))
 
 	util.SendAPIOKRespWithData(w, "success", struct {
-		NewTracks     []models.SpAddedTrack `json:"newTracks"`
-		RemovedTracks []models.SpAddedTrack `json:"removedTracks"`
+		NewTracks     []models.DTOTrack `json:"newTracks"`
+		RemovedTracks []models.DTOTrack `json:"removedTracks"`
 	}{
 		newTracks,
 		removedTracks,
