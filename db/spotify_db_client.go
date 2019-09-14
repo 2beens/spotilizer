@@ -74,16 +74,16 @@ func (sDB SpotifyDB) DeletePlaylistsSnapshot(username string, timestamp string) 
 		return nil, fmt.Errorf("snapshot [%s] not found", timestamp)
 	}
 
-	cmd := rc.Del(snapshotKey)
-	if err := cmd.Err(); err != nil {
-		log.Debugf(" >>> failed to delete playlists snapshot [%s] for user [%s]: %s\n", timestamp, username, err.Error())
-		return nil, err
-	}
-
-	deletedRecordsCount := cmd.Val()
-	if deletedRecordsCount == 0 {
-		return snapshot, fmt.Errorf("snapshot [%s] found, but not deleted", snapshot.Timestamp)
-	}
+	//cmd := rc.Del(snapshotKey)
+	//if err := cmd.Err(); err != nil {
+	//	log.Debugf(" >>> failed to delete playlists snapshot [%s] for user [%s]: %s\n", timestamp, username, err.Error())
+	//	return nil, err
+	//}
+	//
+	//deletedRecordsCount := cmd.Val()
+	//if deletedRecordsCount == 0 {
+	//	return snapshot, fmt.Errorf("snapshot [%s] found, but not deleted", snapshot.Timestamp)
+	//}
 
 	return snapshot, nil
 }
@@ -96,16 +96,16 @@ func (sDB SpotifyDB) DeleteFavTracksSnapshot(username string, timestamp string) 
 		return nil, fmt.Errorf("snapshot [%s] not found", timestamp)
 	}
 
-	cmd := rc.Del(snapshotKey)
-	if err := cmd.Err(); err != nil {
-		log.Debugf(" >>> failed to delete fav tracks snapshot [%s] for user [%s]: %s\n", timestamp, username, err.Error())
-		return nil, err
-	}
-
-	deletedRecordsCount := cmd.Val()
-	if deletedRecordsCount == 0 {
-		return snapshot, fmt.Errorf("snapshot [%s] found, but not deleted", snapshot.Timestamp)
-	}
+	//cmd := rc.Del(snapshotKey)
+	//if err := cmd.Err(); err != nil {
+	//	log.Debugf(" >>> failed to delete fav tracks snapshot [%s] for user [%s]: %s\n", timestamp, username, err.Error())
+	//	return nil, err
+	//}
+	//
+	//deletedRecordsCount := cmd.Val()
+	//if deletedRecordsCount == 0 {
+	//	return snapshot, fmt.Errorf("snapshot [%s] found, but not deleted", snapshot.Timestamp)
+	//}
 
 	return snapshot, nil
 }
