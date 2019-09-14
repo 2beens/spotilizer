@@ -118,6 +118,11 @@ type SpError struct {
 	Message string `json:"message"`
 }
 
+type SpLoginError struct {
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
+}
+
 type SpAPIError struct {
 	Error SpError `json:"error"`
 }

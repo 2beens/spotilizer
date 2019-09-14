@@ -170,8 +170,12 @@ func getAccessToken(data url.Values) (auth *models.SpotifyAuthOptions, err error
 		return nil, err
 	}
 
-	// TODO: handle API error
-	// {"error":"unsupported_grant_type","error_description":"grant_type must be client_credentials, authorization_code or refresh_token"}
+	spLoginError := &models.SpLoginError{}
+	err = json.Unmarshal(body, &spLoginError)
+	if err != nil || (len(spLoginError.Error) > 0 && len(spLoginError.ErrorDescription) > 0) {
+		log.Warn(string(body))
+		return nil, fmt.Errorf("spotify login error, type [%s], details: %s", spLoginError.Error, spLoginError.ErrorDescription)
+	}
 
 	auth = &models.SpotifyAuthOptions{}
 	err = json.Unmarshal(body, &auth)

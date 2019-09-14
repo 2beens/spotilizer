@@ -120,13 +120,11 @@ func (us *UserService) GetUserFromSpotify(accessToken string) (user *models.SpUs
 		return nil, err
 	}
 
-	// TODO: Handle API Error situations - Spotify API can return something like:
-	// {
-	// 	"error": {
-	// 		"status": 400,
-	// 		"message": "Only valid bearer authentication supported"
-	// 	}
-	// }
+	spError := &models.SpError{}
+	err = json.Unmarshal(body, &spError)
+	if err != nil && spError.Status != 0 && len(spError.Message) > 0 {
+		return nil, fmt.Errorf("spotify error, status [%d], message: %s", spError.Status, spError.Message)
+	}
 
 	err = json.Unmarshal(body, &user)
 	if err != nil {
