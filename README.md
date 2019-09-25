@@ -1,9 +1,8 @@
 # :notes: spotilizer
 [![Build Status](https://travis-ci.com/2beens/spotilizer.svg?branch=master)](https://travis-ci.com/2beens/spotilizer)
-[![GitHub issues](https://img.shields.io/github/issues/Naereen/StrapDown.js.svg)](https://GitHub.com/Naereen/StrapDown.js/issues/)
 [![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/Naereen/StrapDown.js/blob/master/LICENSE)
 ![golangci-lint](https://github.com/golangci/golangci-web/blob/master/src/assets/images/badge_a_plus_flat.svg "Using GolangCI Lint")
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-no-red.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
 [![made-for-VSCode](https://img.shields.io/badge/Made%20for-VSCode-1f425f.svg)](https://code.visualstudio.com/)
 
 Study **golang** through using **Spotify API** and **Redis**.
